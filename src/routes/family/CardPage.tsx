@@ -118,7 +118,7 @@ export function CardPage() {
                 <p className="t-muted">{c.cuesEmpty}</p>
               )}
               <p>
-                <Link to="/setup/5">{c.addCues}</Link>
+                <Link to="/cues">{c.addCues}</Link>
               </p>
             </Card>
 

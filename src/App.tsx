@@ -7,6 +7,8 @@ import { Consent } from './routes/auth/Consent';
 import { SignIn } from './routes/auth/SignIn';
 import { SignUp } from './routes/auth/SignUp';
 import { Start } from './routes/auth/Start';
+import { CueEditorPage } from './routes/cues/CueEditor';
+import { CueLibrary } from './routes/cues/CueLibrary';
 import { CardPage } from './routes/family/CardPage';
 import { CardPrint } from './routes/family/CardPrint';
 import { FamilyArea, FamilyHome, SignOut } from './routes/family/FamilyRoutes';
@@ -51,6 +53,9 @@ export function App() {
             <Route path="/home" element={<FamilyHome />} />
             <Route path="/setup" element={<SetupResume />} />
             <Route path="/setup/:step" element={<Setup />} />
+            <Route path="/cues" element={<CueLibrary />} />
+            <Route path="/cues/new" element={<CueEditorPage />} />
+            <Route path="/cues/:id" element={<CueEditorPage />} />
             <Route path="/card" element={<CardPage />} />
             <Route path="/card/print" element={<CardPrint />} />
           </Route>

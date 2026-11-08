@@ -148,7 +148,57 @@ export const copy = {
     submit: 'Set up the profile',
   },
 
+  cues: {
+    title: 'Cues',
+    heading: 'Cue library',
+    intro:
+      'A cue is something your child says or does that others may not understand. Write what it means in each place, and what a worker should do.',
+    add: 'Add a cue',
+    searchLabel: 'Search cues',
+    searchHint: 'Type a word or phrase, for example “cookie” or “door”.',
+    filterLabel: 'Show',
+    all: 'All',
+    count: (shown: number, total: number) =>
+      shown === total ? `${total} cue${total === 1 ? '' : 's'}` : `Showing ${shown} of ${total} cues`,
+    pinned: 'On the card',
+    edit: 'Edit',
+    editCue: (label: string) => `Edit ${label}`,
+    emptyHeading: 'No cues yet',
+    emptyBody:
+      'Start with something a new worker is likely to see on day one: a phrase your child repeats, a sound, or a gesture.',
+    noMatches: (query: string) => (query ? `Nothing matches “${query}”.` : 'No cues in this group yet.'),
+    clear: 'Clear search',
+    saved: 'Saved.',
+    deleted: 'Cue deleted.',
+  },
+
+  cueEditor: {
+    newTitle: 'Add a cue',
+    editTitle: 'Edit cue',
+    cueHeading: 'The cue',
+    descriptionLabel: 'How it looks or sounds',
+    descriptionHint: 'For example: “a quick double tap, usually at the bathroom door”.',
+    aliasesLabel: 'Also written as',
+    aliasesHint: 'Other ways a worker might type it, separated by commas. For example: cookie, cookies, cooky.',
+    pinLabel: 'Show on the first-shift card',
+    pinHint: (used: number) => `Up to 5 cues can be on the card. ${used} of 5 used.`,
+    meaningsHeading: 'What it means',
+    meaningsIntro: 'The same cue can mean different things in different places or with different people.',
+    meaningLegend: (n: number) => `Meaning ${n}`,
+    addMeaning: 'This also means something else somewhere else',
+    removeMeaning: 'Remove this meaning',
+    save: 'Save cue',
+    saving: 'Saving…',
+    cancel: 'Back to the library',
+    delete: 'Delete this cue',
+    deleteTitle: (label: string) => `Delete ${label}?`,
+    deleteBody: 'This removes the cue and everything it means from the profile. It can’t be undone.',
+    deleteConfirm: 'Delete cue',
+    notFound: 'We couldn’t find that cue. It may have been deleted.',
+  },
+
   familyNav: {
+    cues: 'Cues',
     card: 'First-shift card',
     setup: 'Setup',
     signOut: 'Sign out',
@@ -427,6 +477,7 @@ export const copy = {
       'That code doesn’t match an unused invite. Check it against your message from the Porto team, or ask them for a new one.',
     consentFirst: 'Please read and agree to how Porto stores information first.',
     notConfigured: 'Porto isn’t connected to its database yet. The Porto team needs to finish setting it up.',
+    pinLimit: 'The card can show up to 5 cues. Take one off the card first, then try again.',
   },
 
   notFound: {
