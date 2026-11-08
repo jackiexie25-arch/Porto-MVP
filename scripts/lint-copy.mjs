@@ -13,7 +13,7 @@ const files = [
   COPY_FILE,
   ...walk(root, 'src', (name) => name.endsWith('.tsx') && !name.endsWith('.test.tsx')),
   // Demo content is shown to people, so it follows the same voice rules.
-  ...walk(root, 'src/demo', (name) => name.endsWith('.ts')),
+  ...walk(root, 'src/demo', (name) => name.endsWith('.ts') && !name.endsWith('.test.ts')),
 ];
 
 let count = 0;

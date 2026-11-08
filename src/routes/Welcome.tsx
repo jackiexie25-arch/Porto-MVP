@@ -35,7 +35,8 @@ export function Welcome() {
             </>
           )}
         </div>
-        <p>
+        <p className={styles.links}>
+          <Link to="/demo">{copy.demo.link}</Link>
           <Link to="/privacy">{c.privacyLink}</Link>
         </p>
       </div>

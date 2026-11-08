@@ -1,0 +1,14 @@
+/* Stays in view while scrolling, so the demo is never mistaken for a real child's profile. */
+.note {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  max-width: none;
+  margin: 0 calc(var(--space-4) * -1);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border-bottom: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+}

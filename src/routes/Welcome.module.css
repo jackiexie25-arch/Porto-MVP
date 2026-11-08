@@ -23,3 +23,15 @@
   text-align: center;
   margin-block: var(--space-4) var(--space-2);
 }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+}
