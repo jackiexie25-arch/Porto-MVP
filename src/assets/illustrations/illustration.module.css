@@ -1,0 +1,65 @@
+.svg {
+  width: 100%;
+  height: auto;
+  max-width: 320px;
+}
+
+/* One pen: ink line, about 2px at 1x, round caps and joins. No gradients, no shadows. */
+.line,
+.apricot,
+.sky,
+.rose,
+.paper {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line {
+  fill: none;
+}
+
+.thin {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.apricot {
+  fill: var(--apricot);
+}
+
+.sky {
+  fill: var(--sky);
+}
+
+.rose {
+  fill: var(--rose);
+}
+
+.paper {
+  fill: var(--surface);
+}
+
+.skyLine {
+  fill: none;
+  stroke: var(--sky);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* Backdrop */
+.blob {
+  fill: var(--surface);
+}
+
+.leafBlob {
+  fill: var(--blob);
+}
+
+.leafSky {
+  fill: var(--sky);
+}
