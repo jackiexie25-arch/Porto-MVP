@@ -58,33 +58,36 @@ export async function saveSection(profileId: string, section: CardSectionKind, d
   return data as CardSection;
 }
 
-/**
- * Adds a cue with its first meaning. If the meaning can't be saved, the cue is removed again,
- * so the family never ends up with a cue that has no meaning.
- */
-export async function addCue(
-  profileId: string,
-  cue: NewCue,
-  meaning: NewMeaning,
-  pin: { pinned: boolean; pin_order: number | null },
-): Promise<Cue> {
-  const supabase = getSupabase();
-  const created = await supabase
-    .from('cues')
-    .insert({ profile_id: profileId, ...cue, ...pin })
-    .select('*')
-    .single();
-  if (created.error) throw created.error;
-  const row = created.data as Omit<Cue, 'cue_meanings'>;
+export interface CueInput extends NewCue {
+  id?: string;
+  description: string;
+  aliases: string[];
+  pinned: boolean;
+}
 
-  const m = await supabase
-    .from('cue_meanings')
-    .insert({ cue_id: row.id, ...meaning })
-    .select('*')
+export interface MeaningInput extends NewMeaning {
+  id?: string;
+}
+
+/**
+ * Creates or updates a cue and all its meanings in one database transaction (save_cue),
+ * then reads it back. Meanings left out of `meanings` are removed.
+ */
+export async function saveCue(profileId: string, cue: CueInput, meanings: MeaningInput[]): Promise<Cue> {
+  const supabase = getSupabase();
+  const saved = await supabase.rpc('save_cue', { p_profile_id: profileId, p_cue: cue, p_meanings: meanings });
+  if (saved.error) throw saved.error;
+  const row = await supabase
+    .from('cues')
+    .select('*, cue_meanings(*)')
+    .eq('id', saved.data as string)
+    .order('created_at', { referencedTable: 'cue_meanings', ascending: true })
     .single();
-  if (m.error) {
-    await supabase.from('cues').delete().eq('id', row.id);
-    throw m.error;
-  }
-  return { ...row, cue_meanings: [m.data as Cue['cue_meanings'][number]] };
+  if (row.error) throw row.error;
+  return row.data as Cue;
+}
+
+export async function deleteCue(id: string): Promise<void> {
+  const { error } = await getSupabase().from('cues').delete().eq('id', id);
+  if (error) throw error;
 }

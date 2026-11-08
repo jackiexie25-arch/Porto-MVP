@@ -13,6 +13,7 @@ export function friendlyError(error: unknown): string {
   if (message.includes('not_configured')) return copy.errors.notConfigured;
   if (message.includes('invalid_invite_code')) return copy.errors.inviteCode;
   if (message.includes('consent_required')) return copy.errors.consentFirst;
+  if (message.includes('pin_limit')) return copy.errors.pinLimit;
   if (e.status === 429 || /rate limit|too many/i.test(message)) return copy.common.tryAgainSoon;
   if (/fetch|network|load failed/i.test(message)) return copy.errors.offline;
   return copy.errors.generic;
