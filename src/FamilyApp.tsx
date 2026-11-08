@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
-import { FamilyGate } from './auth/FamilyGate';
+import { FamilyGate, RequireSignIn } from './auth/FamilyGate';
+import { AccountPage } from './routes/account/AccountPage';
+import { Deleted } from './routes/account/Deleted';
 import { AuthCallback } from './routes/auth/AuthCallback';
 import { CheckEmail } from './routes/auth/CheckEmail';
 import { Consent } from './routes/auth/Consent';
@@ -18,6 +20,7 @@ import { Privacy } from './routes/Privacy';
 import { Setup, SetupResume } from './routes/setup/Setup';
 import { SharePage } from './routes/share/SharePage';
 import { Styleguide } from './routes/Styleguide';
+import { TeamPage } from './routes/team/TeamPage';
 import { Welcome } from './routes/Welcome';
 
 /** Everything except the worker view: welcome, sign-in, and the signed-in family pages. */
@@ -33,6 +36,15 @@ export default function FamilyApp() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/styleguide" element={<Styleguide />} />
+        <Route path="/deleted" element={<Deleted />} />
+        <Route
+          path="/team"
+          element={
+            <RequireSignIn>
+              <TeamPage />
+            </RequireSignIn>
+          }
+        />
 
         <Route
           path="/consent"
@@ -62,6 +74,7 @@ export default function FamilyApp() {
           <Route path="/card/print" element={<CardPrint />} />
           <Route path="/share" element={<SharePage />} />
           <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

@@ -12,8 +12,7 @@ export function FamilyShell({ children, hideShare = false }: { children: ReactNo
     { to: '/cues', label: copy.familyNav.cues },
     { to: '/card', label: copy.familyNav.card },
     { to: '/inbox', label: copy.familyNav.inbox, badge: pendingNotes, ariaLabel: copy.inbox.navLabel(pendingNotes) },
-    { to: '/setup', label: copy.familyNav.setup },
-    { to: '/signout', label: copy.familyNav.signOut },
+    { to: '/account', label: copy.familyNav.account },
   ];
   return (
     <AppShell links={links} primary={hideShare ? undefined : primary}>

@@ -85,10 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [apply]);
 
   const signOut = useCallback(async () => {
-    if (isSupabaseConfigured) await getSupabase().auth.signOut();
-    setSession(null);
-    setStatus(signedOut);
-    setDisplayName('');
+    try {
+      // 'local' clears this browser even if the account no longer exists on the server.
+      if (isSupabaseConfigured) await getSupabase().auth.signOut({ scope: 'local' });
+    } finally {
+      setSession(null);
+      setStatus(signedOut);
+      setDisplayName('');
+    }
   }, []);
 
   const value = useMemo(

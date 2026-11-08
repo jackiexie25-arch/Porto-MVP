@@ -18,3 +18,11 @@ export function FamilyGate({ need, children }: { need: FamilyNeed; children: Rea
   }
   return <>{children}</>;
 }
+
+/** Signed in, nothing more (used by /team, whose own check decides what to show). */
+export function RequireSignIn({ children }: { children: ReactNode }) {
+  const { loading, status } = useAuth();
+  if (loading) return <Loading />;
+  if (!status.signedIn) return <Navigate to="/signin" replace />;
+  return <>{children}</>;
+}

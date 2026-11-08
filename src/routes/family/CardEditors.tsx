@@ -10,25 +10,28 @@ import { useFamilyData } from '../../family/FamilyDataProvider';
 import { useAutosave, type AutosaveState } from '../../lib/useAutosave';
 import styles from './CardPage.module.css';
 
-function EditorFooter({ state, onDone }: { state: AutosaveState; onDone: () => void }) {
+function EditorFooter({ state, onDone }: { state: AutosaveState; onDone?: () => void }) {
   return (
     <div className={styles.editorFooter}>
       <AutosaveStatus state={state} />
-      <Button variant="outlined" onClick={onDone}>
-        {copy.card.done}
-      </Button>
+      {onDone ? (
+        <Button variant="outlined" onClick={onDone}>
+          {copy.card.done}
+        </Button>
+      ) : null}
     </div>
   );
 }
 
-export function AboutEditor({ onDone }: { onDone: () => void }) {
+/** Without onDone it stays open and just saves as the family types (used on the account page). */
+export function AboutEditor({ onDone }: { onDone?: () => void }) {
   const { profile, saveProfile } = useFamilyData();
   const [draft, setDraft] = useState(() => aboutDraftFrom(profile));
   const { state, flush } = useAutosave(draft, (d) => saveProfile(aboutPatch(d)));
   return (
     <>
       <AboutFields draft={draft} onChange={setDraft} />
-      <EditorFooter state={state} onDone={() => void flush().then((ok) => ok && onDone())} />
+      <EditorFooter state={state} onDone={onDone && (() => void flush().then((ok) => ok && onDone()))} />
     </>
   );
 }
@@ -45,7 +48,7 @@ export function SectionEditor({ section, onDone }: { section: CardSectionKind; o
   );
 }
 
-export function WhoEditor({ onDone }: { onDone: () => void }) {
+export function WhoEditor({ onDone }: { onDone?: () => void }) {
   const { profile, saveProfile } = useFamilyData();
   const [draft, setDraft] = useState(() => whoDraftFrom(profile));
   const phoneOk = phoneLooksValid(draft.who_to_call_phone);
@@ -78,7 +81,7 @@ export function WhoEditor({ onDone }: { onDone: () => void }) {
           error={phoneOk ? undefined : w.phoneInvalid}
         />
       </FieldStack>
-      <EditorFooter state={state} onDone={() => void flush().then((ok) => ok && phoneOk && onDone())} />
+      <EditorFooter state={state} onDone={onDone && (() => void flush().then((ok) => ok && phoneOk && onDone()))} />
     </>
   );
 }
