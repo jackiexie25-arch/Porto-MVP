@@ -7,9 +7,12 @@ import { Consent } from './routes/auth/Consent';
 import { SignIn } from './routes/auth/SignIn';
 import { SignUp } from './routes/auth/SignUp';
 import { Start } from './routes/auth/Start';
-import { FamilyHome } from './routes/family/FamilyHome';
+import { CardPage } from './routes/family/CardPage';
+import { CardPrint } from './routes/family/CardPrint';
+import { FamilyArea, FamilyHome, SignOut } from './routes/family/FamilyRoutes';
 import { NotFound } from './routes/NotFound';
 import { Privacy } from './routes/Privacy';
+import { Setup, SetupResume } from './routes/setup/Setup';
 import { Styleguide } from './routes/Styleguide';
 import { Welcome } from './routes/Welcome';
 
@@ -21,6 +24,7 @@ export function App() {
           <Route path="/" element={<Welcome />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/signout" element={<SignOut />} />
           <Route path="/check-email" element={<CheckEmail />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -42,14 +46,14 @@ export function App() {
               </FamilyGate>
             }
           />
-          <Route
-            path="/home"
-            element={
-              <FamilyGate need="profile">
-                <FamilyHome />
-              </FamilyGate>
-            }
-          />
+
+          <Route element={<FamilyArea />}>
+            <Route path="/home" element={<FamilyHome />} />
+            <Route path="/setup" element={<SetupResume />} />
+            <Route path="/setup/:step" element={<Setup />} />
+            <Route path="/card" element={<CardPage />} />
+            <Route path="/card/print" element={<CardPrint />} />
+          </Route>
 
           <Route path="*" element={<NotFound />} />
         </Routes>

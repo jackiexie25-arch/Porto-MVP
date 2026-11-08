@@ -1,0 +1,170 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--ink-soft);
+}
+
+.block {
+  background: var(--surface);
+  border: 1px solid var(--blob);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-6);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--control-height);
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-sm);
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A small ink chevron that turns when the section is open. */
+.summary::after {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: rotate(45deg);
+  margin-right: var(--space-2);
+  transition: transform var(--motion-fade) ease;
+}
+
+details[open] > .summary::after {
+  transform: rotate(-135deg);
+}
+
+.title {
+  margin: 0;
+}
+
+section.block .title {
+  margin-bottom: var(--space-3);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+}
+
+details .body {
+  padding-top: var(--space-2);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.line dt {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.line dd {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+.cues {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cue + .cue {
+  border-top: 1px solid var(--blob);
+  padding-top: var(--space-4);
+}
+
+.cueLabel {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.meaning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.meaning strong {
+  color: var(--ink);
+}
+
+.phone {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-weight: 600;
+}
+
+.emergency {
+  font-weight: 600;
+  color: var(--ink);
+  padding: var(--space-2) 0;
+}
+
+/* Print: flat, compact, one A4 page for a typical card. */
+.print {
+  gap: 6pt;
+  font-size: 10.5pt;
+  line-height: 1.4;
+}
+
+.print .block {
+  padding: 8pt 12pt;
+  border-radius: 10px;
+  break-inside: avoid;
+}
+
+.print .title {
+  font-size: 13pt;
+  line-height: 1.3;
+}
+
+.print section.block .title {
+  margin-bottom: 4pt;
+}
+
+.print .body,
+.print .lines,
+.print .cues {
+  gap: 4pt;
+}
+
+.print .line dt {
+  font-size: 9.5pt;
+  line-height: 1.3;
+}
+
+.print .cueLabel {
+  font-size: 11pt;
+  line-height: 1.3;
+}
+
+.print .cue + .cue {
+  padding-top: 6pt;
+}

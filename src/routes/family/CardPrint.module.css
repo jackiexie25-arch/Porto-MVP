@@ -1,0 +1,63 @@
+.page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-16);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.toolbar p {
+  flex-basis: 100%;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10pt;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--blob);
+  padding-bottom: 8pt;
+}
+
+.header > div {
+  text-align: right;
+}
+
+.name {
+  font-size: 22pt;
+  line-height: 1.2;
+}
+
+.meta {
+  font-size: 9.5pt;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .toolbar {
+    display: none;
+  }
+}

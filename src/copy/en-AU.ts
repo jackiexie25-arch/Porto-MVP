@@ -148,12 +148,276 @@ export const copy = {
     submit: 'Set up the profile',
   },
 
-  home: {
-    title: 'Home',
-    heading: 'You’re signed in',
-    body: 'Next, you’ll set up your child’s profile: how they communicate, toileting, food, calming and their first cues.',
-    building: 'Profile setup is the next part of Porto being built. It will appear here.',
+  familyNav: {
+    card: 'First-shift card',
+    setup: 'Setup',
     signOut: 'Sign out',
+  },
+
+  /** Names for enum values, as families and workers see them. */
+  labels: {
+    communication: {
+      speech: 'Speech',
+      echolalia: 'Repeated phrases (echolalia)',
+      sounds: 'Sounds',
+      gestures: 'Gestures',
+      aac: 'AAC or a device',
+      other: 'Other',
+    },
+    /** Lowercase, for "Communicates through sounds and gestures." */
+    communicationInline: {
+      speech: 'speech',
+      echolalia: 'repeated phrases',
+      sounds: 'sounds',
+      gestures: 'gestures',
+      aac: 'an AAC device',
+      other: 'other ways',
+    },
+    cueType: {
+      phrase: 'A phrase or word',
+      sound: 'A sound',
+      gesture: 'A gesture or body movement',
+      behaviour: 'A behaviour',
+      aac: 'On their AAC or device',
+      other: 'Something else',
+    },
+    category: {
+      toileting: 'Toileting',
+      food_drink: 'Food and drink',
+      overstimulation: 'Overstimulation',
+      connection: 'Connection',
+      other: 'Other',
+    },
+    context: {
+      home: 'Home',
+      school: 'School',
+      camp: 'Camp',
+      community: 'Out and about',
+      mealtime: 'Mealtime',
+      transport: 'Transport',
+      with_person: 'With a specific person',
+      other: 'Other',
+    },
+    /** For "At home or at mealtimes: …" */
+    contextPhrase: {
+      home: 'at home',
+      school: 'at school',
+      camp: 'at camp',
+      community: 'out and about',
+      mealtime: 'at mealtimes',
+      transport: 'when travelling',
+      with_person: 'with a specific person',
+      other: 'somewhere else',
+    },
+    confidence: {
+      always: 'Always',
+      usually: 'Usually',
+      sometimes: 'Sometimes',
+    },
+  },
+
+  setup: {
+    title: (step: number) => `Setup, step ${step}`,
+    progressLabel: 'Profile setup',
+    continue: 'Save and continue',
+    skip: 'Skip this step',
+    back: 'Back',
+    saving: 'Saving…',
+    saved: 'Saved.',
+    saveFailed: 'We couldn’t save that just now. Your words are still here. We’ll try again when you next type, or you can tap Save and continue.',
+    dictation: 'Tip: you can tap the microphone on your phone’s keyboard to speak instead of type.',
+    medical:
+      'Please don’t add diagnoses or medical instructions. Everyday words like “looks flushed” or “holds their stomach” are fine.',
+    yourChild: 'your child',
+    about: {
+      heading: 'About your child',
+      intro: 'Start with the basics. Short answers are fine, and you can skip anything.',
+      nameLabel: 'First name or nickname',
+      nameHint: 'A nickname is fine. Please don’t add a surname.',
+      modesLegend: 'How do they mainly communicate?',
+      modesHint: 'Choose all that apply.',
+      languagesLabel: 'Languages they understand',
+      languagesHint: 'Separate them with commas. For example: English, Auslan.',
+      styleLegend: (name: string) => `How do you describe ${name}?`,
+      styleHint: 'Porto will follow your words.',
+      styleIdentity: (name: string) => `${name} is autistic`,
+      stylePerson: (name: string) => `${name} has autism`,
+      connectLabel: 'What helps you connect?',
+      connectHint: 'One sentence. For example: “Sit beside them, not in front, and wait for them to look at you.”',
+    },
+    toileting: {
+      heading: 'Toileting',
+      intro: 'What a new worker needs to know so your child never has to wait.',
+    },
+    food: {
+      heading: 'Food and drink',
+      intro: 'How your child shows hunger and thirst, and what they’re happy to eat.',
+    },
+    calming: {
+      heading: 'Overstimulation and calming',
+      intro: 'What overwhelms your child, how to spot it early, and what helps.',
+    },
+    cues: {
+      heading: 'First cues',
+      intro:
+        'A cue is something your child says or does that others might not understand. Add up to three to start. You can add more any time.',
+      examplesLabel: 'Start from an example',
+      examples: [
+        { type: 'phrase', label: 'A phrase they repeat' },
+        { type: 'sound', label: 'A sound they make' },
+        { type: 'gesture', label: 'A gesture or behaviour' },
+      ],
+      addedHeading: 'Added so far',
+      addAnother: 'Add another cue',
+      enough: 'That’s a good start. You can add more cues later.',
+    },
+    preview: {
+      heading: 'Your first-shift card',
+      intro: 'This is what a worker will see on their first shift. You can change anything later.',
+      ready: 'The profile is ready to use.',
+      finish: 'Finish for now',
+    },
+  },
+
+  /** Setup prompts for each card section, and the labels workers see on the card. */
+  sectionFields: {
+    toileting: {
+      signs: {
+        label: 'How do they show they need the toilet?',
+        hint: 'For example: holds the front of their pants, or stands still by the bathroom door.',
+        worker: 'How they show it',
+      },
+      what_to_do: {
+        label: 'What should a new worker do?',
+        hint: 'For example: go straight away. Leave the door open a little. Say “toilet” once, calmly.',
+        worker: 'What to do',
+      },
+      avoid: {
+        label: 'What should they avoid?',
+        hint: 'For example: asking “do you need the toilet?” over and over.',
+        worker: 'Avoid',
+      },
+    },
+    food_drink: {
+      signs: {
+        label: 'How do they show they’re hungry or thirsty?',
+        hint: 'For example: brings you their lunchbox, or taps their mouth.',
+        worker: 'How they show it',
+      },
+      routines: {
+        label: 'Safe foods and routines',
+        hint: 'For example: plain pasta, apple slices, water in the blue bottle. Snack at 10.',
+        worker: 'Safe foods and routines',
+      },
+      avoid: {
+        label: 'What should a new worker avoid?',
+        hint: 'For example: mixing foods on the plate, or offering new food when they’re tired.',
+        worker: 'Avoid',
+      },
+    },
+    overstimulation: {
+      triggers: {
+        label: 'What are common triggers?',
+        hint: 'For example: hand dryers, crowded rooms, people talking over each other.',
+        worker: 'Common triggers',
+      },
+      early_signs: {
+        label: 'What are the early signs?',
+        hint: 'For example: covers their ears, rocks faster, stops answering.',
+        worker: 'Early signs',
+      },
+    },
+    calms: {
+      label: 'What helps them calm?',
+      hint: 'For example: a quiet corner, headphones, squeezing a soft ball. Give them time.',
+    },
+    avoid: {
+      label: 'What makes things worse?',
+      hint: 'For example: touching them without warning, lots of questions, a raised voice.',
+    },
+  },
+
+  cueForm: {
+    labelLabel: 'What you’ll see or hear',
+    labelHints: {
+      phrase: 'Write it the way it sounds. For example: “Cookie time”.',
+      sound: 'Describe it. For example: “a short, high hum”.',
+      gesture: 'Describe it. For example: “taps the door twice”.',
+      behaviour: 'Describe it. For example: “lines up their shoes”.',
+      aac: 'Write the button or phrase. For example: “all done”.',
+      other: 'For example: “taps the door twice” or “Cookie time”.',
+    },
+    typeLegend: 'What kind of cue is it?',
+    categoryLabel: 'What is it mostly about?',
+    contextLegend: 'Where does it mean this?',
+    contextHint: 'Choose any that fit. If it means something else somewhere else, you can add that later.',
+    contextTextLabel: 'Or name a place or person',
+    contextTextHint: 'For example: with Grandma, or at swimming.',
+    meaningLabel: 'What it usually means',
+    meaningHint: 'For example: “I’m hungry” or “I need a break”.',
+    todoLabel: 'What to do',
+    todoHint: 'Lead with the action. For example: “Offer a snack from the green box”.',
+    avoidLabel: 'What to avoid',
+    avoidHint: 'For example: “Don’t ask lots of questions”.',
+    confidenceLegend: 'How sure are you?',
+    submit: 'Add to profile',
+    adding: 'Adding…',
+    added: 'Added to the profile.',
+    labelMissing: 'Add what you see or hear, so a worker can find it.',
+    meaningMissing: 'Add what it usually means.',
+  },
+
+  card: {
+    title: 'First-shift card',
+    heading: (name: string) => `${name}’s first-shift card`,
+    headingNoName: 'Your child’s first-shift card',
+    readingTime: (words: number, minutes: number) =>
+      `About ${minutes} minute${minutes === 1 ? '' : 's'} to read · ${words} words`,
+    longNote:
+      'This is getting long. Workers read this on their first shift. Is anything here better kept in the cue library?',
+    medical:
+      'Please don’t add diagnoses or medical instructions. Everyday words like “looks flushed” or “holds their stomach” are fine.',
+    previewButton: 'Preview as a worker',
+    editButton: 'Back to editing',
+    printLink: 'Print view',
+    previewHeading: 'What a worker sees',
+    edit: 'Edit',
+    done: 'Done',
+    editSection: (title: string) => `Edit ${title}`,
+    emptyFamily: 'Nothing here yet. Workers won’t see this section until you add something.',
+    sections: {
+      about: (name: string) => `About ${name}`,
+      toileting: 'Toileting',
+      food_drink: 'Food and drink',
+      overstimulation: 'Overstimulation',
+      calms: 'What calms',
+      avoid: 'Please avoid',
+      cues: 'Top cues',
+      who: 'Who to call',
+    },
+    about: {
+      communicates: (list: string) => `Communicates through ${list}.`,
+      languages: (list: string) => `Languages: ${list}.`,
+    },
+    cuesEmpty: 'No cues pinned yet.',
+    addCues: 'Add cues',
+    tryLabel: 'Try',
+    avoidLabel: 'Avoid',
+    who: {
+      nameLabel: 'Contact’s first name',
+      phoneLabel: 'Phone number',
+      note: 'Anyone with a share link can see this name and number.',
+      phoneInvalid: 'Use numbers only, like 0412 345 678.',
+      callLine: (name: string, phone: string) => (name ? `${name}: ${phone}` : phone),
+    },
+    sharedBy: (name: string) => `Shared by ${name}’s family`,
+    lastUpdated: (date: string) => `Last updated ${date}`,
+    print: {
+      title: 'Print',
+      button: 'Print or save as PDF',
+      back: 'Back to the card',
+      tip: 'Keep a paper copy in a bag or folder. It’s up to date as of today.',
+    },
   },
 
   errors: {
@@ -179,6 +443,7 @@ export const copy = {
     linkCopied: 'Link copied.',
     optional: 'Optional',
     loading: 'Loading…',
+    tryAgain: 'Try again',
     tryAgainSoon: 'Please try again in a moment.',
     stepOf: (step: number, total: number) => `Step ${step} of ${total}`,
     currentStep: 'current step',
@@ -214,7 +479,10 @@ export const copy = {
       progress: 'Progress',
       sheet: 'Bottom sheet',
       illustrations: 'Illustrations',
+      firstShiftCard: 'First-shift card (worker view)',
+      firstShiftPrint: 'First-shift card (print)',
     },
+    demoLabel: 'Demo profile (fictional). Not a real child.',
     typeSamples: {
       hero: 'Hero: Know what to do',
       h2: 'Heading 2: Food and drink',

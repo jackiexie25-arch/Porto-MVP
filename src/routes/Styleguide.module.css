@@ -136,6 +136,10 @@
   overflow: hidden;
 }
 
+.cardDemo {
+  max-width: 420px;
+}
+
 .illustrations {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

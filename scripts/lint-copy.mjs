@@ -12,6 +12,8 @@ const COPY_FILE = 'src/copy/en-AU.ts';
 const files = [
   COPY_FILE,
   ...walk(root, 'src', (name) => name.endsWith('.tsx') && !name.endsWith('.test.tsx')),
+  // Demo content is shown to people, so it follows the same voice rules.
+  ...walk(root, 'src/demo', (name) => name.endsWith('.ts')),
 ];
 
 let count = 0;

@@ -1,7 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import appIconUrl from '../assets/brand/porto-app-icon.svg';
 import { CalmWave, ChecklistSun, QuietCorner, SideBySide, WorkerPhone } from '../assets/illustrations';
+import { FirstShiftCard } from '../components/card/FirstShiftCard';
 import { AppShell } from '../components/layout/AppShell';
+import { ARI_CUES, ARI_PROFILE, ARI_SECTIONS } from '../demo/ari';
+import { buildCard } from '../lib/card';
 import {
   Banner,
   Button,
@@ -42,7 +45,9 @@ const COLOURS = [
   '--success',
 ] as const;
 
-const SPACES = ['--space-2', '--space-3', '--space-4', '--space-6', '--space-8', '--space-12', '--space-16'] as const;
+const demoCard = buildCard(ARI_PROFILE, ARI_SECTIONS, ARI_CUES, 'Ari');
+
+const SPACES =['--space-2', '--space-3', '--space-4', '--space-6', '--space-8', '--space-12', '--space-16'] as const;
 const RADII = ['--radius-sm', '--radius-md', '--radius-lg'] as const;
 
 function useTokenValue(name: string): string {
@@ -279,6 +284,20 @@ export function Styleguide() {
             </Button>
           </div>
         </Sheet>
+      </Section>
+
+      <Section title={c.sections.firstShiftCard}>
+        <p className="t-small t-muted">{c.demoLabel}</p>
+        <div className={styles.cardDemo}>
+          <FirstShiftCard model={demoCard} variant="worker" />
+        </div>
+      </Section>
+
+      <Section title={c.sections.firstShiftPrint}>
+        <p className="t-small t-muted">{c.demoLabel}</p>
+        <div className={styles.cardDemo}>
+          <FirstShiftCard model={demoCard} variant="print" />
+        </div>
       </Section>
 
       <Section title={c.sections.illustrations}>

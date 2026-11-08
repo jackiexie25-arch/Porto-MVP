@@ -1,0 +1,60 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.heading:focus {
+  outline: none;
+}
+
+.art {
+  align-self: center;
+  width: 100%;
+  max-width: 220px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.added {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.addedItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.examples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.readingTime {
+  font-weight: 600;
+  color: var(--ink);
+}

@@ -88,12 +88,17 @@ export function TextField({ label, hint, error, optional, className, ...rest }: 
   );
 }
 
-export type TextAreaProps = FieldFrameProps & Omit<ComponentPropsWithoutRef<'textarea'>, 'id'>;
+export type TextAreaProps = FieldFrameProps & Omit<ComponentPropsWithRef<'textarea'>, 'id'>;
 
 /** Grows with its content so nothing the family writes is hidden behind a scrollbar. */
-export function TextArea({ label, hint, error, optional, className, value, rows = 3, ...rest }: TextAreaProps) {
+export function TextArea({ label, hint, error, optional, className, value, rows = 3, ref: outerRef, ...rest }: TextAreaProps) {
   const ids = useFrameIds(hint, error);
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const setRef = (el: HTMLTextAreaElement | null) => {
+    ref.current = el;
+    if (typeof outerRef === 'function') outerRef(el);
+    else if (outerRef) outerRef.current = el;
+  };
 
   useEffect(() => {
     const el = ref.current;
@@ -105,7 +110,7 @@ export function TextArea({ label, hint, error, optional, className, value, rows 
   return (
     <FieldFrame label={label} hint={hint} error={error} optional={optional} {...ids}>
       <textarea
-        ref={ref}
+        ref={setRef}
         id={ids.inputId}
         rows={rows}
         value={value}
@@ -158,6 +163,49 @@ export function Checkbox({ label, className, ...rest }: CheckboxProps) {
         {label}
       </label>
     </div>
+  );
+}
+
+export interface RadioOption<V extends string> {
+  value: V;
+  label: string;
+}
+
+/** One choice from a short list, as native radios in 48px rows. */
+export function RadioGroup<V extends string>({
+  legend,
+  hint,
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  legend: string;
+  hint?: ReactNode;
+  name: string;
+  value: V;
+  options: readonly RadioOption<V>[];
+  onChange: (value: V) => void;
+}) {
+  const id = useId();
+  return (
+    <FieldSet legend={legend} hint={hint}>
+      {options.map((o) => (
+        <div key={o.value} className={styles.checkRow}>
+          <input
+            id={`${id}-${o.value}`}
+            type="radio"
+            name={name}
+            className={styles.checkbox}
+            checked={value === o.value}
+            onChange={() => onChange(o.value)}
+          />
+          <label htmlFor={`${id}-${o.value}`} className={styles.checkLabel}>
+            {o.label}
+          </label>
+        </div>
+      ))}
+    </FieldSet>
   );
 }
 
