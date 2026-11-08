@@ -76,6 +76,8 @@ Do not build: hardware or sensors; audio or voice analysis; any ML or AI "guess 
 - Every new table gets RLS enabled, explicit grants (never rely on Supabase defaults) and a test in `supabase/tests/` proving family B can't reach family A's rows and anon can't reach anything.
 - Every function sets `search_path = ''`, uses schema-qualified names, revokes execute from `public` (and from `anon` unless workers need it), and grants only what's needed.
 - Family-owned rows hang off `profiles` with `on delete cascade`. Deleting a profile must remove everything, and a test proves it.
+- Search normalisation exists twice (`public.normalise_query` and `normaliseQuery` in `src/lib/search.ts`). Change both together and add a case to `supabase/tests/normalise-cases.json`, which both test suites read.
+- Search never guesses: `search_cues` returns only the family's own cues, and `[]` when nothing matches.
 - `CONSENT_VERSION` in `src/lib/consent.ts` must match `public.consent_version()`. A test checks this. Bump both, in a new migration, when the consent text changes.
 
 ## Working conventions

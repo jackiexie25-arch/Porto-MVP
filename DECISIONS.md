@@ -71,6 +71,29 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Demo profile** (`src/demo/ari.ts`): the fictional Ari profile from brief section 8, with 8 cues. It's shown on `/styleguide` with the "Demo profile (fictional)" label, and Phase 6's `/demo` will reuse it. The phone number comes from the range ACMA reserves for fiction. The copy lint now checks `src/demo/` too.
 - **Family navigation** for now: First-shift card, Setup and Sign out. Cues, Inbox and Share are added in their phases.
 
+### Phase 3
+
+- **Search lives in the database as `search_cues(profile, query, context)`.** It's internal (no client role can call it). Phase 4's `worker_search(token, …)` will check the share token, call it and write `search_log`. Building the ranking now keeps it testable before tokens exist.
+- **Ranking, as briefed:** exact label (4) → exact alias (3) → trigram (2) → full text over the description and meanings (1).
+  - The trigram tier uses `max(similarity, word_similarity) ≥ 0.25` on the label and each alias. `word_similarity` means a part phrase like "bathroom door" or a half-typed "coo" still finds a long label.
+  - Full text uses the `english` configuration, so "hungry" finds "I'm hungry".
+  - Up to 5 results. An empty or punctuation-only query returns nothing, never a guess.
+- **Context boost:**
+  - Within the same tier, cues with a meaning for the chosen place come first. The place never lifts a weaker match above a better one; a test proves an exact label still wins.
+  - Each cue's meanings are ordered with the chosen place first, and flagged `in_context` for the worker view.
+- **Normalisation:** lowercase, apostrophes dropped ("don't" → "dont"), other punctuation becomes a space, spaces collapsed. It's the same in SQL (`normalise_query`) and TypeScript (`normaliseQuery`), and both are tested against one shared list of cases (`supabase/tests/normalise-cases.json`).
+- **No trigram indexes:** each family has tens of cues, so scanning them is instant. Revisit if profiles grow past a few hundred cues.
+- **`save_cue(profile, cue, meanings)`** saves a cue and all its meanings in one transaction, running as the caller so RLS still applies.
+  - Meanings left out are deleted.
+  - Pins keep their place, or take the first free place from 1 to 5.
+  - A meaning's `source` is never changed, so meanings that came from worker notes stay marked as such.
+  - Setup's quick add now uses it too, replacing Phase 2's two inserts.
+- **The family's library search runs in the browser** over their own cues. Every typed word must appear somewhere in the label, aliases, description or meanings. Workers get the ranked database search, because they can't see the whole profile.
+- **"Also written as"** is typed as a comma-separated list. Repeats (ignoring case) are dropped, with up to 20 aliases of 80 characters.
+- **Deleting a cue** asks first in a sheet ("It can't be undone"), then hard-deletes the cue and its meanings. Worker notes that pointed at it keep their own text (`cue_id` is set to null).
+- **The pin limit** is enforced in the database. The editor shows "{n} of 5 used" and turns the limit error into plain words.
+- The library and editor screens haven't been checked in a browser yet, because they need sign-in and so the Supabase project. Component tests cover them.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -101,6 +124,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - All setup step copy, the prompts and their fictional examples (`copy.setup`, `copy.sectionFields`, `copy.cueForm`). Check the examples suit the age range of children in the trial.
 - Card copy, including the worker-facing labels "How they show it", "What to do", "Avoid" and "Try" (`copy.card`), and the enum labels (`copy.labels`).
 - The demo profile content for Ari (`src/demo/ari.ts`).
+- Cue library and editor copy (`copy.cues`, `copy.cueEditor`), including the delete warning and the pin-limit message.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 ## Questions for Jackie
