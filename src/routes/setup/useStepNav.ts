@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logEvent } from '../../data/events';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 
 /**
@@ -15,6 +16,7 @@ export function useStepNav(step: number) {
     setBusy(true);
     try {
       if (flush && !(await flush())) return;
+      logEvent('onboarding_step_completed', { step });
       const next = step + 1;
       if (profile.setup_step < next) await saveProfile({ setup_step: next });
       navigate(`/setup/${next}`);

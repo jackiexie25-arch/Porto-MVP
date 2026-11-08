@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { FirstShiftCard } from '../../components/card/FirstShiftCard';
 import { FamilyShell } from '../../components/family/FamilyShell';
 import { Banner, Button, ButtonLink, Card, Tag } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
+import { logEvent } from '../../data/events';
 import type { CardSectionKind } from '../../data/types';
 import { useCardModel } from '../../family/useCardModel';
 import type { CardLine } from '../../lib/card';
@@ -57,6 +58,10 @@ export function CardPage() {
   usePageTitle(c.title);
   const { model, words, minutes, isLong, hasName } = useCardModel();
   const [preview, setPreview] = useState(false);
+
+  useEffect(() => {
+    logEvent('card_viewed_by_family');
+  }, []);
   const heading = hasName ? c.heading(model.name) : c.headingNoName;
 
   return (

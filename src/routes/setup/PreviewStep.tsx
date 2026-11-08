@@ -4,6 +4,7 @@ import { ChecklistSun } from '../../assets/illustrations';
 import { FirstShiftCard } from '../../components/card/FirstShiftCard';
 import { Banner } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
+import { logEvent } from '../../data/events';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 import { useCardModel } from '../../family/useCardModel';
 import { friendlyError } from '../../lib/errors';
@@ -25,6 +26,8 @@ export function PreviewStep() {
     try {
       if (!profile.setup_completed_at) {
         await saveProfile({ setup_step: 6, setup_completed_at: new Date().toISOString() });
+        logEvent('onboarding_step_completed', { step: 6 });
+        logEvent('onboarding_completed');
       }
       navigate(to);
     } catch (err) {
