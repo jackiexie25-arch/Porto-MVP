@@ -22,6 +22,32 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Manifest:** `start_url` is `/`. A worker who adds the share page to their home screen on Android may land on `/` rather than their share link. To revisit in Phase 4 (see Questions).
 - **Welcome page (Phase 0):** shows the tagline, illustration 1 and the explanation. Sign-up is wired in Phase 1. For now the page links to the styleguide instead of showing a primary button that does nothing.
 
+### Phase 1
+
+- **Database tests run on PGlite**, an in-memory Postgres in WebAssembly. This Mac has no Docker, so the Supabase CLI's local stack can't run. A small shim recreates Supabase's `auth.users`, `auth.uid()`, the `anon`, `authenticated` and `service_role` roles, and Supabase's default broad grants, so the tests prove our migrations remove those grants. Tests run in `npm test` and in CI. Once a real project exists, they're worth repeating against it.
+- **All tables are created in Phase 1**, so the data model and RLS are reviewed together. Worker RPCs, search, sharing and events arrive in their phases.
+- **One profile per family account** (`profiles.owner_id` is unique). Multi-child management is out of scope.
+- **`display_name` starts empty.** The profile is created at sign-up, and the name is filled in at setup step 1.
+- **Text limits:** names 40 characters, cue labels 120, meanings and worker note fields 500, card sections 1,500, aliases 20 items of up to 80 characters, languages 10 items of up to 40. All enforced in the database.
+- **Pinned cues:** at most 5, enforced by a trigger. Unpinning clears `pin_order`.
+- **Families can't write `shares` or `shift_notes` directly.** Shares are created and closed through RPCs (Phase 4), because tokens must be made server-side. Notes are approved or dismissed through RPCs (Phase 5). Families can't change `profiles.owner_id` or `id` (column-level grants).
+- **`events` rows cascade when a profile is deleted**, so "delete everything" includes analytics. The funnel on `/team` then counts only families who are still in the trial.
+- **Invite codes:**
+  - Stored uppercase with no spaces. What families type is normalised the same way.
+  - `check_invite_code()` (anon) gives early feedback on the form. `create_profile()` enforces the code: it needs current consent plus a valid, unused code, and it marks the code used in the same statement.
+  - Codes look like `PORTO-XXXX-XXXX`, built from an unambiguous 29-character set (about 39 bits), which is far too many to guess.
+  - Codes aren't committed. `npm run invite-codes` prints new ones as SQL.
+- **The invite code travels in the magic-link sign-up metadata** (`options.data.invite_code`), so the profile is created right after consent, even if the family opens the link on another device. If the code is missing or already used, `/start` asks for it.
+- **Implicit magic-link flow** rather than PKCE. PKCE links only work in the browser that asked for them, and families often ask on a laptop and open the email on a phone. The tokens arrive in the URL fragment, which is never sent to a server, and supabase-js clears it straight away.
+- **Sign-in never reveals whether an account exists.** An unknown email still lands on "Check your email".
+- **Consent:**
+  - Version `2026-11-v1`, stored per user.
+  - The order is sign in → consent → create profile → app. Every family page is wrapped in `FamilyGate`.
+  - Changing the consent text needs a new version in both `src/lib/consent.ts` and `public.consent_version()`. A test checks they match.
+- **Privacy contact:** set by `VITE_PRIVACY_CONTACT_EMAIL`. If it's missing, the screen says to ask the team member who sent the invite.
+- **Bundle size:** adding supabase-js brings the single bundle to about 159 kB gzipped. Phase 4 will split routes so the worker view loads only what it needs (target: Lighthouse 90+ on a phone).
+- **`/home` is a temporary signed-in page** for Phase 1. It says profile setup is coming. Phase 2 replaces it with guided setup.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -46,10 +72,14 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Illustration text alternatives (`copy.illustrations`).
 - Styleguide sample copy (`copy.styleguide`): internal only, but it models the voice.
 - Emergency line: "If it's an emergency, call 000." (`copy.layout.emergency`).
+- **Consent and privacy text** (`copy.consent`, `copy.privacy`). This needs careful review, ideally by someone who knows the Australian Privacy Principles. Pay particular attention to the claim that the team "won't read your profile unless you ask us to help". It's a promise about behaviour, not something the system enforces.
+- Sign-up, sign-in, check-your-email, expired-link and set-up copy (`copy.signUp`, `copy.signIn`, `copy.checkEmail`, `copy.authCallback`, `copy.start`, `copy.home`).
+- Error messages (`copy.errors`).
+- Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 ## Questions for Jackie
 
-1. **Supabase:** please create a project in **Sydney (ap-southeast-2)** and share the project URL and anon key (never the service-role key). Needed for Phase 1.
+1. **Supabase:** please create a project in **Sydney (ap-southeast-2)** and share the project URL and anon key (never the service-role key). Phase 1 is built and tested without it, but sign-up can't be tried end to end until it exists. Setup steps are in the README.
 2. **Trial values:** the invite codes (`<<TRIAL_INVITE_CODES>>`), the privacy contact email (`<<PRIVACY_CONTACT_EMAIL>>`) and the team emails for `/team` (`<<TEAM_EMAILS>>`). Placeholders are used until then.
 3. **Netlify:** connect a site to `jackiexie25-arch/Porto-MVP` when you're ready to deploy (Phase 4).
 4. **Home-screen installs for workers:** the manifest can't carry a per-share `start_url`. On Android, an installed icon would open `/`, not the worker's link. iOS keeps the current URL. Is "open the link from your messages" acceptable for the trial, or do you want a small "Open my last shared link" step? A step like that would mean storing the token on the worker's phone, which is a privacy trade-off.

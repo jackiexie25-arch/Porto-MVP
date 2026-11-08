@@ -24,8 +24,10 @@ npm run check        # lint:copy + lint:hex + typecheck + unit tests
 npm run lint:copy    # avoid-list words and exclamation marks in user-facing strings
 npm run lint:hex     # no raw colours outside src/styles/tokens.css and derived-tokens.css
 npm run typecheck
-npm test
+npm test             # unit tests + database tests
+npm run test:db      # migrations applied from scratch to PGlite; RLS, RPC and cascade tests
 npm run build
+npm run invite-codes -- 10   # print new invite codes and the SQL to add them
 npm run icons        # regenerate public/icons from public/porto-app-icon.svg
 ```
 
@@ -68,6 +70,13 @@ npm run icons        # regenerate public/icons from public/porto-app-icon.svg
 ## Out of scope (brief section 7)
 
 Do not build: hardware or sensors; audio or voice analysis; any ML or AI "guess what they mean"; medical or diagnostic cues; hospital and clinician features; emergency QR ID; payments; agency or camp admin and multi-child teams; push or email notifications beyond the magic link; offline mode or service workers; photos or video; chat; activity guides and the "when things go wrong" playbook; public sign-up without an invite code; locales beyond en-AU. If something seems essential, add it to DECISIONS.md under "Questions for Jackie".
+
+## Database conventions
+
+- Every new table gets RLS enabled, explicit grants (never rely on Supabase defaults) and a test in `supabase/tests/` proving family B can't reach family A's rows and anon can't reach anything.
+- Every function sets `search_path = ''`, uses schema-qualified names, revokes execute from `public` (and from `anon` unless workers need it), and grants only what's needed.
+- Family-owned rows hang off `profiles` with `on delete cascade`. Deleting a profile must remove everything, and a test proves it.
+- `CONSENT_VERSION` in `src/lib/consent.ts` must match `public.consent_version()`. A test checks this. Bump both, in a new migration, when the consent text changes.
 
 ## Working conventions
 
