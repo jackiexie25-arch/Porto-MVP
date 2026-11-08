@@ -1,0 +1,28 @@
+/*
+ * Values the brief specifies for components but that are not in tokens.css.
+ * Each is derived from an existing token and recorded in DECISIONS.md (Brand gaps).
+ * This file and tokens.css are the only CSS allowed to contain raw colour values.
+ */
+:root {
+  --scrim: rgba(36, 48, 79, 0.4);             /* --ink at 40%, dialog and sheet backdrop */
+  --shadow-button-pressed: 1px 1px 0 var(--ink);
+  --radius-pill: 999px;
+  --control-height: 48px;
+  --chip-height: 32px;
+  --chip-height-selectable: 44px;
+  --measure: 66ch;                            /* comfortable paragraph width */
+  --motion-fade: 150ms;
+  --section-gap: var(--space-12);
+}
+
+@media (max-width: 599px) {
+  :root {
+    --section-gap: var(--space-16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fade: 0ms;
+  }
+}

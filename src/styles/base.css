@@ -1,0 +1,163 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+.t-hero,
+.t-h2,
+.t-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1,
+.t-hero {
+  font-size: 56px;
+  line-height: 60px;
+}
+
+h2,
+.t-h2 {
+  font-size: 36px;
+  line-height: 42px;
+}
+
+h3,
+.t-h3 {
+  font-size: 24px;
+  line-height: 30px;
+}
+
+p {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+.t-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.t-body {
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.t-small {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.t-muted {
+  color: var(--muted);
+}
+
+.t-button {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@media (max-width: 599px) {
+  h1,
+  .t-hero {
+    font-size: 36px;
+    line-height: 40px;
+  }
+
+  h2,
+  .t-h2 {
+    font-size: 28px;
+    line-height: 34px;
+  }
+}
+
+a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+/* Focus: visible everywhere */
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}

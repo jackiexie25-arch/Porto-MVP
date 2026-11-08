@@ -1,0 +1,78 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fade) ease,
+    box-shadow var(--motion-fade) ease,
+    transform var(--motion-fade) ease;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.primary {
+  background: var(--apricot);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-button);
+}
+
+.primary:hover {
+  background: var(--apricot-deep);
+}
+
+.primary:active {
+  background: var(--apricot-deep);
+  box-shadow: var(--shadow-button-pressed);
+  transform: translate(2px, 2px);
+}
+
+/* Brand gap: no disabled state is defined. Derived: surface fill, control-border edge, muted text, no shadow. */
+.primary:disabled,
+.outlined:disabled,
+.secondary:disabled {
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--control-border);
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.secondary {
+  background: none;
+  border: 0;
+  padding-inline: var(--space-2);
+  color: var(--ink);
+}
+
+.secondary:hover,
+.outlined:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.outlined {
+  background: var(--surface);
+  border: 1.5px solid var(--control-border);
+  color: var(--ink);
+}
+
+.fullWidth {
+  width: 100%;
+}

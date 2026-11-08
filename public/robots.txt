@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /s/
+Disallow: /card
+Disallow: /cues
+Disallow: /inbox
+Disallow: /share
+Disallow: /team

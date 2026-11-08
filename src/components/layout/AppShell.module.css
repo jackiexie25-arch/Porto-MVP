@@ -1,0 +1,22 @@
+.main {
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-16);
+}
+
+.main:focus {
+  outline: none;
+}
+
+.narrow {
+  max-width: 720px;
+}
+
+.wide {
+  max-width: 1120px;
+}
+
+@media (min-width: 720px) {
+  .main {
+    padding: var(--space-12) var(--space-6);
+  }
+}

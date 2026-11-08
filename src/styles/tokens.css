@@ -1,0 +1,39 @@
+:root {
+  color-scheme: light;
+
+  /* Colour */
+  --ground: #F3F1FA;        /* page background */
+  --surface: #FFFFFF;       /* cards, form panels, inputs */
+  --blob: #E7E3F4;          /* soft lavender: decorative blobs, card borders, dividers. Never behind text under 18px */
+  --ink: #24304F;           /* headings, logo, line art, button border + shadow, focus rings */
+  --ink-soft: #4A5372;      /* body text, nav links */
+  --muted: #646A88;         /* captions, helper text. Do not go lighter */
+  --control-border: #7F84A3;/* input and select borders */
+  --apricot: #F5B07A;       /* THE warm accent: primary buttons, logo sun, illustration fills. NEVER for text */
+  --apricot-deep: #E3894A;  /* primary button hover/pressed. Not for text */
+  --sky: #C9DAF2;           /* illustration fills, soft tags, focus ring tint */
+  --rose: #F4CFC6;          /* illustration fills, soft tags. Use sparingly */
+  --success: #2F6E4E;       /* confirmation message text only */
+
+  /* Type */
+  --font-display: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Spacing (given) */
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-12: 96px;         /* section gap on desktop; use 64px on phones */
+  /* App additions (record in DECISIONS.md): */
+  --space-3: 12px;
+  --space-8: 32px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 10px;        /* inputs, selects */
+  --radius-md: 14px;        /* buttons */
+  --radius-lg: 24px;        /* cards, panels */
+
+  /* Shadow */
+  --shadow-button: 3px 3px 0 #24304F;
+}

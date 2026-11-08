@@ -1,0 +1,132 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 0;
+}
+
+.optional {
+  font-weight: 400;
+}
+
+.hint {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+
+.control {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1.5px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 26px;
+  transition: border-color var(--motion-fade) ease, box-shadow var(--motion-fade) ease;
+}
+
+.control::placeholder {
+  color: var(--muted);
+}
+
+.control:focus,
+.control:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--sky);
+}
+
+.control[aria-invalid='true'] {
+  border: 2px solid var(--ink);
+}
+
+.textarea {
+  resize: vertical;
+  overflow: hidden;
+  field-sizing: content;
+  min-height: calc(var(--control-height) * 2);
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--space-8);
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+    linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 14px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.errorIcon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+}
+
+.checkbox {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.checkLabel {
+  flex: 1;
+  padding-block: var(--space-3);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldsetBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+}

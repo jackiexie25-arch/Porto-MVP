@@ -1,0 +1,38 @@
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.steps {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.done {
+  background: var(--sky);
+}
+
+.current {
+  background: var(--apricot);
+  width: 28px;
+  border-radius: var(--radius-pill);
+}
+
+.text {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
