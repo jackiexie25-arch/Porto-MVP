@@ -118,6 +118,26 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **"Share for a shift"** is the nav's primary button on every family page except `/share` itself, where the form's own button is the one primary action.
 - **Emergency line:** on the worker page it's in the footer, so the card there leaves out its own copy (`showEmergency={false}`) and it isn't said twice.
 
+### Phase 5
+
+- **One added question on the worker's log: "What do you think they needed?"** (optional, `shift_notes.seemed_to_need`). The brief's log has no field for what a cue *meant*, but a cue meaning can't be saved without one.
+  - When the worker answers it and picked one of the family's cues, **Add to profile** is one tap.
+  - Otherwise, Add to profile opens the cue editor prefilled with the note, so the family writes the meaning. A new description always goes to the prefilled form, as briefed.
+- **How a note becomes a meaning:**
+  - Context and place come from the note. What they tried becomes "What to do" if it helped (Yes or A bit), or "What to avoid" if it didn't.
+  - Confidence starts at **Sometimes**, since a note is one observation. The family can change any of it in "Edit then add".
+- **`approve_note`** saves the cue (through `save_cue`), marks only the meanings this save created as `source: worker_note` with `source_note_id`, and resolves the note, all in one transaction. A family-typed extra meaning added in the same "Edit then add" save would also be marked as from the note; that seems acceptable.
+- **Notes are only ever pending, added or set aside.** "Not now" (`dismiss_note`) keeps the note, and set-aside and added notes stay viewable in folded sections. Families can't edit notes directly.
+- **`worker_log_note`:**
+  - Needs a "card + search + notes" link.
+  - Needs either one of the family's cues or a description, plus whether it helped.
+  - Over-long text is trimmed to the limits rather than refused, so a worker never loses a note. Unknown places are dropped.
+  - The worker sees "Thank you. {name}'s family will see this." It never says the note was added.
+- **The log form's cue list** comes from `worker_get_card`'s new `cue_options` (id and label for every cue), sent only on links that allow notes. A worker on such a link can already search those cues, so the labels reveal nothing new.
+- **"Did this help? Yes / Not really"** shows under each search result on any link that allows search. After an answer, the worker sees "Thank you. The family will see this." Answers are stored per cue and link in `cue_feedback`. The family doesn't see them yet; the `/team` "helped rate" in Phase 6 uses them.
+- **Where the log opens:** a calm "Something happened? Let {name}'s family know." card below the search, and "Tell {name}'s family what happened" when nothing matches. That one prefills the description with what the worker typed.
+- **Inbox badge:** the nav shows the number of new notes beside "Inbox" (read out as "Inbox, 2 new"), and on phones beside "Menu". There's no push, email or other nudge.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -150,6 +170,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - The demo profile content for Ari (`src/demo/ari.ts`).
 - Cue library and editor copy (`copy.cues`, `copy.cueEditor`), including the delete warning and the pin-limit message.
 - Sharing copy (`copy.share`), especially the scope labels, the "shown only once" note and the closed-link message.
+- The worker log form, the feedback buttons and the inbox (`copy.worker.log`, `copy.worker.feedback*`, `copy.inbox`), including the added question "What do you think they needed?".
 - Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
