@@ -1,0 +1,15 @@
+.qr {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  border: 1px solid var(--blob);
+  border-radius: var(--radius-sm);
+}
+
+.background {
+  fill: var(--surface);
+}
+
+.modules {
+  fill: var(--ink);
+}

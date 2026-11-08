@@ -9,7 +9,13 @@ const links = [
   { to: '/signout', label: copy.familyNav.signOut },
 ] as const;
 
-/** The signed-in family layout. Sharing (Phase 4) and the inbox (Phase 5) add their links. */
-export function FamilyShell({ children }: { children: ReactNode }) {
-  return <AppShell links={links}>{children}</AppShell>;
+const primary = { to: '/share', label: copy.familyNav.share };
+
+/** The signed-in family layout, with "Share for a shift" as the one primary action. The inbox (Phase 5) adds a link. */
+export function FamilyShell({ children, hideShare = false }: { children: ReactNode; hideShare?: boolean }) {
+  return (
+    <AppShell links={links} primary={hideShare ? undefined : primary}>
+      {children}
+    </AppShell>
+  );
 }
