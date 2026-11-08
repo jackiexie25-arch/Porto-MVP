@@ -10,23 +10,27 @@
     "dev": "vite",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.db.json",
+    "test:db": "vitest run supabase/tests",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint:copy": "node scripts/lint-copy.mjs",
     "lint:hex": "node scripts/lint-hex.mjs",
     "lint": "npm run lint:copy && npm run lint:hex",
     "icons": "node scripts/make-icons.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "invite-codes": "node scripts/invite-codes.mjs"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
+    "@supabase/supabase-js": "^2.119.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",

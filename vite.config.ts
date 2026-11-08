@@ -12,7 +12,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs', 'supabase/tests/**/*.test.ts'],
+    testTimeout: 30000,
+    hookTimeout: 60000,
     css: { modules: { classNameStrategy: 'non-scoped' } },
   },
 });
