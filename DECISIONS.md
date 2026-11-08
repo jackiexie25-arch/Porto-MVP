@@ -48,6 +48,29 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Bundle size:** adding supabase-js brings the single bundle to about 159 kB gzipped. Phase 4 will split routes so the worker view loads only what it needs (target: Lighthouse 90+ on a phone).
 - **`/home` is a temporary signed-in page** for Phase 1. It says profile setup is coming. Phase 2 replaces it with guided setup.
 
+### Phase 2
+
+- **Schema addition: `card_sections.details` (jsonb).** Setup steps 2 to 4 ask two or three questions per section, and a single `body` can't keep them apart. `details` stores each answer under a fixed key (toileting: `signs`, `what_to_do`, `avoid`; food and drink: `signs`, `routines`, `avoid`; overstimulation: `triggers`, `early_signs`), and `card_details_ok()` enforces the keys and a 500-character limit. "What calms" and "Please avoid" have one answer each and use `body`. The card can then label each answer for workers, and the JSON export stays structured.
+- **Where step 4's answers go:** "What helps them calm?" goes to **What calms**, and "What makes things worse?" goes to **Please avoid**. The toileting and food "avoid" answers stay in their own sections, next to the cue they relate to.
+- **Order within a section:** how they show it, then what to do, then avoid. That's the order a worker meets things in the moment.
+- **Setup progress:** stored on `profiles` (`setup_step`, `setup_started_at`, `setup_completed_at`). `/setup` resumes where the family left off. After setup it opens at step 1 so answers can be revisited. `/home` goes to setup until it's finished, then to the card. The timestamps feed the "about 15 minutes" measure in Phase 6.
+- **Autosave:** saves 0.8 seconds after typing stops, one save at a time, and saves straight away on "Save and continue", "Skip" or leaving a step. A failed save keeps the text and shows a calm message. "Skip this step" still keeps anything typed.
+- **Step 5:** examples open the cue form with the type preset.
+  - "Save and continue" adds a half-written cue if it's complete. If it isn't, the form says what's missing, and nothing is lost.
+  - Starter cues are **pinned automatically** (up to 5), so they appear on the card's Top cues.
+  - The form asks for one meaning per cue. More meanings come with the cue library in Phase 3.
+- **Cue then meaning are two inserts.** If the meaning fails, the cue is deleted again. Phase 3 may move this into one database function.
+- **Step 6 has one button, "Finish for now", which goes to the card.** "Share it" arrives with sharing in Phase 4, rather than linking to a page that doesn't exist yet.
+- **About {name}** is built from the family's own answers (communication modes, languages, the connect note), at most 3 lines. Nothing is generated beyond joining their choices into a sentence.
+- **"How do you describe {name}?"** is stored as `language_style`. No current screen describes the child's diagnosis, so it doesn't change any wording yet. It will matter wherever Porto first refers to the child in that way.
+- **Empty sections** are hidden from workers. On the family's card page they show "Nothing here yet".
+- **Reading time:** every word the worker reads (headings and labels included) at 200 words a minute, rounded up, at least 1 minute. The gentle note appears above 350 words and never blocks saving. A test checks the demo card reads in 2 minutes or less.
+- **Worker view sections** use native `<details>`, open by default, so they fold away without any script.
+- **Who to call:** the phone number shows as a `tel:` link in the worker view. A number that doesn't look like a phone number isn't saved until it's fixed.
+- **Print view** (`/card/print`): A4 with 12 mm margins and smaller print type, and nothing prints automatically. One page is the aim for a typical card. A very long card can run to two pages. Printing hasn't been checked on paper yet.
+- **Demo profile** (`src/demo/ari.ts`): the fictional Ari profile from brief section 8, with 8 cues. It's shown on `/styleguide` with the "Demo profile (fictional)" label, and Phase 6's `/demo` will reuse it. The phone number comes from the range ACMA reserves for fiction. The copy lint now checks `src/demo/` too.
+- **Family navigation** for now: First-shift card, Setup and Sign out. Cues, Inbox and Share are added in their phases.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -75,6 +98,9 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - **Consent and privacy text** (`copy.consent`, `copy.privacy`). This needs careful review, ideally by someone who knows the Australian Privacy Principles. Pay particular attention to the claim that the team "won't read your profile unless you ask us to help". It's a promise about behaviour, not something the system enforces.
 - Sign-up, sign-in, check-your-email, expired-link and set-up copy (`copy.signUp`, `copy.signIn`, `copy.checkEmail`, `copy.authCallback`, `copy.start`, `copy.home`).
 - Error messages (`copy.errors`).
+- All setup step copy, the prompts and their fictional examples (`copy.setup`, `copy.sectionFields`, `copy.cueForm`). Check the examples suit the age range of children in the trial.
+- Card copy, including the worker-facing labels "How they show it", "What to do", "Avoid" and "Try" (`copy.card`), and the enum labels (`copy.labels`).
+- The demo profile content for Ari (`src/demo/ari.ts`).
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 ## Questions for Jackie
