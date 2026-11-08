@@ -42,6 +42,17 @@ This runs the copy lint, the colour lint, the type-check and every test. CI runs
 6. **Copy the keys.** Copy the project URL and the **anon** key into `.env.local` (and later into Netlify's environment variables). Never use the service-role key in the app.
 7. **Update the Content Security Policy.** In `netlify.toml`, replace `PROJECT_REF` in `connect-src` with your project ref.
 
+## Deploy to Netlify
+
+1. In Netlify, choose **Add new site → Import an existing project** and pick `jackiexie25-arch/Porto-MVP`. Netlify reads the build command and headers from `netlify.toml`.
+2. Under **Site configuration → Environment variables**, add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_PRIVACY_CONTACT_EMAIL`.
+3. Make sure `PROJECT_REF` in `netlify.toml` has been replaced with your Supabase project ref (step 7 above). Otherwise the Content Security Policy blocks every database call.
+4. Deploy. Then in Supabase, set the **Site URL** to the Netlify URL and add `https://<your-site>/auth/callback` to **Redirect URLs**.
+5. **Check it:**
+   - Open `/`, sign up with an invite code, finish setup and share a link.
+   - Open the link on a phone. Search for a cue, then close the link from `/share` and refresh the phone.
+   - It should show only "This link has closed".
+
 ## Add invite codes
 
 ```bash

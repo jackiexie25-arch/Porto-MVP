@@ -94,6 +94,30 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **The pin limit** is enforced in the database. The editor shows "{n} of 5 used" and turns the limit error into plain words.
 - The library and editor screens haven't been checked in a browser yet, because they need sign-in and so the Supabase project. Component tests cover them.
 
+### Phase 4
+
+- **One gate for every worker call: `use_share(token)`.** It hashes the token and checks it isn't closed or expired, then applies the rate limit and records first and last open. It answers `closed` for a wrong, expired or closed token alike, so a worker can't tell whether a token ever existed. Malformed tokens (anything other than 43 base64url characters) are refused before the database is searched.
+- **Rate limit:** 60 calls a minute per link, counted on the share row in a fixed one-minute window. Over the limit, the answer is `busy` and the worker sees "Please try again in a moment." Other links aren't affected. Wrong tokens aren't rate-limited by Porto, because 256-bit tokens can't be guessed; Supabase's own API limits still apply.
+- **`worker_log_note` and `worker_cue_feedback` come in Phase 5** with their screens. Until then, the "card + search + notes" scope behaves like "card + search".
+- **Durations:** "This shift" is 8 hours. "Today" runs to midnight on the family's device. Then 3, 7 or 14 days. The database refuses anything outside 1 to 336 hours.
+- **The token is shown once,** in the "Link ready" panel with the QR code, "Copy link" and the phone's own share sheet where there is one. "Done" clears it from the page. "Share again" makes a new link with the old label, name and scope filled in.
+- **Closing a link** takes one tap with no confirmation, as briefed. It works straight away.
+- **QR codes** are made in the browser with `qrcode-generator` (MIT, no dependencies) and drawn as one SVG path from the module grid, in ink on white for reliable scanning. The link never goes to a QR service.
+- **The worker view loads on its own.**
+  - `/s/:token` is a separate bundle that calls the two worker functions with plain `fetch` (anon key, `credentials: omit`, `cache: no-store`, `no-referrer`) instead of the Supabase client. Workers download about 101 kB gzipped, against 190 kB for the family app.
+  - It never stores a session, and a signed-in family member opening a link is treated exactly like a worker.
+- **The token comes out of the address bar** after load: it's kept in `sessionStorage` for that tab only, and the address becomes `/s/open`, still under `/s/` for the no-index and no-store headers. A refresh still works. If the browser won't allow `sessionStorage`, the token stays in the address so refresh keeps working.
+- **The worker's search:**
+  - Runs 0.4 seconds after typing stops. It only runs when the tidied query changes, so "cookie" then "cookie!" doesn't search, or get logged, twice. Empty queries aren't sent or logged.
+  - The place chips ("Where are you?") stay chosen for the tab, and tapping one again clears it.
+  - Results show every meaning, with the chosen place first and marked by a calm ink edge rather than a colour. "Show larger" opens the cue in a sheet with bigger text.
+- **No match:** "Nothing in {name}'s profile matches yet." plus the card's **What calms** lines. "Tell {name}'s family what happened" arrives with the log form in Phase 5.
+- **Closed links:** "This link has closed. Ask {name}'s family for a new one." The name appears only if this page already loaded the card. Otherwise it reads "Ask the family for a new one", so a closed link never reveals a name.
+- **The worker page title** is "Shared profile · Porto", never the child's name, so the name doesn't land in browser history.
+- **Step 6** now has "Share it" (primary, goes to `/share`) and "Finish later" (goes to the card). Both mark setup complete.
+- **"Share for a shift"** is the nav's primary button on every family page except `/share` itself, where the form's own button is the one primary action.
+- **Emergency line:** on the worker page it's in the footer, so the card there leaves out its own copy (`showEmergency={false}`) and it isn't said twice.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -125,6 +149,8 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Card copy, including the worker-facing labels "How they show it", "What to do", "Avoid" and "Try" (`copy.card`), and the enum labels (`copy.labels`).
 - The demo profile content for Ari (`src/demo/ari.ts`).
 - Cue library and editor copy (`copy.cues`, `copy.cueEditor`), including the delete warning and the pin-limit message.
+- Sharing copy (`copy.share`), especially the scope labels, the "shown only once" note and the closed-link message.
+- Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 ## Questions for Jackie
@@ -132,4 +158,4 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 1. **Supabase:** please create a project in **Sydney (ap-southeast-2)** and share the project URL and anon key (never the service-role key). Phase 1 is built and tested without it, but sign-up can't be tried end to end until it exists. Setup steps are in the README.
 2. **Trial values:** the invite codes (`<<TRIAL_INVITE_CODES>>`), the privacy contact email (`<<PRIVACY_CONTACT_EMAIL>>`) and the team emails for `/team` (`<<TEAM_EMAILS>>`). Placeholders are used until then.
 3. **Netlify:** connect a site to `jackiexie25-arch/Porto-MVP` when you're ready to deploy (Phase 4).
-4. **Home-screen installs for workers:** the manifest can't carry a per-share `start_url`. On Android, an installed icon would open `/`, not the worker's link. iOS keeps the current URL. Is "open the link from your messages" acceptable for the trial, or do you want a small "Open my last shared link" step? A step like that would mean storing the token on the worker's phone, which is a privacy trade-off.
+4. **Home-screen installs for workers:** the manifest can't carry a per-share link. Since Phase 4, the token is kept only for the browser tab (the address becomes `/s/open`), so an icon added to the home screen won't reopen the profile once the tab is closed. For the trial, workers open the link from their messages each shift. Keeping the token longer on the worker's phone would make the icon work, but it's a privacy trade-off. Is the current behaviour acceptable?
