@@ -138,6 +138,35 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Where the log opens:** a calm "Something happened? Let {name}'s family know." card below the search, and "Tell {name}'s family what happened" when nothing matches. That one prefills the description with what the worker typed.
 - **Inbox badge:** the nav shows the number of new notes beside "Inbox" (read out as "Inbox, 2 new"), and on phones beside "Menu". There's no push, email or other nudge.
 
+### Phase 6
+
+- **Most events are recorded by the database, not the browser,** through triggers on the rows they describe:
+  - `signup_completed` (profile created), `consent_given`, `cue_created`
+  - `share_created {scope, duration_hours}`, `share_opened` (first open only)
+  - `worker_search {had_results}`, `cue_feedback {helpful}`
+  - `note_logged`, `note_approved`, `note_dismissed`
+  - `signup_started` is recorded when a valid, unused invite code is checked on the sign-up form.
+  - `profile_deleted` is recorded by `delete_my_account`, with no profile id.
+
+  So the counts match what actually happened, and no client can invent them.
+- **The browser reports four events,** through `log_event`: `onboarding_step_completed {step}`, `onboarding_completed` (the database works out `{minutes}` from the profile, once), `card_viewed_by_family` and `profile_exported`. Any other name is ignored, and props are rebuilt in the database rather than trusted. A failed event never interrupts the family.
+- **The `/team` funnel is counted from the real tables** (profiles, shares, searches, notes), not by replaying events, so it stays right even if an event were missed. Events add what the tables don't hold, such as card views.
+- **`team_metrics()`** checks the caller's sign-in email against `team_members`. Anyone else gets `{status: 'not_team'}` and a calm "This page is for the Porto team."
+  - It returns totals, rates, the median setup time and a per-family table labelled "Family 01", "Family 02" (by sign-up order).
+  - It never returns cue text, searches, notes, worker names, child names, emails or ids. A test checks the output contains none of them.
+  - "Download totals (CSV)" exports exactly what's on the page, with spreadsheet-formula characters neutralised.
+- **Team members need a sign-in account.** Team members don't use invite codes: add their email to `team_members`, and invite them from the Supabase dashboard (Authentication → Users → Invite user). They then sign in at `/signin` and go to `/team`. Phase 7's runbook covers this.
+- **"Delete this profile and everything in it"** (Account) runs `delete_my_account`:
+  - It removes the profile and everything that cascades from it (card, cues, meanings, links, notes, searches, feedback and the family's events), plus their consent records and **their sign-in account** (`auth.users`).
+  - Every link stops working at once. The invite code stays marked as used.
+  - The family types the child's name to confirm (or `DELETE` if there's no name yet), in a sheet with "Keep the profile" as the way out. Afterwards they see a calm "Everything has been deleted" page.
+- **Export** builds the JSON in the browser from the family's own rows (`schema_version: 1`): profile, card sections, cues with meanings (including source and source note), links (never tokens or hashes), notes, searches, feedback and consent records. The file is called `porto-{name}-{date}.json`. The PDF is the existing print view.
+- **The Account page** holds the settings (About and Who to call, saving as the family types), download, "Go through setup again", sign out and delete. The nav is now Cues · First-shift card · Inbox · Account, plus the Share button.
+- **`/demo`:**
+  - The real worker view, fed by `demoSource`: the fictional Ari profile and a simple in-browser search. The tiers and context ordering match the database's, using word prefixes instead of trigrams.
+  - It makes no network calls. Notes and feedback are acknowledged and dropped, and a sticky line says "Demo profile (fictional). Not a real child. Nothing you type here is saved or sent."
+  - It loads as its own small bundle and is linked from the welcome page.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -170,6 +199,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - The demo profile content for Ari (`src/demo/ari.ts`).
 - Cue library and editor copy (`copy.cues`, `copy.cueEditor`), including the delete warning and the pin-limit message.
 - Sharing copy (`copy.share`), especially the scope labels, the "shown only once" note and the closed-link message.
+- Account, delete, deleted, demo and team copy (`copy.account`, `copy.deleted`, `copy.demo`, `copy.team`), especially the delete warning: it must be unmistakable that deleting can't be undone.
 - The worker log form, the feedback buttons and the inbox (`copy.worker.log`, `copy.worker.feedback*`, `copy.inbox`), including the added question "What do you think they needed?".
 - Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
