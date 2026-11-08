@@ -2,6 +2,7 @@ import {
   useEffect,
   useId,
   useRef,
+  type ComponentPropsWithRef,
   type ComponentPropsWithoutRef,
   type ReactNode,
 } from 'react';
@@ -69,7 +70,8 @@ function FieldError({ id, children }: { id: string; children: ReactNode }) {
   );
 }
 
-export type TextFieldProps = FieldFrameProps & Omit<ComponentPropsWithoutRef<'input'>, 'id'>;
+/** `ref` reaches the input, so forms can move focus to the first field that needs attention. */
+export type TextFieldProps = FieldFrameProps & Omit<ComponentPropsWithRef<'input'>, 'id'>;
 
 export function TextField({ label, hint, error, optional, className, ...rest }: TextFieldProps) {
   const ids = useFrameIds(hint, error);

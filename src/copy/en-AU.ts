@@ -29,7 +29,140 @@ export const copy = {
       'Porto helps the people who support your child understand them from day one. You write down what you already know: how your child shows they need the toilet, food or a break, and what their sounds, words and gestures mean in different places.',
     who: 'For families of minimally verbal autistic children, and the support workers, camp leaders and aides who spend time with them.',
     control: 'Families choose who sees the profile, and for how long.',
-    styleguideLink: 'See the styleguide',
+    trial: 'Porto is in an early trial. You’ll need an invite code from the Porto team to start.',
+    start: 'Start with an invite code',
+    signIn: 'Sign in',
+    continue: 'Go to your profile',
+    privacyLink: 'How Porto looks after your information',
+  },
+
+  signUp: {
+    title: 'Start',
+    heading: 'Start your child’s profile',
+    intro: 'We’ll email you a link to sign in. There’s no password to remember.',
+    emailLabel: 'Your email',
+    emailHint: 'We only use this to send you sign-in links.',
+    codeLabel: 'Invite code',
+    codeHint: 'It’s in the message the Porto team sent you, for example PORTO-7KQM-X4TD.',
+    submit: 'Email me a sign-in link',
+    sending: 'Sending…',
+    haveAccount: 'Already started? Sign in',
+    emailMissing: 'Add your email address so we can send you a link.',
+    emailInvalid: 'This email doesn’t look complete. Check it has an @ and a dot, like name@example.com.',
+    codeMissing: 'Add the invite code from your message from the Porto team.',
+  },
+
+  signIn: {
+    title: 'Sign in',
+    heading: 'Sign in',
+    intro: 'Enter the email you used to start. We’ll send you a link to sign in.',
+    submit: 'Email me a sign-in link',
+    sending: 'Sending…',
+    noAccount: 'New to Porto? Start with an invite code',
+  },
+
+  checkEmail: {
+    title: 'Check your email',
+    heading: 'Check your email',
+    sentTo: (email: string) => `We’ve sent a sign-in link to ${email}.`,
+    sentGeneric: 'We’ve sent you a sign-in link.',
+    howTo: 'Open the email and tap the link. You can open it on this device or another one.',
+    expiry: 'The link works once and closes after an hour.',
+    junk: 'It can take a minute to arrive. If it isn’t there, check your junk or spam folder.',
+    differentEmail: 'Use a different email',
+  },
+
+  authCallback: {
+    title: 'Signing in',
+    signingIn: 'Signing you in…',
+    expiredHeading: 'This sign-in link has closed',
+    expiredBody: 'Sign-in links work once and close after an hour. Ask for a new one and use the newest email.',
+    newLink: 'Send me a new link',
+  },
+
+  consent: {
+    title: 'Before you start',
+    heading: 'Before you start',
+    intro:
+      'Porto keeps what you know about your child in one place, so the people you choose can support them well. Please read how it works.',
+    agreeLabel: 'I’ve read this and I agree to Porto storing this information.',
+    agreeMissing: 'Tick the box to say you agree, then continue.',
+    submit: 'Agree and continue',
+    saving: 'Saving…',
+  },
+
+  privacy: {
+    title: 'Your information',
+    heading: 'How Porto looks after your information',
+    version: (v: string) => `Version ${v}`,
+    sections: [
+      {
+        heading: 'What we store',
+        body: [
+          'Your email address, so you can sign in.',
+          'What you write about your child: a first name or nickname, how they communicate, and what helps with toileting, food and drink, overstimulation and calming.',
+          'Their cues, meaning what they say or do and what it means in different places.',
+          'Notes that workers send you. A note only becomes part of the profile if you add it.',
+          'The links you create, when they were opened, and what workers searched for. Only you can see the searches.',
+        ],
+      },
+      {
+        heading: 'What we never store',
+        body: [
+          'No audio, video or photos. Porto never uses your microphone, camera or location.',
+          'No surname, date of birth, address, school name or NDIS number. A nickname is fine.',
+          'Please don’t add diagnoses or medical instructions. Porto is not medical advice.',
+        ],
+      },
+      {
+        heading: 'Who can see it',
+        body: [
+          'You, when you’re signed in.',
+          'A worker you share it with, through a link you create, and only until that link closes. Links last from one shift up to 14 days. You can close any link at any time, and it stops working straight away.',
+          'Our trial dashboard shows the Porto team totals only, like how many links were opened. It never shows your child’s cues, your notes or what workers searched. The small Porto team can reach the database to keep it running, and won’t read your profile unless you ask us to help.',
+        ],
+      },
+      {
+        heading: 'Where it’s kept',
+        body: ['In Australia, on Supabase servers in Sydney. Porto has no advertising and no third-party tracking.'],
+      },
+      {
+        heading: 'You’re in control',
+        body: [
+          'You can download everything in the profile as a file at any time.',
+          'You can delete the profile and everything in it. Deleting closes every link straight away and can’t be undone.',
+          'This is an early trial. If we change how your information is used, we’ll ask you again first.',
+        ],
+      },
+    ],
+    contact: (email: string) => `Questions or requests: ${email}`,
+    contactMissing: 'Questions or requests: ask the Porto team member who sent your invite.',
+    emergency: 'If it’s an emergency, call 000.',
+  },
+
+  start: {
+    title: 'Set up',
+    heading: 'One more step',
+    intro: 'Enter your invite code to set up your child’s profile.',
+    working: 'Setting up your profile…',
+    submit: 'Set up the profile',
+  },
+
+  home: {
+    title: 'Home',
+    heading: 'You’re signed in',
+    body: 'Next, you’ll set up your child’s profile: how they communicate, toileting, food, calming and their first cues.',
+    building: 'Profile setup is the next part of Porto being built. It will appear here.',
+    signOut: 'Sign out',
+  },
+
+  errors: {
+    generic: 'Something went wrong on our side. What you typed is still here. Please try again in a moment.',
+    offline: 'We couldn’t reach Porto just now. Check your internet connection, then try again.',
+    inviteCode:
+      'That code doesn’t match an unused invite. Check it against your message from the Porto team, or ask them for a new one.',
+    consentFirst: 'Please read and agree to how Porto stores information first.',
+    notConfigured: 'Porto isn’t connected to its database yet. The Porto team needs to finish setting it up.',
   },
 
   notFound: {
@@ -45,6 +178,7 @@ export const copy = {
     saved: 'Saved.',
     linkCopied: 'Link copied.',
     optional: 'Optional',
+    loading: 'Loading…',
     tryAgainSoon: 'Please try again in a moment.',
     stepOf: (step: number, total: number) => `Step ${step} of ${total}`,
     currentStep: 'current step',
