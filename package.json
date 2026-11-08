@@ -21,7 +21,7 @@
     "check": "npm run lint && npm run typecheck && npm run test",
     "invite-codes": "node scripts/invite-codes.mjs",
     "db:link": "supabase link",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push --linked"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "^5.3.0",
