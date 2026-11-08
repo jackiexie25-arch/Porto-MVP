@@ -34,6 +34,8 @@ export interface WorkerCardData {
     updated_at: string;
   };
   sections: CardSection[];
+  /** The family's cue labels, for the log form. Empty unless the link allows notes. */
+  cue_options?: Array<{ id: string; label: string }>;
   cues: Array<{
     id: string;
     label: string;
@@ -61,8 +63,23 @@ export type WorkerSearchResult =
   | { status: 'ok'; results: SearchHit[] }
   | { status: 'closed' | 'busy' | 'not_allowed' };
 
+export interface WorkerNote {
+  cue_id: string | null;
+  cue_text: string;
+  context_tags: ContextTag[];
+  context_text: string;
+  tried: string;
+  seemed_to_need: string;
+  outcome: 'worked' | 'partly' | 'no';
+  worker_name: string;
+}
+
+export type WorkerWriteResult = { status: 'ok' | 'closed' | 'busy' | 'not_allowed' | 'invalid' };
+
 /** Where the worker view gets its data: a real share link, or the local demo. */
 export interface WorkerSource {
   getCard: () => Promise<WorkerCardResult>;
   search: (query: string, context: ContextTag | null) => Promise<WorkerSearchResult>;
+  logNote: (note: WorkerNote) => Promise<WorkerWriteResult>;
+  feedback: (cueId: string, helpful: boolean) => Promise<WorkerWriteResult>;
 }

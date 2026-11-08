@@ -174,3 +174,35 @@
   align-self: center;
   max-width: 240px;
 }
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px solid var(--blob);
+  padding-top: var(--space-3);
+}
+
+.feedbackButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.feedbackThanks {
+  color: var(--success);
+  font-weight: 600;
+  border-top: 1px solid var(--blob);
+  padding-top: var(--space-3);
+}
+
+.logPrompt {
+  gap: var(--space-3);
+}
+
+.logForm,
+.logDone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}

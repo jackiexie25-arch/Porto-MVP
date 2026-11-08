@@ -9,6 +9,7 @@ import { friendlyError } from '../lib/errors';
 import { normaliseQuery } from '../lib/search';
 import { formatUntil } from '../lib/share';
 import { usePageTitle } from '../lib/usePageTitle';
+import { emptyLog, LogForm, type LogDraft } from './LogForm';
 import { workerCard } from './toCard';
 import type { SearchHit, WorkerCardData, WorkerSource } from './types';
 import styles from './Worker.module.css';
@@ -65,7 +66,37 @@ function Meaning({ m }: { m: SearchHit['meanings'][number] }) {
   );
 }
 
-function Result({ hit, onOpen }: { hit: SearchHit; onOpen: () => void }) {
+type FeedbackState = 'sending' | 'done' | 'error';
+
+function Feedback({ label, state, onAnswer }: { label: string; state?: FeedbackState; onAnswer: (helpful: boolean) => void }) {
+  if (state === 'done') return <p className={styles.feedbackThanks} role="status">{w.feedbackThanks}</p>;
+  return (
+    <div className={styles.feedback}>
+      <p className={styles.contextLegend}>{w.feedbackQuestion}</p>
+      <div className={styles.feedbackButtons}>
+        <Button variant="outlined" disabled={state === 'sending'} onClick={() => onAnswer(true)} aria-label={w.feedbackYesLabel(label)}>
+          {w.feedbackYes}
+        </Button>
+        <Button variant="outlined" disabled={state === 'sending'} onClick={() => onAnswer(false)} aria-label={w.feedbackNoLabel(label)}>
+          {w.feedbackNo}
+        </Button>
+      </div>
+      {state === 'error' ? <p className="t-small">{copy.common.tryAgainSoon}</p> : null}
+    </div>
+  );
+}
+
+function Result({
+  hit,
+  onOpen,
+  feedback,
+  onFeedback,
+}: {
+  hit: SearchHit;
+  onOpen: () => void;
+  feedback?: FeedbackState;
+  onFeedback: (helpful: boolean) => void;
+}) {
   return (
     <Card as="li" className={styles.result}>
       <h3 className={styles.resultLabel}>{hit.label}</h3>
@@ -77,6 +108,7 @@ function Result({ hit, onOpen }: { hit: SearchHit; onOpen: () => void }) {
           {w.bigger}
         </Button>
       </div>
+      <Feedback label={hit.label} state={feedback} onAnswer={onFeedback} />
     </Card>
   );
 }
@@ -143,6 +175,8 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const [context, setContext] = useState<ContextTag | null>(readContext);
   const [search, setSearch] = useState<SearchState>({ kind: 'idle' });
   const [open, setOpen] = useState<SearchHit | null>(null);
+  const [feedback, setFeedback] = useState<Record<string, FeedbackState>>({});
+  const [log, setLog] = useState<{ key: number; draft: LogDraft } | null>(null);
   const requestId = useRef(0);
   const inputId = useId();
   const hintId = useId();
@@ -170,6 +204,22 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
 
   const model: CardModel | null = useMemo(() => (card ? workerCard(card) : null), [card]);
   const canSearch = card?.scope !== 'card';
+  const canLog = card?.scope === 'card_search_log';
+
+  async function sendFeedback(cueId: string, helpful: boolean) {
+    setFeedback((f) => ({ ...f, [cueId]: 'sending' }));
+    try {
+      const result = await source.feedback(cueId, helpful);
+      if (result.status === 'closed') return setStatus('closed');
+      setFeedback((f) => ({ ...f, [cueId]: result.status === 'ok' ? 'done' : 'error' }));
+    } catch {
+      setFeedback((f) => ({ ...f, [cueId]: 'error' }));
+    }
+  }
+
+  function openLog(cueText = '') {
+    setLog({ key: Date.now(), draft: emptyLog(cueText, context) });
+  }
   const normalised = normaliseQuery(query);
 
   useEffect(() => {
@@ -268,7 +318,13 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
                 <p className="t-small t-muted">{w.resultCount(search.hits.length)}</p>
                 <ul className={styles.resultList}>
                   {search.hits.map((hit) => (
-                    <Result key={hit.id} hit={hit} onOpen={() => setOpen(hit)} />
+                    <Result
+                      key={hit.id}
+                      hit={hit}
+                      onOpen={() => setOpen(hit)}
+                      feedback={feedback[hit.id]}
+                      onFeedback={(helpful) => void sendFeedback(hit.id, helpful)}
+                    />
                   ))}
                 </ul>
               </>
@@ -286,10 +342,28 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
                     ))}
                   </>
                 ) : null}
+                {canLog ? (
+                  <div>
+                    <Button variant="outlined" onClick={() => openLog(query.trim())}>
+                      {w.tellFamily(model.name)}
+                    </Button>
+                  </div>
+                ) : null}
               </Card>
             ) : null}
           </div>
         </section>
+      ) : null}
+
+      {canLog ? (
+        <Card className={styles.logPrompt}>
+          <p>{w.logPrompt(model.name)}</p>
+          <div>
+            <Button variant="outlined" onClick={() => openLog()}>
+              {w.logOpen}
+            </Button>
+          </div>
+        </Card>
       ) : null}
 
       <section aria-labelledby="worker-card" className={styles.card}>
@@ -298,6 +372,23 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
         </h2>
         <FirstShiftCard model={model} variant="worker" headingLevel={3} showEmergency={false} />
       </section>
+
+      <Sheet open={log !== null} onClose={() => setLog(null)} title={w.log.title}>
+        {log ? (
+          <LogForm
+            key={log.key}
+            name={model.name}
+            source={source}
+            cueOptions={card.cue_options ?? []}
+            contexts={CONTEXTS}
+            initial={log.draft}
+            onClosed={() => {
+              setLog(null);
+              setStatus('closed');
+            }}
+          />
+        ) : null}
+      </Sheet>
 
       <Sheet open={open !== null} onClose={() => setOpen(null)} title={open?.label ?? ''}>
         <div className={styles.bigger}>

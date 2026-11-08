@@ -1,10 +1,10 @@
 import type { ContextTag } from '../data/types';
 import { config, isSupabaseConfigured } from '../lib/config';
-import type { WorkerCardResult, WorkerSearchResult, WorkerSource } from './types';
+import type { WorkerCardResult, WorkerNote, WorkerSearchResult, WorkerSource, WorkerWriteResult } from './types';
 
 /**
  * Workers never sign in, so the worker view doesn't load the Supabase client at all: it calls the
- * two worker functions over plain HTTPS with the public anon key. Nothing is stored on the
+ * worker functions over plain HTTPS with the public anon key. Nothing is stored on the
  * worker's phone, and a family member opening a link is treated exactly like a worker.
  */
 async function rpc<T>(name: string, body: Record<string, unknown>): Promise<T> {
@@ -32,5 +32,8 @@ export function shareSource(token: string): WorkerSource {
     getCard: () => rpc<WorkerCardResult>('worker_get_card', { p_token: token }),
     search: (query: string, context: ContextTag | null) =>
       rpc<WorkerSearchResult>('worker_search', { p_token: token, p_query: query, p_context: context }),
+    logNote: (note: WorkerNote) => rpc<WorkerWriteResult>('worker_log_note', { p_token: token, p_note: note }),
+    feedback: (cueId: string, helpful: boolean) =>
+      rpc<WorkerWriteResult>('worker_cue_feedback', { p_token: token, p_cue_id: cueId, p_helpful: helpful }),
   };
 }
