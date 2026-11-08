@@ -4,7 +4,9 @@ import { AppShell } from '../components/layout/AppShell';
 import { Banner, Button } from '../components/ui';
 import { copy } from '../copy/en-AU';
 import {
+  approveNote,
   deleteCue,
+  dismissNote,
   fetchFamilyData,
   saveCue,
   saveSection,
@@ -23,6 +25,9 @@ interface FamilyDataState extends FamilyData {
   addCue: (cue: NewCue, meaning: NewMeaning) => Promise<Cue>;
   saveCue: (cue: CueInput, meanings: MeaningInput[]) => Promise<Cue>;
   deleteCue: (id: string) => Promise<void>;
+  approveNote: (noteId: string, cue: CueInput, meanings: MeaningInput[]) => Promise<Cue>;
+  dismissNote: (noteId: string) => Promise<void>;
+  pendingNotes: number;
 }
 
 const FamilyDataContext = createContext<FamilyDataState | null>(null);
@@ -81,6 +86,30 @@ export function FamilyDataProvider({ children }: { children: ReactNode }) {
         await deleteCue(id);
         setData((d) => (d ? { ...d, cues: d.cues.filter((c) => c.id !== id) } : d));
       },
+      approveNote: async (noteId, cue, meanings) => {
+        const saved = await approveNote(noteId, cue, meanings);
+        const now = new Date().toISOString();
+        setData((d) => {
+          if (!d) return d;
+          const exists = d.cues.some((c) => c.id === saved.id);
+          return {
+            ...d,
+            cues: exists ? d.cues.map((c) => (c.id === saved.id ? saved : c)) : [...d.cues, saved],
+            notes: d.notes.map((n) =>
+              n.id === noteId ? { ...n, status: 'approved', resolved_to_cue_id: saved.id, resolved_at: now } : n,
+            ),
+          };
+        });
+        return saved;
+      },
+      dismissNote: async (noteId) => {
+        await dismissNote(noteId);
+        const now = new Date().toISOString();
+        setData((d) =>
+          d ? { ...d, notes: d.notes.map((n) => (n.id === noteId ? { ...n, status: 'dismissed', resolved_at: now } : n)) } : d,
+        );
+      },
+      pendingNotes: data.notes.filter((n) => n.status === 'pending').length,
     };
   }, [data]);
 

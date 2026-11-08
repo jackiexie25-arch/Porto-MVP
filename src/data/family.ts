@@ -8,6 +8,7 @@ import type {
   Profile,
   ProfilePatch,
   SectionDraft,
+  ShiftNote,
 } from './types';
 
 const PROFILE_COLUMNS =
@@ -17,12 +18,16 @@ export interface FamilyData {
   profile: Profile;
   sections: CardSection[];
   cues: Cue[];
+  notes: ShiftNote[];
 }
+
+const NOTE_COLUMNS =
+  'id, cue_id, cue_text, context_tags, context_text, tried, seemed_to_need, outcome, worker_name, status, resolved_to_cue_id, created_at, resolved_at, shares(label)';
 
 /** Everything the family screens need. RLS limits every query to the signed-in family's rows. */
 export async function fetchFamilyData(): Promise<FamilyData> {
   const supabase = getSupabase();
-  const [profile, sections, cues] = await Promise.all([
+  const [profile, sections, cues, notes] = await Promise.all([
     supabase.from('profiles').select(PROFILE_COLUMNS).single(),
     supabase.from('card_sections').select('section, details, body, updated_at'),
     supabase
@@ -30,14 +35,17 @@ export async function fetchFamilyData(): Promise<FamilyData> {
       .select('*, cue_meanings(*)')
       .order('created_at', { ascending: true })
       .order('created_at', { referencedTable: 'cue_meanings', ascending: true }),
+    supabase.from('shift_notes').select(NOTE_COLUMNS).order('created_at', { ascending: false }),
   ]);
   if (profile.error) throw profile.error;
   if (sections.error) throw sections.error;
   if (cues.error) throw cues.error;
+  if (notes.error) throw notes.error;
   return {
     profile: profile.data as Profile,
     sections: sections.data as CardSection[],
     cues: cues.data as Cue[],
+    notes: notes.data as unknown as ShiftNote[],
   };
 }
 
@@ -77,14 +85,30 @@ export async function saveCue(profileId: string, cue: CueInput, meanings: Meanin
   const supabase = getSupabase();
   const saved = await supabase.rpc('save_cue', { p_profile_id: profileId, p_cue: cue, p_meanings: meanings });
   if (saved.error) throw saved.error;
-  const row = await supabase
+  return readCue(saved.data as string);
+}
+
+async function readCue(id: string): Promise<Cue> {
+  const row = await getSupabase()
     .from('cues')
     .select('*, cue_meanings(*)')
-    .eq('id', saved.data as string)
+    .eq('id', id)
     .order('created_at', { referencedTable: 'cue_meanings', ascending: true })
     .single();
   if (row.error) throw row.error;
   return row.data as Cue;
+}
+
+/** Adds a worker's note to the profile: saves the cue as confirmed and resolves the note, in one step. */
+export async function approveNote(noteId: string, cue: CueInput, meanings: MeaningInput[]): Promise<Cue> {
+  const saved = await getSupabase().rpc('approve_note', { p_note_id: noteId, p_cue: cue, p_meanings: meanings });
+  if (saved.error) throw saved.error;
+  return readCue(saved.data as string);
+}
+
+export async function dismissNote(noteId: string): Promise<void> {
+  const { error } = await getSupabase().rpc('dismiss_note', { p_note_id: noteId });
+  if (error) throw error;
 }
 
 export async function deleteCue(id: string): Promise<void> {

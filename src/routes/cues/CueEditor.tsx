@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   cueEditorDraftFrom,
+  cueEditorDraftFromNote,
   emptyCueEditorDraft,
   emptyMeaning,
   hasErrors,
@@ -26,9 +27,12 @@ const f = copy.cueForm;
 
 export function CueEditorPage() {
   const { id } = useParams();
-  const { cues } = useFamilyData();
+  const [params] = useSearchParams();
+  const { cues, notes } = useFamilyData();
   const isNew = id === undefined;
   const existing = isNew ? undefined : cues.find((cue) => cue.id === id);
+  // "Edit then add" from the inbox: the note to confirm, if it's still waiting.
+  const note = notes.find((n) => n.id === params.get('note') && n.status === 'pending');
   usePageTitle(isNew ? c.newTitle : c.editTitle);
 
   if (!isNew && !existing) {
@@ -43,12 +47,13 @@ export function CueEditorPage() {
       </FamilyShell>
     );
   }
-  // Keyed so switching between cues starts a fresh form.
-  return <CueEditor key={id ?? 'new'} initial={existing ? cueEditorDraftFrom(existing) : undefined} />;
+  const initial = note ? cueEditorDraftFromNote(note, cues) : existing ? cueEditorDraftFrom(existing) : undefined;
+  // Keyed so switching between cues (or notes) starts a fresh form.
+  return <CueEditor key={`${id ?? 'new'}-${note?.id ?? ''}`} initial={initial} noteId={note?.id} />;
 }
 
-function CueEditor({ initial }: { initial?: CueEditorDraft }) {
-  const { cues, saveCue, deleteCue } = useFamilyData();
+function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: string }) {
+  const { cues, saveCue, deleteCue, approveNote } = useFamilyData();
   const navigate = useNavigate();
   const pinnedElsewhere = cues.filter((cue) => cue.pinned && cue.id !== initial?.id).length;
   const [draft, setDraft] = useState<CueEditorDraft>(() => initial ?? emptyCueEditorDraft(pinnedElsewhere < MAX_PINNED));
@@ -77,8 +82,13 @@ function CueEditor({ initial }: { initial?: CueEditorDraft }) {
     setSaving(true);
     try {
       const { cue, meanings } = toCueInput(draft);
-      await saveCue(cue, meanings);
-      navigate('/cues', { state: { notice: copy.cues.saved } });
+      if (noteId) {
+        await approveNote(noteId, cue, meanings);
+        navigate('/inbox', { state: { notice: copy.inbox.added } });
+      } else {
+        await saveCue(cue, meanings);
+        navigate('/cues', { state: { notice: copy.cues.saved } });
+      }
     } catch (err) {
       setFormError(friendlyError(err));
       setSaving(false);
@@ -100,6 +110,12 @@ function CueEditor({ initial }: { initial?: CueEditorDraft }) {
     <FamilyShell>
       <form noValidate onSubmit={onSubmit} className={styles.form}>
         <h1 className="t-h2">{draft.id ? draft.label || c.editTitle : c.newTitle}</h1>
+        {noteId ? (
+          <Banner tone="info">
+            {copy.inbox.fromNote}
+            {draft.meanings.some((m) => !m.meaning.trim()) ? ` ${copy.inbox.needsMeaning}` : ''}
+          </Banner>
+        ) : null}
         {formError ? <Banner tone="error">{formError}</Banner> : null}
 
         <Card as="section" aria-label={c.cueHeading}>
@@ -186,10 +202,10 @@ function CueEditor({ initial }: { initial?: CueEditorDraft }) {
           <Button type="submit" disabled={saving}>
             {saving ? c.saving : c.save}
           </Button>
-          <Link to="/cues">{c.cancel}</Link>
+          <Link to={noteId ? '/inbox' : '/cues'}>{noteId ? copy.inbox.backToInbox : c.cancel}</Link>
         </div>
 
-        {draft.id ? (
+        {draft.id && !noteId ? (
           <div>
             <Button variant="secondary" onClick={() => setConfirmDelete(true)}>
               {c.delete}

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { copy } from '../../copy/en-AU';
-import type { Cue } from '../../data/types';
+import type { Cue, ShiftNote } from '../../data/types';
 import { ARI_CUES } from '../../demo/ari';
 import { makeCue } from '../../test/fixtures';
 import { CueEditorPage } from './CueEditor';
@@ -11,12 +11,34 @@ import { CueLibrary } from './CueLibrary';
 
 const saveCue = vi.fn();
 const deleteCue = vi.fn();
+const approveNote = vi.fn();
 let cues: Cue[];
+let notes: ShiftNote[];
 
 vi.mock('../../family/FamilyDataProvider', () => ({
   MAX_PINNED: 5,
-  useFamilyData: () => ({ cues, saveCue, deleteCue }),
+  useFamilyData: () => ({ cues, notes, saveCue, deleteCue, approveNote, pendingNotes: 0 }),
 }));
+
+function note(overrides: Partial<ShiftNote> = {}): ShiftNote {
+  return {
+    id: 'note-1',
+    cue_id: null,
+    cue_text: 'Flaps both hands',
+    context_tags: ['camp'],
+    context_text: '',
+    tried: 'Gave him space',
+    seemed_to_need: '',
+    outcome: 'worked',
+    worker_name: 'Jo',
+    status: 'pending',
+    resolved_to_cue_id: null,
+    created_at: new Date().toISOString(),
+    resolved_at: null,
+    shares: { label: 'Camp weekend' },
+    ...overrides,
+  };
+}
 
 function renderAt(path: string) {
   render(
@@ -25,6 +47,7 @@ function renderAt(path: string) {
         <Route path="/cues" element={<CueLibrary />} />
         <Route path="/cues/new" element={<CueEditorPage />} />
         <Route path="/cues/:id" element={<CueEditorPage />} />
+        <Route path="/inbox" element={<p>Inbox page</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -35,6 +58,8 @@ const f = copy.cueForm;
 
 beforeEach(() => {
   cues = ARI_CUES;
+  notes = [];
+  approveNote.mockReset().mockResolvedValue(makeCue());
   saveCue.mockReset().mockResolvedValue(makeCue());
   deleteCue.mockReset().mockResolvedValue(undefined);
 });
@@ -160,5 +185,43 @@ describe('cue editor', () => {
   it('says so when a cue no longer exists', () => {
     renderAt('/cues/not-a-cue');
     expect(screen.getByText(e.notFound)).toBeInTheDocument();
+  });
+});
+
+describe('confirming a worker’s note', () => {
+  it('prefills a new cue from the note and asks for the missing meaning', async () => {
+    const user = userEvent.setup();
+    notes = [note()];
+    renderAt('/cues/new?note=note-1');
+    expect(screen.getByText(/From a worker’s note/)).toHaveTextContent(copy.inbox.needsMeaning);
+    expect(screen.getByLabelText(f.labelLabel)).toHaveValue('Flaps both hands');
+    const meaning = screen.getByRole('region', { name: e.meaningLegend(1) });
+    expect(within(meaning).getByLabelText(f.todoLabel)).toHaveValue('Gave him space');
+    expect(within(meaning).getByRole('button', { name: copy.labels.context.camp })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.type(within(meaning).getByLabelText(f.meaningLabel), 'I’m excited');
+    await user.click(screen.getByRole('button', { name: e.save }));
+    await waitFor(() => expect(approveNote).toHaveBeenCalledTimes(1));
+    expect(approveNote.mock.calls[0]![0]).toBe('note-1');
+    expect(approveNote.mock.calls[0]![2]).toEqual([
+      expect.objectContaining({ meaning: 'I’m excited', what_to_do: 'Gave him space', confidence: 'sometimes' }),
+    ]);
+    expect(saveCue).not.toHaveBeenCalled();
+    expect(await screen.findByText('Inbox page')).toBeInTheDocument();
+  });
+
+  it('adds the note as another meaning on an existing cue, and hides delete', () => {
+    notes = [note({ cue_id: 'demo-cookie', seemed_to_need: 'A drink', outcome: 'no', tried: 'Offered a biscuit' })];
+    renderAt('/cues/demo-cookie?note=note-1');
+    const third = screen.getByRole('region', { name: e.meaningLegend(3) });
+    expect(within(third).getByLabelText(f.meaningLabel)).toHaveValue('A drink');
+    expect(within(third).getByLabelText(/^What to avoid/)).toHaveValue('Offered a biscuit');
+    expect(screen.queryByRole('button', { name: e.delete })).not.toBeInTheDocument();
+  });
+
+  it('ignores a note that has already been dealt with', () => {
+    notes = [note({ status: 'approved' })];
+    renderAt('/cues/new?note=note-1');
+    expect(screen.getByLabelText(f.labelLabel)).toHaveValue('');
   });
 });

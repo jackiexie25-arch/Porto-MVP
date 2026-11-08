@@ -16,6 +16,10 @@ vi.mock('../../data/shares', () => ({
   revokeShare: (id: string) => revokeShare(id),
 }));
 
+vi.mock('../../family/FamilyDataProvider', () => ({
+  useFamilyData: () => ({ pendingNotes: 0 }),
+}));
+
 vi.mock('../../family/useCardModel', () => ({
   useCardModel: () => ({ model: { name: 'Ari' } }),
 }));

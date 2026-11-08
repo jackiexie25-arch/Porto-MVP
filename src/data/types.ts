@@ -81,6 +81,24 @@ export interface Cue {
   cue_meanings: CueMeaning[];
 }
 
+export interface ShiftNote {
+  id: string;
+  cue_id: string | null;
+  cue_text: string;
+  context_tags: ContextTag[];
+  context_text: string;
+  tried: string;
+  seemed_to_need: string;
+  outcome: 'worked' | 'partly' | 'no';
+  worker_name: string;
+  status: 'pending' | 'approved' | 'dismissed';
+  resolved_to_cue_id: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  /** Label of the link it came through, if that link still exists. */
+  shares: { label: string } | null;
+}
+
 export type ProfilePatch = Partial<
   Pick<
     Profile,

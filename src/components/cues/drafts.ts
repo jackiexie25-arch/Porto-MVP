@@ -1,6 +1,6 @@
 import { copy } from '../../copy/en-AU';
 import type { CueInput, MeaningInput } from '../../data/family';
-import type { Confidence, ContextTag, Cue, CueCategory, CueType } from '../../data/types';
+import type { Confidence, ContextTag, Cue, CueCategory, CueType, ShiftNote } from '../../data/types';
 
 export interface MeaningDraft {
   /** Stable key for React lists, also for meanings not saved yet. */
@@ -142,4 +142,45 @@ export function hasErrors(errors: CueErrors): boolean {
 /** Keeps chosen context tags in their standard order. */
 export function toggleTag(tags: readonly ContextTag[], tag: ContextTag, all: readonly ContextTag[]): ContextTag[] {
   return tags.includes(tag) ? tags.filter((t) => t !== tag) : all.filter((t) => t === tag || tags.includes(t));
+}
+
+/**
+ * A meaning built from a worker's note, for the family to confirm. What they tried becomes
+ * "what to do" if it helped, or "what to avoid" if it didn't. One shift is one observation,
+ * so it starts as "Sometimes".
+ */
+export function meaningDraftFromNote(note: ShiftNote): MeaningDraft {
+  const helped = note.outcome !== 'no';
+  return {
+    key: nextKey(),
+    context_tags: note.context_tags,
+    context_text: note.context_text.slice(0, 120),
+    meaning: note.seemed_to_need,
+    what_to_do: helped ? note.tried : '',
+    what_to_avoid: helped ? '' : note.tried,
+    confidence: 'sometimes',
+  };
+}
+
+/** A note can be added in one tap when it points at an existing cue and says what was needed. */
+export function canAddInOneTap(note: ShiftNote, cues: readonly Cue[]): boolean {
+  return Boolean(note.cue_id && cues.some((c) => c.id === note.cue_id) && note.seemed_to_need.trim());
+}
+
+/** The editor draft for confirming a note: the existing cue plus the note's meaning, or a new cue. */
+export function cueEditorDraftFromNote(note: ShiftNote, cues: readonly Cue[]): CueEditorDraft {
+  const existing = note.cue_id ? cues.find((c) => c.id === note.cue_id) : undefined;
+  if (existing) {
+    const draft = cueEditorDraftFrom(existing);
+    return { ...draft, meanings: [...draft.meanings, meaningDraftFromNote(note)] };
+  }
+  return {
+    label: note.cue_text.slice(0, 120),
+    cue_type: 'other',
+    description: '',
+    aliasesText: '',
+    category: 'other',
+    pinned: false,
+    meanings: [meaningDraftFromNote(note)],
+  };
 }

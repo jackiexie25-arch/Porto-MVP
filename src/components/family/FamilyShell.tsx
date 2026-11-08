@@ -1,18 +1,20 @@
 import type { ReactNode } from 'react';
 import { copy } from '../../copy/en-AU';
+import { useFamilyData } from '../../family/FamilyDataProvider';
 import { AppShell } from '../layout/AppShell';
-
-const links = [
-  { to: '/cues', label: copy.familyNav.cues },
-  { to: '/card', label: copy.familyNav.card },
-  { to: '/setup', label: copy.familyNav.setup },
-  { to: '/signout', label: copy.familyNav.signOut },
-] as const;
 
 const primary = { to: '/share', label: copy.familyNav.share };
 
-/** The signed-in family layout, with "Share for a shift" as the one primary action. The inbox (Phase 5) adds a link. */
+/** The signed-in family layout, with "Share for a shift" as the one primary action. */
 export function FamilyShell({ children, hideShare = false }: { children: ReactNode; hideShare?: boolean }) {
+  const { pendingNotes } = useFamilyData();
+  const links = [
+    { to: '/cues', label: copy.familyNav.cues },
+    { to: '/card', label: copy.familyNav.card },
+    { to: '/inbox', label: copy.familyNav.inbox, badge: pendingNotes, ariaLabel: copy.inbox.navLabel(pendingNotes) },
+    { to: '/setup', label: copy.familyNav.setup },
+    { to: '/signout', label: copy.familyNav.signOut },
+  ];
   return (
     <AppShell links={links} primary={hideShare ? undefined : primary}>
       {children}

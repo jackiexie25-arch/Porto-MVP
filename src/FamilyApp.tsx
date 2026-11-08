@@ -12,6 +12,7 @@ import { CueLibrary } from './routes/cues/CueLibrary';
 import { CardPage } from './routes/family/CardPage';
 import { CardPrint } from './routes/family/CardPrint';
 import { FamilyArea, FamilyHome, SignOut } from './routes/family/FamilyRoutes';
+import { InboxPage } from './routes/inbox/InboxPage';
 import { NotFound } from './routes/NotFound';
 import { Privacy } from './routes/Privacy';
 import { Setup, SetupResume } from './routes/setup/Setup';
@@ -60,6 +61,7 @@ export default function FamilyApp() {
           <Route path="/card" element={<CardPage />} />
           <Route path="/card/print" element={<CardPrint />} />
           <Route path="/share" element={<SharePage />} />
+          <Route path="/inbox" element={<InboxPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

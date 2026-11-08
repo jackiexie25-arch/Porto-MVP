@@ -9,6 +9,18 @@ import styles from './Nav.module.css';
 export interface NavItem {
   to: string;
   label: string;
+  /** A small count beside the label, such as new notes. Never shown when zero. */
+  badge?: number;
+  /** Full accessible name when there's a badge, such as "Inbox, 2 new". */
+  ariaLabel?: string;
+}
+
+function Badge({ count }: { count: number }) {
+  return (
+    <span className={styles.badge} aria-hidden="true">
+      {count}
+    </span>
+  );
 }
 
 interface NavProps {
@@ -28,6 +40,7 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
   }, [location.pathname]);
 
   const hasMenu = links.length > 0 || primary;
+  const badgeTotal = links.reduce((sum, l) => sum + (l.badge ?? 0), 0);
 
   return (
     <header className={styles.header}>
@@ -47,6 +60,7 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
             >
               {open ? <CloseIcon /> : <MenuIcon />}
               <span>{open ? copy.layout.menuClose : copy.layout.menuOpen}</span>
+              {!open && badgeTotal ? <Badge count={badgeTotal} /> : null}
             </button>
 
             <div id={menuId} className={[styles.menu, open ? styles.menuOpen : ''].join(' ')}>
@@ -55,9 +69,11 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
+                      aria-label={item.badge ? item.ariaLabel : undefined}
                       className={({ isActive }) => [styles.link, isActive ? styles.active : ''].join(' ')}
                     >
                       {item.label}
+                      {item.badge ? <Badge count={item.badge} /> : null}
                     </NavLink>
                   </li>
                 ))}
