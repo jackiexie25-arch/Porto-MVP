@@ -12,6 +12,8 @@ interface FirstShiftCardProps {
   variant: 'worker' | 'print';
   /** Heading level for section titles, so the card fits the page it sits in. */
   headingLevel?: 2 | 3;
+  /** Leave off when the page already shows the emergency line, so it isn't said twice. */
+  showEmergency?: boolean;
 }
 
 function Block({
@@ -48,7 +50,7 @@ function Block({
  * The first-shift card, exactly as a worker reads it: fixed section order, empty sections hidden,
  * and only what the family wrote. It never adds or guesses anything.
  */
-export function FirstShiftCard({ model, variant, headingLevel = 2 }: FirstShiftCardProps) {
+export function FirstShiftCard({ model, variant, headingLevel = 2, showEmergency = true }: FirstShiftCardProps) {
   return (
     <div className={[styles.card, styles[variant]].join(' ')}>
       {model.about.length ? (
@@ -124,7 +126,7 @@ export function FirstShiftCard({ model, variant, headingLevel = 2 }: FirstShiftC
         </Block>
       ) : null}
 
-      <p className={styles.emergency}>{copy.layout.emergency}</p>
+      {showEmergency ? <p className={styles.emergency}>{copy.layout.emergency}</p> : null}
     </div>
   );
 }

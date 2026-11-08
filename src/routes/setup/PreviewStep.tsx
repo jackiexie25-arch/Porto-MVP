@@ -19,14 +19,14 @@ export function PreviewStep() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
-  async function finish() {
+  async function finish(to: '/share' | '/card') {
     setBusy(true);
     setError(undefined);
     try {
       if (!profile.setup_completed_at) {
         await saveProfile({ setup_step: 6, setup_completed_at: new Date().toISOString() });
       }
-      navigate('/card');
+      navigate(to);
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -40,10 +40,11 @@ export function PreviewStep() {
       heading={s.heading}
       intro={s.intro}
       art={<ChecklistSun />}
-      primaryLabel={s.finish}
-      showSkip={false}
+      primaryLabel={s.share}
+      secondaryLabel={s.finish}
       busy={busy}
-      onPrimary={() => void finish()}
+      onPrimary={() => void finish('/share')}
+      onSkip={() => void finish('/card')}
     >
       {error ? <Banner tone="error">{error}</Banner> : null}
       <p className={styles.readingTime}>{copy.card.readingTime(words, minutes)}</p>

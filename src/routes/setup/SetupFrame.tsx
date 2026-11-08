@@ -21,6 +21,8 @@ interface SetupFrameProps {
   primaryLabel?: string;
   busy?: boolean;
   showSkip?: boolean;
+  /** Replaces "Skip this step" on the last step. */
+  secondaryLabel?: string;
   onPrimary: () => void;
   onSkip?: () => void;
   children: ReactNode;
@@ -36,6 +38,7 @@ export function SetupFrame({
   primaryLabel = copy.setup.continue,
   busy = false,
   showSkip = true,
+  secondaryLabel = copy.setup.skip,
   onPrimary,
   onSkip,
   children,
@@ -76,7 +79,7 @@ export function SetupFrame({
           </Button>
           {showSkip && onSkip ? (
             <Button variant="secondary" onClick={onSkip} disabled={busy}>
-              {copy.setup.skip}
+              {secondaryLabel}
             </Button>
           ) : null}
         </div>

@@ -35,6 +35,7 @@ function renderStep(step: number) {
           }
         />
         <Route path="/card" element={<Where />} />
+        <Route path="/share" element={<Where />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -113,6 +114,14 @@ describe('setup steps', () => {
       { label: 'Cookie time', cue_type: 'phrase', category: 'other' },
       expect.objectContaining({ meaning: 'I’m hungry', confidence: 'usually' }),
     );
+  });
+
+  it('step 6 can go straight to sharing', async () => {
+    const user = userEvent.setup();
+    profile = makeProfile({ setup_step: 6 });
+    renderStep(6);
+    await user.click(screen.getByRole('button', { name: copy.setup.preview.share }));
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/share'));
   });
 
   it('step 6 previews the card with a reading time and finishes setup', async () => {
