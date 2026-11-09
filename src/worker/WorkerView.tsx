@@ -116,6 +116,9 @@ function Result({
 function Shell({ name, expiresAt, demoNote, children }: { name: string; expiresAt?: string; demoNote?: ReactNode; children: ReactNode }) {
   return (
     <div className={styles.page}>
+      <a className="skip-link" href="#main">
+        {copy.layout.skipLink}
+      </a>
       <header className={styles.header}>
         <Wordmark width={88} />
         <div className={styles.headerText}>
@@ -138,6 +141,9 @@ function Shell({ name, expiresAt, demoNote, children }: { name: string; expiresA
 export function ClosedView({ name }: { name?: string }) {
   return (
     <div className={styles.page}>
+      <a className="skip-link" href="#main">
+        {copy.layout.skipLink}
+      </a>
       <main id="main" className={[styles.main, styles.closed].join(' ')}>
         <CalmWave className={styles.closedArt} />
         <h1 className="t-h2">{w.closedHeading}</h1>

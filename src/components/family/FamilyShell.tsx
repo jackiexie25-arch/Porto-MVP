@@ -11,7 +11,7 @@ export function FamilyShell({ children, hideShare = false }: { children: ReactNo
   const links = [
     { to: '/cues', label: copy.familyNav.cues },
     { to: '/card', label: copy.familyNav.card },
-    { to: '/inbox', label: copy.familyNav.inbox, badge: pendingNotes, ariaLabel: copy.inbox.navLabel(pendingNotes) },
+    { to: '/inbox', label: copy.familyNav.inbox, badge: pendingNotes, badgeSuffix: copy.inbox.navBadge },
     { to: '/account', label: copy.familyNav.account },
   ];
   return (

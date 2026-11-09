@@ -11,15 +11,20 @@ export interface NavItem {
   label: string;
   /** A small count beside the label, such as new notes. Never shown when zero. */
   badge?: number;
-  /** Full accessible name when there's a badge, such as "Inbox, 2 new". */
-  ariaLabel?: string;
+  /** Read after the count by screen readers only, such as "new" ("Inbox 1 new"). */
+  badgeSuffix?: string;
 }
 
-function Badge({ count }: { count: number }) {
+/**
+ * The count is real text, so the spoken name ("Inbox 1 new") starts with exactly what's on
+ * screen ("Inbox 1"), and voice-control users can say what they see.
+ */
+function Badge({ count, suffix }: { count: number; suffix?: string }) {
   return (
-    <span className={styles.badge} aria-hidden="true">
-      {count}
-    </span>
+    <>
+      <span className={styles.badge}>{count}</span>
+      {suffix ? <span className="visually-hidden"> {suffix}</span> : null}
+    </>
   );
 }
 
@@ -60,7 +65,7 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
             >
               {open ? <CloseIcon /> : <MenuIcon />}
               <span>{open ? copy.layout.menuClose : copy.layout.menuOpen}</span>
-              {!open && badgeTotal ? <Badge count={badgeTotal} /> : null}
+              {!open && badgeTotal ? <Badge count={badgeTotal} suffix={copy.layout.menuBadge} /> : null}
             </button>
 
             <div id={menuId} className={[styles.menu, open ? styles.menuOpen : ''].join(' ')}>
@@ -69,11 +74,10 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
-                      aria-label={item.badge ? item.ariaLabel : undefined}
                       className={({ isActive }) => [styles.link, isActive ? styles.active : ''].join(' ')}
                     >
                       {item.label}
-                      {item.badge ? <Badge count={item.badge} /> : null}
+                      {item.badge ? <Badge count={item.badge} suffix={item.badgeSuffix} /> : null}
                     </NavLink>
                   </li>
                 ))}
