@@ -171,6 +171,28 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 
 - **Consent version 2 (`2026-11-v2`).** The privacy text now names the services that help run Porto: Supabase (data, Sydney), Resend (sign-in emails, United States; sees email addresses and sign-in links only) and Netlify (delivers the pages; never receives the child's information). Because the consent text changed, everyone is asked to agree again on their next visit, as the privacy text promises. A family that already has a profile sees a short "We've updated this page" note saying what changed. **Deploy order:** push the database migration first (`npm run db:push`), then the site. Otherwise a new family could be asked to consent to a version the database doesn't accept yet.
 
+### Phase 7
+
+- **End-to-end tests use a test-only stand-in for Supabase** (`e2e/mini-supabase.mjs`), not the live project. There's no Docker for the Supabase CLI, and testing against real families' data is unacceptable. The stand-in:
+  - runs every real migration in PGlite and executes each request as the real `anon` or `authenticated` role, so RLS, grants and every function behave as in production
+  - implements only the slice of Supabase's API that Porto uses: magic-link auth with a test mailbox; table reads and writes with `eq` filters, ordering, limits, single rows, upserts and the two embedded relations; and RPC
+  - trusts unsigned tokens and has an admin SQL endpoint, so it's never deployed
+
+  `config.ts` now also accepts `http://127.0.0.1` or `http://localhost` as the Supabase URL, which is only used for this.
+- **19 Playwright tests** cover the brief's 7 flows, plus: a wrong invite code; sign-in that doesn't reveal accounts; an expired sign-in link; JSON export; acceptance 2 (find a cue within 10 seconds at 360px); acceptance 5 (note → inbox → add → search finds it); and acceptance 7 (every request goes to the app or the database, checked in every test).
+- **Accessibility:**
+  - axe (WCAG 2.2 AA) runs on every screen in its main states: errors, open sheets, the log form, previews, editing and the closed link.
+  - Further tests check keyboard-only use of the worker view (skip link, chips, sheet focus trap, Escape, focus returning), visible focus rings, no sideways scrolling at 320px, at 360px and at 200% zoom, and reduced motion.
+  - **Found and fixed:**
+    - Button names that didn't start with their visible words (WCAG 2.5.3). These are now "Not really: Cookie time", "Add to profile: …", "Close this link now: …".
+    - The Inbox count is now real text ("Inbox 1 new").
+    - The "Everything has been deleted" heading had `role="status"`, which hid it as a heading. It's now a heading that takes focus.
+    - The worker pages had no skip link; they now do.
+- **A real bug found by the browser tests:** after deleting an account, the sign-out could land before the move to the "deleted" page, and the sign-in guard then sent the family to Sign in. The "deleted" page now clears the sign-in itself, outside every guard.
+- **Lighthouse, mobile, live site:** worker view (`/demo`) scores performance 94 and accessibility 100; closed link 96 and 100; welcome page 95 and 100. Best practices is 93 on all three, only because of console errors from Netlify's injected script (next point).
+- **Netlify injects a script into every page it serves:** `/.netlify/scripts/hud?variant=public`, tagged `data-account-tier="free"`. Porto's CSP blocks its inline frame, it loads nothing from other domains, and visitors don't see it. But it's code Porto didn't write, running on pages that show children's information. **Question for Jackie:** turn it off in Netlify if your plan allows it (look for a toolbar, HUD or badge setting), or ask Netlify support how. It's in the runbook checklist.
+- **Trial runbook:** `docs/RUNBOOK.md` covers inviting families, closing links, deleting a family's data on request, team access, metrics, common problems, making changes, and keys and secrets.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.

@@ -21,10 +21,26 @@ Then open http://localhost:5173. The styleguide is at `/styleguide`. Without Sup
 ## Checks
 
 ```bash
-npm run check
+npm run check      # copy lint, colour lint, type-check, unit and database tests
+npm run test:e2e   # 19 browser tests of the full flows, against a local stand-in for Supabase
 ```
 
-This runs the copy lint, the colour lint, the type-check and every test. CI runs the same checks plus a production build.
+CI runs both, plus a production build, on every push.
+
+**End-to-end tests** (`e2e/`) use Playwright. They start two local servers:
+- `e2e/mini-supabase.mjs`, a test-only stand-in for Supabase. It applies the real migrations to an in-memory Postgres (PGlite), answers the same requests Supabase does, and keeps sign-in emails in a test mailbox instead of sending them.
+- A production build of the app, pointed at that stand-in.
+
+So the tests click through the real app, against the real row-level security rules and functions, without touching the live project. They cover:
+- sign-up with an invite code, and guided setup through to sharing
+- worker search, with and without a match
+- worker log → inbox → add to profile, and search then finding it
+- closing a link, and an expired link
+- deleting a profile, and exporting the JSON
+- that no page talks to any third party
+- WCAG 2.2 AA (axe) on every screen, keyboard use, zoom and narrow phones
+
+The first time, run `npx playwright install chromium` to download the test browser.
 
 - `npm test` runs the unit tests and the database tests.
 - `npm run test:db` runs only the database tests. They apply every migration from scratch to an in-memory Postgres ([PGlite](https://pglite.dev)) with a small stand-in for Supabase's `auth` schema and default grants (`supabase/tests/supabase-shim.sql`). Then they check row-level security, invite codes and cascading deletes. No Docker needed.
@@ -62,6 +78,10 @@ npm run invite-codes -- 10
 ```
 
 This prints 10 random codes and the SQL to insert them. Paste the SQL into the Supabase SQL editor, then send one code to each family. Codes are never stored in this repo.
+
+## Running the trial
+
+See [`docs/RUNBOOK.md`](docs/RUNBOOK.md): how to invite a family, close a link, delete a family's data on request, give a teammate access to `/team`, and what to do when something goes wrong.
 
 ## Project rules
 
