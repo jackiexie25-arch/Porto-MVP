@@ -85,6 +85,9 @@ export const copy = {
     heading: 'Before you start',
     intro:
       'Porto keeps what you know about your child in one place, so the people you choose can support them well. Please read how it works.',
+    updatedHeading: 'We’ve updated this page',
+    updatedBody:
+      'What changed: sign-in emails are now sent by an email service called Resend, and we’ve named the services that help run Porto. Nothing about how your child’s information is stored or shared has changed. Please read it and agree again to keep using Porto.',
     agreeLabel: 'I’ve read this and I agree to Porto storing this information.',
     agreeMissing: 'Tick the box to say you agree, then continue.',
     submit: 'Agree and continue',
@@ -123,8 +126,13 @@ export const copy = {
         ],
       },
       {
-        heading: 'Where it’s kept',
-        body: ['In Australia, on Supabase servers in Sydney. Porto has no advertising and no third-party tracking.'],
+        heading: 'Where it’s kept, and who helps run Porto',
+        body: [
+          'Everything you write is stored in Australia, on Supabase servers in Sydney.',
+          'Sign-in emails are sent by Resend, an email service based in the United States. Resend sees your email address and the sign-in link. It never sees anything about your child.',
+          'The website itself is delivered by Netlify. It passes on the pages but doesn’t receive or store your child’s information.',
+          'Porto has no advertising and no third-party tracking.',
+        ],
       },
       {
         heading: 'You’re in control',

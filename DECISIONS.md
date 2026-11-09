@@ -167,6 +167,10 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
   - It makes no network calls. Notes and feedback are acknowledged and dropped, and a sticky line says "Demo profile (fictional). Not a real child. Nothing you type here is saved or sent."
   - It loads as its own small bundle and is linked from the welcome page.
 
+### After launch
+
+- **Consent version 2 (`2026-11-v2`).** The privacy text now names the services that help run Porto: Supabase (data, Sydney), Resend (sign-in emails, United States; sees email addresses and sign-in links only) and Netlify (delivers the pages; never receives the child's information). Because the consent text changed, everyone is asked to agree again on their next visit, as the privacy text promises. A family that already has a profile sees a short "We've updated this page" note saying what changed. **Deploy order:** push the database migration first (`npm run db:push`), then the site. Otherwise a new family could be asked to consent to a version the database doesn't accept yet.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -191,7 +195,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Illustration text alternatives (`copy.illustrations`).
 - Styleguide sample copy (`copy.styleguide`): internal only, but it models the voice.
 - Emergency line: "If it's an emergency, call 000." (`copy.layout.emergency`).
-- **Consent and privacy text** (`copy.consent`, `copy.privacy`). This needs careful review, ideally by someone who knows the Australian Privacy Principles. Pay particular attention to the claim that the team "won't read your profile unless you ask us to help". It's a promise about behaviour, not something the system enforces.
+- **Consent and privacy text** (`copy.consent`, `copy.privacy`), including the v2 wording about Supabase, Resend and Netlify and the "We've updated this page" note. This needs careful review, ideally by someone who knows the Australian Privacy Principles. Pay particular attention to the claim that the team "won't read your profile unless you ask us to help". It's a promise about behaviour, not something the system enforces.
 - Sign-up, sign-in, check-your-email, expired-link and set-up copy (`copy.signUp`, `copy.signIn`, `copy.checkEmail`, `copy.authCallback`, `copy.start`, `copy.home`).
 - Error messages (`copy.errors`).
 - All setup step copy, the prompts and their fictional examples (`copy.setup`, `copy.sectionFields`, `copy.cueForm`). Check the examples suit the age range of children in the trial.

@@ -54,6 +54,12 @@ export function Consent() {
           <h1 className="t-h2">{c.heading}</h1>
           <p className="t-body-lg">{c.intro}</p>
         </header>
+        {/* A family with a profile has agreed before, so this is a new version: say what changed. */}
+        {status.profileId ? (
+          <Banner tone="info">
+            <strong>{c.updatedHeading}.</strong> {c.updatedBody}
+          </Banner>
+        ) : null}
         <PrivacyDetails />
         <Card as="form" noValidate onSubmit={onSubmit} className={styles.form}>
           {error ? <Banner tone="error">{error}</Banner> : null}
