@@ -24,7 +24,6 @@ export function confirmMatches(typed: string, word: string): boolean {
 }
 
 function DeleteSheet({ open, onClose, word }: { open: boolean; onClose: () => void; word: string }) {
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string>();
@@ -42,9 +41,9 @@ function DeleteSheet({ open, onClose, word }: { open: boolean; onClose: () => vo
     setError(undefined);
     try {
       await deleteAccount(typed);
-      // Leave the signed-in area first, so the sign-in guard doesn't redirect mid-way.
+      // The deleted page clears the sign-in itself. It sits outside every sign-in guard, so
+      // nothing can redirect the family to the sign-in page while that happens.
       navigate('/deleted', { replace: true });
-      await signOut().catch(() => undefined);
     } catch (err) {
       setError(/confirm_mismatch/.test(String((err as { message?: string }).message)) ? c.confirmMismatch(word) : friendlyError(err));
       setDeleting(false);

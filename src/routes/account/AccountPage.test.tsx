@@ -56,7 +56,7 @@ describe('account page', () => {
     expect(screen.getByRole('link', { name: c.printLink })).toHaveAttribute('href', '/card/print');
   });
 
-  it('only deletes once the child’s name is typed, then signs out', async () => {
+  it('only deletes once the child’s name is typed, then shows the deleted page', async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(screen.getByRole('button', { name: c.deleteOpen }));
@@ -71,7 +71,6 @@ describe('account page', () => {
     await user.click(within(dialog).getByRole('button', { name: c.deleteConfirm }));
     await waitFor(() => expect(deleteAccount).toHaveBeenCalledWith('Ari'));
     expect(await screen.findByText('Deleted page')).toBeInTheDocument();
-    expect(signOut).toHaveBeenCalled();
   });
 
   it('can be backed out of', async () => {

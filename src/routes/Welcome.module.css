@@ -35,3 +35,8 @@
   align-items: center;
   min-height: var(--control-height);
 }
+
+/* Headings that receive focus from code (to announce a page) don't need a visible ring. */
+.heading:focus {
+  outline: none;
+}
