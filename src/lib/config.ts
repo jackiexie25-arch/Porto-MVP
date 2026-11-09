@@ -7,7 +7,10 @@ export const config = {
   privacyContactEmail: (env.VITE_PRIVACY_CONTACT_EMAIL as string | undefined) ?? '',
 };
 
+/** HTTPS in production; plain http only for a stand-in on this computer (end-to-end tests). */
+const urlOk = /^https:\/\//.test(config.supabaseUrl) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(config.supabaseUrl);
+
 export const isSupabaseConfigured =
-  config.supabaseUrl.startsWith('https://') &&
+  urlOk &&
   !config.supabaseUrl.includes('PROJECT_REF') &&
   config.supabaseAnonKey.length > 20;
