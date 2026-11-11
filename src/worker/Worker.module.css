@@ -7,7 +7,7 @@
   gap: var(--space-4);
 }
 
-/* Masthead: the wordmark, and the one call the worker may need to make. */
+/* Masthead: just the wordmark. The call sits beside the child's name. */
 .masthead {
   display: flex;
   align-items: center;
@@ -28,7 +28,11 @@
   color: var(--ink);
   font-weight: 600;
   text-decoration: none;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+}
+
+.call svg {
+  flex: none;
 }
 
 @media (hover: hover) {
@@ -57,6 +61,15 @@
   min-width: 0;
 }
 
+/* The name and "Call Sam" share a row, and wrap onto two at 200% zoom. */
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
 .name {
   font-family: var(--font-display);
   font-weight: 600;
@@ -77,22 +90,48 @@
   display: block;
 }
 
+/* "Before you start" and "Right now": the two moments of a shift, as quiet labels. */
+.kicker {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.intro .kicker {
+  margin-top: var(--space-4);
+}
+
 .intro .opening {
-  padding: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.readFirst {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-weight: 600;
 }
 
 .openingLine {
   color: var(--muted);
 }
 
-/* Search is part of the page: a sentence for the place, an instruction, a box. */
-.search {
+/* Right now: a sentence for the place, a short question, a box, then the answer. */
+.now {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   border-top: 1px solid var(--blob);
   padding-top: var(--space-6);
   min-width: 0;
+}
+
+.searchBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .place {
@@ -105,28 +144,30 @@
   margin-right: var(--space-2);
 }
 
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+/* Typing brings the box itself to the top of the screen, so the answer sits above the keyboard. */
+.form input {
   scroll-margin-top: var(--space-2);
 }
 
 /* The demo's sticky "fictional" note sits over the top of the screen. */
-.withNote .form {
+.withNote .form input {
   scroll-margin-top: 88px;
 }
-
-
-
-
-
-
 
 .hint {
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
   color: var(--muted);
+}
+
+/* "1 match · At school · Change": the place stays in sight with the keyboard up. */
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  min-height: var(--control-height);
+  color: var(--ink-soft);
 }
 
 .status {
@@ -214,7 +255,7 @@
 }
 
 .result + .result {
-  border-top: 2px solid var(--ink);
+  border-top: 1px solid var(--blob);
   padding-top: var(--space-8);
 }
 
@@ -338,12 +379,6 @@
   min-width: 0;
 }
 
-.cardHead {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .cardHeading {
   font-family: var(--font-display);
   font-weight: 600;
@@ -353,13 +388,16 @@
   color: var(--ink);
 }
 
+/* Full screen: the meaning fills the top; other places wait at the foot of the screen. */
 .large {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
 }
 
 .largeOther {
+  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -457,11 +495,20 @@
     grid-row: 1;
   }
 
-  .search {
+  .now {
     grid-column: 2;
     grid-row: 1 / span 2;
     border-top: 0;
-    padding-top: var(--space-4);
+    padding-top: 0;
+  }
+
+  /* The place and the search box stay in reach while reading the card; results flow beneath. */
+  .searchBar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--ground);
+    padding: var(--space-4) 0;
   }
 
   .card {

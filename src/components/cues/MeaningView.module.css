@@ -42,6 +42,7 @@
 /* What to do is what a worker scans for. */
 .do {
   color: var(--ink);
+  font-weight: 600;
 }
 
 /* Wider screens: labels in their own column so the answers line up. */
@@ -108,8 +109,16 @@
 .large .meaning {
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  font-size: var(--text-hero);
-  line-height: var(--text-hero-lh);
+  /* Read at arm's length: a step above the phone hero size, the hero size on wider screens. */
+  font-size: 44px;
+  line-height: 48px;
+}
+
+@media (min-width: 600px) {
+  .large .meaning {
+    font-size: var(--text-hero);
+    line-height: var(--text-hero-lh);
+  }
 }
 
 .large .actions {

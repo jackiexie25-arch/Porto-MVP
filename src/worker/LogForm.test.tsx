@@ -21,7 +21,11 @@ function cardData(scope: WorkerCardData['scope'] = 'card_search_log'): WorkerCar
   };
 }
 
-let source: WorkerSource & { search: ReturnType<typeof vi.fn>; logNote: ReturnType<typeof vi.fn>; feedback: ReturnType<typeof vi.fn> };
+let source: WorkerSource & {
+  search: ReturnType<typeof vi.fn>;
+  logNote: ReturnType<typeof vi.fn>;
+  feedback: ReturnType<typeof vi.fn>;
+};
 
 beforeEach(() => {
   sessionStorage.clear();
@@ -36,7 +40,17 @@ beforeEach(() => {
           cue_type: 'phrase',
           category: 'food_drink',
           match: 'label',
-          meanings: [{ context_tags: [], context_text: '', meaning: 'I’m hungry', what_to_do: '', what_to_avoid: '', confidence: 'usually', in_context: false }],
+          meanings: [
+            {
+              context_tags: [],
+              context_text: '',
+              meaning: 'I’m hungry',
+              what_to_do: '',
+              what_to_avoid: '',
+              confidence: 'usually',
+              in_context: false,
+            },
+          ],
         },
       ],
     }),
@@ -49,10 +63,12 @@ describe('log what happened', () => {
   it('sends a note in one screen and thanks the worker without claiming it was added', async () => {
     const user = userEvent.setup();
     render(<WorkerView source={source} />);
-    await user.click(await screen.findByRole('button', { name: w.logOpen }));
-    const dialog = screen.getByRole('dialog', { name: l.title });
+    await user.click(await screen.findByRole('button', { name: w.tellFamily('Ari') }));
+    const dialog = screen.getByRole('dialog', { name: l.title('Ari') });
 
-    await user.selectOptions(within(dialog).getByLabelText(l.cueLabel), 'demo-cookie');
+    // Nothing to prefill: one text field, not the cue list.
+    expect(within(dialog).queryByRole('combobox')).not.toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(l.cueLabel), 'Asked for a cookie');
     await user.click(within(dialog).getByText(l.more));
     await user.type(within(dialog).getByLabelText(new RegExp(`^${l.neededLabel}`)), 'A snack');
     await user.click(within(dialog).getByRole('button', { name: copy.labels.context.school }));
@@ -63,8 +79,8 @@ describe('log what happened', () => {
 
     await waitFor(() =>
       expect(source.logNote).toHaveBeenCalledWith({
-        cue_id: 'demo-cookie',
-        cue_text: '',
+        cue_id: null,
+        cue_text: 'Asked for a cookie',
         context_tags: ['school'],
         context_text: '',
         tried: 'Offered an apple',
@@ -81,7 +97,7 @@ describe('log what happened', () => {
   it('says what is missing and sends nothing', async () => {
     const user = userEvent.setup();
     render(<WorkerView source={source} />);
-    await user.click(await screen.findByRole('button', { name: w.logOpen }));
+    await user.click(await screen.findByRole('button', { name: w.tellFamily('Ari') }));
     const dialog = screen.getByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: l.submit('Ari') }));
     expect(within(dialog).getByText(l.missingCue)).toBeInTheDocument();
@@ -94,15 +110,16 @@ describe('log what happened', () => {
     source.search.mockResolvedValue({ status: 'ok', results: [] });
     render(<WorkerView source={source} />);
     await user.type(await screen.findByRole('searchbox'), 'flaps hands');
+    await screen.findByText(w.noMatch('Ari'));
     await user.click(await screen.findByRole('button', { name: w.tellFamily('Ari') }));
-    expect(within(screen.getByRole('dialog')).getByLabelText(l.describeLabel)).toHaveValue('flaps hands');
+    expect(within(screen.getByRole('dialog')).getByLabelText(l.cueLabel)).toHaveValue('flaps hands');
   });
 
   it('is not offered on links without notes', async () => {
     source.getCard = vi.fn().mockResolvedValue(cardData('card_search'));
     render(<WorkerView source={source} />);
     await screen.findByRole('searchbox');
-    expect(screen.queryByRole('button', { name: w.logOpen })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: w.tellFamily('Ari') })).not.toBeInTheDocument();
   });
 });
 
@@ -123,7 +140,7 @@ describe('did this help', () => {
     await user.type(await screen.findByRole('searchbox'), 'cookie');
     await user.click(await screen.findByRole('button', { name: w.feedbackYesLabel('Cookie time') }));
     await user.click(await screen.findByRole('button', { name: w.feedbackNoteLabel('Cookie time') }));
-    const dialog = screen.getByRole('dialog', { name: l.title });
+    const dialog = screen.getByRole('dialog', { name: l.title('Ari') });
     expect(within(dialog).getByLabelText(l.cueLabel)).toHaveValue('demo-cookie');
     expect(within(dialog).getByRole('button', { name: l.outcomes.worked })).toHaveAttribute('aria-pressed', 'true');
   });

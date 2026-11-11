@@ -97,6 +97,7 @@ export function Styleguide() {
   const [chosen, setChosen] = useState<string>(c.chips.places[0]);
   const [checks, setChecks] = useState({ speech: false, sounds: true, gestures: true });
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [fullOpen, setFullOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
   const sampleMeaning = demoCard.cues[0]?.meanings[0];
@@ -307,9 +308,12 @@ export function Styleguide() {
       </Section>
 
       <Section title={c.sections.sheet}>
-        <div>
+        <div className={styles.row}>
           <Button variant="outlined" onClick={() => setSheetOpen(true)}>
             {c.sheet.open}
+          </Button>
+          <Button variant="outlined" onClick={() => setFullOpen(true)}>
+            {c.sheet.openFull}
           </Button>
         </div>
         <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={c.sheet.title}>
@@ -320,6 +324,9 @@ export function Styleguide() {
               {c.sheet.no}
             </Button>
           </div>
+        </Sheet>
+        <Sheet open={fullOpen} onClose={() => setFullOpen(false)} title={c.sheet.fullTitle} size="full">
+          <p className="t-body-lg">{c.sheet.fullBody}</p>
         </Sheet>
       </Section>
 

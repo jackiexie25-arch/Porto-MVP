@@ -12,6 +12,12 @@ interface SheetProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /**
+   * standard: bottom sheet on phones, centred dialog on wider screens.
+   * full: the whole screen, for holding the phone out to someone. The title becomes a quiet label
+   * so the content is the loudest thing.
+   */
+  size?: 'standard' | 'full';
 }
 
 /**
@@ -19,7 +25,7 @@ interface SheetProps {
  * Traps focus, closes on Escape or the Close button, returns focus to the opener.
  * Never auto-dismisses, and a tap on the backdrop does not close it (nothing typed is lost by accident).
  */
-export function Sheet({ open, onClose, title, children }: SheetProps) {
+export function Sheet({ open, onClose, title, children, size = 'standard' }: SheetProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -72,17 +78,10 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
   if (!open) return null;
 
   return createPortal(
-    <div className={styles.scrim}>
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className={styles.panel}
-      >
+    <div className={[styles.scrim, size === 'full' ? styles.full : ''].join(' ')}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={styles.panel}>
         <div className={styles.header}>
-          <h2 id={titleId} className={`t-h3 ${styles.title}`}>
+          <h2 id={titleId} className={size === 'full' ? styles.quietTitle : `t-h3 ${styles.title}`}>
             {title}
           </h2>
           <button type="button" className={styles.close} onClick={onClose}>

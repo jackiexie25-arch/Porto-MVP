@@ -82,6 +82,8 @@ export function LogForm({
   const [sent, setSent] = useState(false);
   const cueRef = useRef<HTMLTextAreaElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
+  // The family's cue list only when the note is about one of their cues; otherwise one text field.
+  const withSelect = Boolean(initial.cueId) && cueOptions.length > 0;
   const formErrorRef = useRevealOn<HTMLDivElement>(errors.form);
   // The outcome comes first in the form, so its error is revealed first.
   const outcomeErrorRef = useRevealOn<HTMLDivElement>(errors.outcome);
@@ -177,7 +179,7 @@ export function LogForm({
           ) : null}
         </div>
 
-        {cueOptions.length ? (
+        {withSelect ? (
           <Select
             label={l.cueLabel}
             value={draft.cueId}
@@ -188,7 +190,7 @@ export function LogForm({
         {!draft.cueId ? (
           <TextArea
             ref={cueRef}
-            label={cueOptions.length ? l.describeLabel : l.cueLabel}
+            label={withSelect ? l.describeLabel : l.cueLabel}
             hint={l.describeHint}
             rows={2}
             maxLength={MAX}

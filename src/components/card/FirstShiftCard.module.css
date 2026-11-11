@@ -63,12 +63,23 @@
   padding: var(--space-6) 0;
 }
 
+/* Inside "About", the opening needs no padding of its own. */
+.block .opening {
+  padding: 0;
+}
+
+/* Who to call ends the card: clear space above its rule, so the last cue never sits on it. */
+.worker .who {
+  margin-top: var(--space-4);
+}
+
 .worker > * + .block {
   border-top: 1px solid var(--blob);
 }
 
 .summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
@@ -85,6 +96,9 @@
 
 .title {
   margin: 0;
+  /* Keeps "Overstimulation" whole (Hide/Show moves down), and only breaks it when it cannot fit at all. */
+  max-width: 100%;
+  overflow-wrap: break-word;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-h3);
@@ -172,8 +186,12 @@ details:not([open]) > .summary .hide {
   color: var(--ink);
 }
 
-/* Please avoid: set between two ink rules, no colour. Its shape tells it apart. */
+/*
+ * Please avoid: the one section set between two ink rules, with clear space outside them, so it
+ * reads as a deliberate warning line rather than a heavier hairline. No colour.
+ */
 .worker .avoid {
+  margin: var(--space-6) 0;
   border-top: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
 }

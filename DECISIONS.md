@@ -252,6 +252,18 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Log form (W8).** Starts with what the worker wants to say: what they tried, then whether it helped, then what they saw (prefilled from the cue being read, or from what they typed when nothing matched), then their first name. What they think was needed and the place sit under "Add more detail" (the place is prefilled from "I'm at"). "Did it help?" stays required because `worker_notes.outcome` is `not null` in the database; changing that needs a migration, which this round didn't touch. After "Did this help?" the worker can tap "Add a note", which opens the form with the cue and their answer filled in.
 - **Fold labels:** card sections fold with a visible "Hide" / "Show" word instead of a chevron. The word is hidden from screen readers because `<details>` already announces whether it's open.
 
+### Worker view, variant C (design round 2)
+
+- **Two moments, labelled.** "Before you start" (the name with "Call Sam" beside it, the family's note, the facts, "Read Ari's card first · about 2 minutes", then the card) and "Right now" (I'm at, "What did Ari do or say?", the answer). On a phone they stack in that order with the card last; at 960px and wider they are two columns, and the place and search box stay in reach (sticky, on the ground colour) while the results flow beneath, so there's no nested scroll area.
+- **"Call Sam" sits on the name row** instead of the masthead, and wraps under the name at 200% zoom (180px wide) with no sideways scroll.
+- **The search label is one short question,** "What did Ari do or say?". Typing scrolls the input itself to the top of a phone screen. The count line echoes the place ("1 match · At school · Change"); Change moves focus to the place chips. Only the count is in the live region.
+- **Focus after every action:** a quick cue moves focus to the first result (or the no-match line), Change to the chosen place, feedback to the thank-you line, Clear to the box, the log's errors and "sent" message to themselves. A second skip link, "Skip to search", focuses the search box.
+- **Show it large is full screen** (`Sheet size="full"`, shared and shown on /styleguide). Its title becomes a quiet 14/20 label, so the cue label never competes with the meaning; other places wait at the foot of the screen.
+- **No match is one block on the page,** not a card, and its one action, "Tell Ari's family what happened", is also the log sheet's title and the log line's button.
+- **Log form:** the cue list shows only when the note is about one of the family's cues (from "Add a note"); otherwise there's one text field, "What did you see or hear?", prefilled from the search when nothing matched.
+- **Card:** the setup preview and family card page keep the "About Ari" heading, with the family's note inside it, and the reading-time word count is unchanged (the "From Ari's family" attribution isn't counted). Every rule inside the sheet is a 1px hairline except "Please avoid", which keeps its two ink rules with clear space outside them. Who to call has extra space above its rule. Long single-word headings ("Overstimulation" at 360px) stay whole and the Hide or Edit control moves to the next line.
+- **Code:** the worker view is split into `WorkerView` (state and layout), `WorkerShell`, `WorkerIntro`, `QuickCues`, `WorkerResult`, `NoMatch`, `LargeView`, `place.ts` and `useWorkerSearch.ts`.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -267,6 +279,9 @@ Things the brand doesn't define, and how each was derived from existing tokens.
 - **Type tokens** in `derived-tokens.css`: `--text-hero`, `--text-h2`, `--text-h3`, `--text-body-lg`, `--text-body`, `--text-small`, each with a `-lh` line height, taken from the type scale in CLAUDE.md (hero and h2 change below 600px).
 - **SearchField Clear button:** ink, 600, underlined text, no fill, the full height of the input (at least 48px).
 - **"Please avoid" on the card:** set between two 2px `--ink` rules, no colour, so its shape tells it apart from the hairline-divided sections.
+- **"What to do" is ink 600 in every MeaningView density,** because it's the line a worker scans for.
+- **"Show it large" meaning on phones: 44/48,** a step above the 36/40 phone hero size, for reading at arm's length. Wider screens use the 56/60 hero size.
+- **Full-screen sheet:** no scrim edge, no radius, `--surface` panel filling the viewport; on wide screens the content is centred in a 960px measure.
 - **Rose tag:** kept for one tag type only, the family's confidence ("Usually").
 - **Styleguide code labels** use the system monospace font. They appear only on `/styleguide`, never on family or worker screens.
 
@@ -293,6 +308,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - The worker log form, the feedback buttons and the inbox (`copy.worker.log`, `copy.worker.feedback*`, `copy.inbox`), including the added question "What do you think they needed?".
 - Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
 - Worker view round C copy (`copy.worker`): "Call Sam", "From Ari's family", "If Ari does or says something you don't understand, type it here.", "I'm at", "Things Ari often does", "In other places", "Ari's family hasn't written what this means at camp. This is what they wrote for other places.", "Ari's family wrote different meanings for different places. Choose where you are, above the search.", "Show it large", "Add a note", "No matches from Ari's family", "Ari's first-shift card", "About 2 minutes to read.", "Ari's family hasn't written the card yet.", the reordered log form with "Add more detail", and the card's "Hide" / "Show" and "Call Sam on 0491 570 156" (`copy.card`).
+- Worker view round 2 copy (`copy.worker`): "What did Ari do or say?", "Before you start", "Right now", "Read Ari's card first · about 2 minutes", "Skip to search", "1 match · At school · Change" (and "No place chosen · Choose"), "Something happened?", "Tell Ari's family what happened" as the log title, "Say what you saw or heard.", and the styleguide's full-screen sheet sample.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 

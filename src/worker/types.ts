@@ -1,12 +1,4 @@
-import type {
-  CardSection,
-  CommunicationMode,
-  Confidence,
-  ContextTag,
-  CueCategory,
-  CueType,
-  LanguageStyle,
-} from '../data/types';
+import type { CardSection, CommunicationMode, Confidence, ContextTag, CueCategory, CueType, LanguageStyle } from '../data/types';
 
 export type ShareScope = 'card' | 'card_search' | 'card_search_log';
 
@@ -59,9 +51,7 @@ export interface SearchHit {
   meanings: Array<WorkerMeaning & { in_context: boolean }>;
 }
 
-export type WorkerSearchResult =
-  | { status: 'ok'; results: SearchHit[] }
-  | { status: 'closed' | 'busy' | 'not_allowed' };
+export type WorkerSearchResult = { status: 'ok'; results: SearchHit[] } | { status: 'closed' | 'busy' | 'not_allowed' };
 
 export interface WorkerNote {
   cue_id: string | null;

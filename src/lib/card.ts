@@ -153,8 +153,9 @@ export function buildCard(profile: Profile, sections: readonly CardSection[], cu
 /** Every word a worker reads on the card, including headings and labels. */
 export function cardText(model: CardModel): string {
   const parts: string[] = [];
-  if (model.note) parts.push(copy.card.noteFrom(model.name), model.note);
-  if (model.about.length) parts.push(copy.card.sections.about(model.name), ...model.about);
+  // The note's "From …'s family" attribution is framing, not the family's words, so it isn't counted.
+  const about = [...model.about, model.note].filter(Boolean);
+  if (about.length) parts.push(copy.card.sections.about(model.name), ...about);
   for (const block of model.sections) {
     if (!block.lines.length) continue;
     parts.push(block.title, ...block.lines.flatMap((l) => (l.label ? [l.label, l.text] : [l.text])));

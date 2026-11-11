@@ -136,7 +136,7 @@ describe('worker view', () => {
     const lines = within(item).getAllByText(/I need a break|I’m hungry/);
     expect(lines[0]).toHaveTextContent('I need a break');
     expect(within(item).getByText('Don’t offer food.')).toBeInTheDocument();
-    expect(screen.getByText(w.resultCount(1, 'Ari'))).toBeInTheDocument();
+    expect(screen.getByText(w.resultCount(1))).toBeInTheDocument();
     expect(sessionStorage.getItem('porto.context')).toBe('school');
   });
 
@@ -155,6 +155,37 @@ describe('worker view', () => {
     await user.type(await screen.findByRole('searchbox'), 'cookie');
     await user.click(await screen.findByRole('button', { name: w.biggerLabel('Cookie time') }));
     expect(screen.getByRole('dialog', { name: 'Cookie time' })).toBeInTheDocument();
+  });
+
+  it('echoes the place beside the count, and Change moves focus to the place choice', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source()} />);
+    await user.click(await screen.findByRole('button', { name: copy.labels.context.school }));
+    await user.type(screen.getByRole('searchbox'), 'cookie');
+    await screen.findByText(w.resultCount(1));
+    expect(screen.getByText('At school')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: w.changeLabel }));
+    expect(screen.getByRole('button', { name: copy.labels.context.school })).toHaveFocus();
+  });
+
+  it('moves focus to the answer after a quick cue', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source()} />);
+    await user.click(await screen.findByRole('button', { name: 'Cookie time' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Cookie time', level: 3 })).toHaveFocus());
+  });
+
+  it('has a skip link straight to the search box', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source()} />);
+    await user.click(await screen.findByRole('link', { name: w.skipToSearch }));
+    expect(screen.getByRole('searchbox')).toHaveFocus();
+  });
+
+  it('points to the card with its reading time', async () => {
+    render(<WorkerView source={source()} />);
+    const link = await screen.findByRole('link', { name: /^Read Ari’s card first · about \d minutes?$/ });
+    expect(link).toHaveAttribute('href', '#worker-card');
   });
 
   it('hides search on a card-only link', async () => {

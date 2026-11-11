@@ -45,6 +45,10 @@ describe('buildCard', () => {
       'Languages: English and Auslan.',
     ]);
     expect(model.note).toBe('Sit beside him and wait.');
+    // Read under "About", after the facts, exactly as before the note had its own field.
+    expect(cardText(model)).toBe(
+      'About Ari Communicates through sounds, gestures and an AAC device. Languages: English and Auslan. Sit beside him and wait.',
+    );
   });
 
   it('shows up to 5 pinned cues in pin order, with every meaning in its context', () => {

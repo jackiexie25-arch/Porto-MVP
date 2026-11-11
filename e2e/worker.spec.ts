@@ -36,7 +36,7 @@ test.describe('worker view', () => {
     // Acceptance 2: find a cue by typing a phrase within about 10 seconds.
     const started = Date.now();
     await worker.getByRole('button', { name: 'School' }).click();
-    await worker.getByRole('searchbox', { name: 'If Ari does or says something you don’t understand, type it here.' }).fill('cookie time');
+    await worker.getByRole('searchbox', { name: 'What did Ari do or say?' }).fill('cookie time');
     const result = worker.getByRole('heading', { name: 'Cookie time', level: 3 });
     await expect(result).toBeVisible();
     expect(Date.now() - started).toBeLessThan(10_000);
@@ -93,9 +93,12 @@ test.describe('worker view', () => {
     const { link } = await familyWithLink(page);
     const { worker, close } = await openAsWorker(browser, link);
 
-    await worker.getByRole('button', { name: 'Log what happened' }).click();
-    const sheet = worker.getByRole('dialog', { name: 'Log what happened' });
-    await sheet.getByLabel('What did you see or hear?').selectOption({ label: 'Cookie time' });
+    // From a result: "Did this help? Yes", then "Add a note" opens the form about that cue.
+    await worker.getByRole('searchbox').fill('cookie');
+    await worker.getByRole('button', { name: 'Yes: Cookie time helped' }).click();
+    await worker.getByRole('button', { name: 'Add a note about Cookie time' }).click();
+    const sheet = worker.getByRole('dialog', { name: 'Tell Ari’s family what happened' });
+    await expect(sheet.getByLabel('What did you see or hear?')).toHaveValue(/.+/);
     await sheet.getByText('Add more detail').click();
     await sheet.getByLabel(/^What do you think they needed\?/).fill('A drink after swimming');
     await sheet.getByRole('button', { name: 'Camp' }).click();

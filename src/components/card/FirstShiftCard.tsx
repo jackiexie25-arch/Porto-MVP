@@ -17,7 +17,7 @@ interface FirstShiftCardProps {
   headingLevel?: 2 | 3;
   /** Leave off when the page already shows the emergency line, so it isn't said twice. */
   showEmergency?: boolean;
-  /** Leave off when the page already opens with the family's note and the About facts. */
+  /** Leave off when the page already opens with the family's note and the About facts (the worker page). */
   showOpening?: boolean;
 }
 
@@ -103,7 +103,11 @@ function SectionBody({ section }: { section: CardBlock }) {
 export function FirstShiftCard({ model, variant, headingLevel = 2, showEmergency = true, showOpening = true }: FirstShiftCardProps) {
   return (
     <div className={[styles.card, styles[variant]].join(' ')}>
-      {showOpening ? <CardOpening model={model} /> : null}
+      {showOpening && (model.note || model.about.length) ? (
+        <Block kind="about" title={c.sections.about(model.name)} variant={variant} headingLevel={headingLevel}>
+          <CardOpening model={model} />
+        </Block>
+      ) : null}
 
       {model.sections
         .filter((s) => s.lines.length)
