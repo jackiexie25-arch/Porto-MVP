@@ -47,7 +47,8 @@
 /* Wider screens: labels in their own column so the answers line up. */
 @media (min-width: 600px) {
   .compact .actions,
-  .full .actions {
+  .full .actions,
+  .lead .actions {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);
     column-gap: var(--space-4);
@@ -55,12 +56,14 @@
   }
 
   .compact .row,
-  .full .row {
+  .full .row,
+  .lead .row {
     display: contents;
   }
 
   .compact .row dt,
-  .full .row dt {
+  .full .row dt,
+  .lead .row dt {
     padding-top: 3px;
   }
 }
@@ -77,6 +80,20 @@
   font-optical-sizing: auto;
   font-size: var(--text-h3);
   line-height: var(--text-h3-lh);
+}
+
+/* Lead: the answer for here. The meaning at h2 size; what to do a step up from body. */
+.lead .meaning {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+}
+
+.lead .do {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  font-weight: 600;
 }
 
 .large {

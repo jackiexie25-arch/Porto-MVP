@@ -53,6 +53,7 @@ describe('log what happened', () => {
     const dialog = screen.getByRole('dialog', { name: l.title });
 
     await user.selectOptions(within(dialog).getByLabelText(l.cueLabel), 'demo-cookie');
+    await user.click(within(dialog).getByText(l.more));
     await user.type(within(dialog).getByLabelText(new RegExp(`^${l.neededLabel}`)), 'A snack');
     await user.click(within(dialog).getByRole('button', { name: copy.labels.context.school }));
     await user.type(within(dialog).getByLabelText(new RegExp(`^${l.triedLabel}`)), 'Offered an apple');
@@ -114,5 +115,16 @@ describe('did this help', () => {
     expect(source.feedback).toHaveBeenCalledWith('demo-cookie', false);
     expect(await screen.findByText(w.feedbackThanks)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: w.feedbackYesLabel('Cookie time') })).not.toBeInTheDocument();
+  });
+
+  it('offers a note about that cue, with the cue and the answer filled in', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source} />);
+    await user.type(await screen.findByRole('searchbox'), 'cookie');
+    await user.click(await screen.findByRole('button', { name: w.feedbackYesLabel('Cookie time') }));
+    await user.click(await screen.findByRole('button', { name: w.feedbackNoteLabel('Cookie time') }));
+    const dialog = screen.getByRole('dialog', { name: l.title });
+    expect(within(dialog).getByLabelText(l.cueLabel)).toHaveValue('demo-cookie');
+    expect(within(dialog).getByRole('button', { name: l.outcomes.worked })).toHaveAttribute('aria-pressed', 'true');
   });
 });

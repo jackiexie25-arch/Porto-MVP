@@ -282,6 +282,10 @@ export function Styleguide() {
             <Card>
               <MeaningView meaning={sampleMeaning} density="full" inContext />
             </Card>
+            <p className="t-label">{c.meaning.lead}</p>
+            <Card>
+              <MeaningView meaning={sampleMeaning} density="lead" inContext />
+            </Card>
             <p className="t-label">{c.meaning.large}</p>
             <Card>
               <MeaningView meaning={sampleMeaning} density="large" />

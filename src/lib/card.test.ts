@@ -26,14 +26,14 @@ describe('buildCard', () => {
     );
     expect(model.sections.map((s) => s.key)).toEqual(['toileting', 'food_drink', 'overstimulation', 'calms', 'avoid']);
     expect(model.sections[0]!.lines).toEqual([
-      { label: 'How they show it', text: 'Taps the door twice' },
-      { label: 'What to do', text: 'Go straight away' },
+      { key: 'signs', label: 'How they show it', text: 'Taps the door twice' },
+      { key: 'what_to_do', label: 'What to do', text: 'Go straight away' },
     ]);
     expect(model.sections[4]!.lines).toEqual([{ text: 'Raised voices' }]);
     expect(model.sections[1]!.lines).toEqual([]);
   });
 
-  it('writes About in at most three short lines from what the family chose', () => {
+  it('writes About as short facts and keeps the family’s connect note as its own line', () => {
     const model = buildCard(
       makeProfile({ communication_modes: ['sounds', 'gestures', 'aac'], languages: ['English', 'Auslan'] }),
       [],
@@ -43,8 +43,8 @@ describe('buildCard', () => {
     expect(model.about).toEqual([
       'Communicates through sounds, gestures and an AAC device.',
       'Languages: English and Auslan.',
-      'Sit beside him and wait.',
     ]);
+    expect(model.note).toBe('Sit beside him and wait.');
   });
 
   it('shows up to 5 pinned cues in pin order, with every meaning in its context', () => {

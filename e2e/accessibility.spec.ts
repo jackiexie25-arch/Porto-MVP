@@ -106,13 +106,13 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
     await worker.getByRole('searchbox').fill('cookie');
     await expect(worker.getByRole('heading', { name: 'Cookie time', level: 3 })).toBeVisible();
     problems.push(...(await scan(worker, 'worker, results')));
-    await worker.getByRole('button', { name: 'Show larger: Cookie time' }).click();
+    await worker.getByRole('button', { name: 'Show it large: Cookie time' }).click();
     problems.push(...(await scan(worker, 'worker, larger view')));
     await worker.keyboard.press('Escape');
     await worker.getByRole('searchbox').fill('giraffe');
     await expect(worker.getByText('Nothing in Ari’s profile matches yet.')).toBeVisible();
     problems.push(...(await scan(worker, 'worker, no match')));
-    await worker.getByRole('button', { name: 'Log what happened' }).click();
+    await worker.getByRole('button', { name: 'Tell Ari’s family what happened' }).click();
     problems.push(...(await scan(worker, 'worker, log form')));
     await worker.getByRole('button', { name: 'Send to Ari’s family' }).click();
     problems.push(...(await scan(worker, 'worker, log form with errors')));
@@ -139,21 +139,21 @@ test.describe('keyboard, zoom and small screens', () => {
     // Search, choose a place with the keyboard, and open a result larger.
     await page.getByRole('searchbox').focus();
     await page.keyboard.type('cookie');
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Clear search' })).toBeFocused();
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    // The place choice sits just before the search box, read as "I'm at Home, School, …".
+    for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('button', { name: 'School' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'School' })).toHaveAttribute('aria-pressed', 'true');
 
-    const larger = page.getByRole('button', { name: 'Show larger: Cookie time' });
+    const larger = page.getByRole('button', { name: 'Show it large: Cookie time' });
     await larger.focus();
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog', { name: 'Cookie time' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
     // Focus stays inside the sheet, and Escape closes it and returns focus.
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', { name: 'Show it large: At home or at mealtimes' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
     await page.keyboard.press('Escape');

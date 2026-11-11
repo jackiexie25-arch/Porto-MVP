@@ -11,12 +11,13 @@ import {
 
 export const WORDS_PER_MINUTE = 200;
 export const LONG_CARD_WORDS = 350;
-export const MAX_ABOUT_LINES = 3;
 
 export interface CardLine {
   /** Worker-facing label, such as "What to do". Absent for single-answer sections. */
   label?: string;
   text: string;
+  /** Which question this answers, such as "what_to_do". Absent for single-answer sections. */
+  key?: string;
 }
 
 export interface CardBlock {
@@ -41,7 +42,10 @@ export interface CardCue {
 
 export interface CardModel {
   name: string;
+  /** Plain facts: how they communicate, their languages. */
   about: string[];
+  /** The family's own "how to connect" note, in their words. The card opens with it. */
+  note: string;
   /** Always in the fixed order; a section with no lines is still listed so families can fill it. */
   sections: CardBlock[];
   cues: CardCue[];
@@ -97,8 +101,7 @@ function aboutLines(profile: Profile): string[] {
     );
   }
   if (profile.languages.length) lines.push(copy.card.about.languages(joinList(profile.languages)));
-  if (profile.connect_note.trim()) lines.push(profile.connect_note.trim());
-  return lines.slice(0, MAX_ABOUT_LINES);
+  return lines;
 }
 
 function sectionLines(kind: CardSectionKind, section: CardSection | undefined): CardLine[] {
@@ -108,7 +111,7 @@ function sectionLines(kind: CardSectionKind, section: CardSection | undefined): 
   }
   const fields = copy.sectionFields[kind] as Record<string, { worker: string }>;
   return SECTION_DETAIL_KEYS[kind]
-    .map((key) => ({ label: fields[key]!.worker, text: (section.details[key] ?? '').trim() }))
+    .map((key) => ({ key, label: fields[key]!.worker, text: (section.details[key] ?? '').trim() }))
     .filter((line) => line.text !== '');
 }
 
@@ -129,6 +132,7 @@ export function buildCard(profile: Profile, sections: readonly CardSection[], cu
   return {
     name: profile.display_name.trim() || fallbackName,
     about: aboutLines(profile),
+    note: profile.connect_note.trim(),
     sections: ORDER.map((key) => ({
       key,
       title: copy.card.sections[key],
@@ -149,6 +153,7 @@ export function buildCard(profile: Profile, sections: readonly CardSection[], cu
 /** Every word a worker reads on the card, including headings and labels. */
 export function cardText(model: CardModel): string {
   const parts: string[] = [];
+  if (model.note) parts.push(copy.card.noteFrom(model.name), model.note);
   if (model.about.length) parts.push(copy.card.sections.about(model.name), ...model.about);
   for (const block of model.sections) {
     if (!block.lines.length) continue;
@@ -174,7 +179,7 @@ export function readingMinutes(words: number): number {
 }
 
 export function isEmptyCard(model: CardModel): boolean {
-  return !model.about.length && model.sections.every((s) => !s.lines.length) && !model.cues.length && !model.whoToCall;
+  return !model.note && !model.about.length && model.sections.every((s) => !s.lines.length) && !model.cues.length && !model.whoToCall;
 }
 
 export function formatDate(iso: string): string {

@@ -36,7 +36,7 @@ test.describe('worker view', () => {
     // Acceptance 2: find a cue by typing a phrase within about 10 seconds.
     const started = Date.now();
     await worker.getByRole('button', { name: 'School' }).click();
-    await worker.getByRole('searchbox', { name: 'Type what you heard or saw' }).fill('cookie time');
+    await worker.getByRole('searchbox', { name: 'If Ari does or says something you don’t understand, type it here.' }).fill('cookie time');
     const result = worker.getByRole('heading', { name: 'Cookie time', level: 3 });
     await expect(result).toBeVisible();
     expect(Date.now() - started).toBeLessThan(10_000);
@@ -50,7 +50,7 @@ test.describe('worker view', () => {
     await expect(worker.getByText('Lower the noise. Offer his headphones.').first()).toBeVisible();
 
     // The card is there too, and the page doesn't scroll sideways on a 360px phone.
-    await expect(worker.getByRole('heading', { name: 'First-shift card' })).toBeVisible();
+    await expect(worker.getByRole('heading', { name: 'Ari’s first-shift card' })).toBeVisible();
     expect(await worker.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await close();
   });
@@ -96,6 +96,7 @@ test.describe('worker view', () => {
     await worker.getByRole('button', { name: 'Log what happened' }).click();
     const sheet = worker.getByRole('dialog', { name: 'Log what happened' });
     await sheet.getByLabel('What did you see or hear?').selectOption({ label: 'Cookie time' });
+    await sheet.getByText('Add more detail').click();
     await sheet.getByLabel(/^What do you think they needed\?/).fill('A drink after swimming');
     await sheet.getByRole('button', { name: 'Camp' }).click();
     await sheet.getByLabel(/^What did you try\?/).fill('Gave him his water bottle');

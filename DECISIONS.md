@@ -244,6 +244,14 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **The demo search** (`src/demo/demoSource.ts`) now follows the same rules: it computes trigram similarity the way pg_trgm does, uses Postgres's english stop words, and a simple suffix trim stands in for stemming. The same 56 cases run against it in `src/demo/demoSource.test.ts`, and against the database in `supabase/tests/search-relevance.test.ts`.
 - `normalise_query` is unchanged.
 
+### Worker view, variant C (design round 1)
+
+- **Worker view as a note from the family (design round, variant C).** The page opens with the child's name as the h1, "Shared by Ari's family", the link expiry and a "Call Sam" `tel:` link in the masthead (Who to call also stays as the card's last section, as approved). The family's connect note is now its own field on the card model (`CardModel.note`) and opens the card as its first line, attributed "From Ari's family"; on the worker page it opens the page instead, so it isn't said twice. About keeps only the plain facts.
+- **The place shapes each result (W3).** `arrangeMeanings` (`src/worker/arrange.ts`) only reorders the family's meanings: the one for the chosen place leads with the ink edge; a meaning written for no particular place counts as "anywhere"; if neither exists the result says "Ari's family hasn't written what this means at camp" and shows the others. With no place chosen and meanings that differ by place, it asks the worker to choose a place. Other places are never hidden.
+- **Search stays still while typing (W6).** The last results stay on screen while a new search runs; the status line says "Looking…". When the worker starts typing on a phone, the search box scrolls to the top so the answer sits above the keyboard, and the hint hides. The live region announces only the count ("1 match from Ari's family" / "No matches from Ari's family").
+- **Log form (W8).** Starts with what the worker wants to say: what they tried, then whether it helped, then what they saw (prefilled from the cue being read, or from what they typed when nothing matched), then their first name. What they think was needed and the place sit under "Add more detail" (the place is prefilled from "I'm at"). "Did it help?" stays required because `worker_notes.outcome` is `not null` in the database; changing that needs a migration, which this round didn't touch. After "Did this help?" the worker can tap "Add a note", which opens the form with the cue and their answer filled in.
+- **Fold labels:** card sections fold with a visible "Hide" / "Show" word instead of a chevron. The word is hidden from screen readers because `<details>` already announces whether it's open.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -258,6 +266,7 @@ Things the brand doesn't define, and how each was derived from existing tokens.
 - **Static tags:** transparent, 1px `--control-border` outline, `--ink-soft` text, 6px radius. Rose tags keep the `--rose` fill with `--ink` text.
 - **Type tokens** in `derived-tokens.css`: `--text-hero`, `--text-h2`, `--text-h3`, `--text-body-lg`, `--text-body`, `--text-small`, each with a `-lh` line height, taken from the type scale in CLAUDE.md (hero and h2 change below 600px).
 - **SearchField Clear button:** ink, 600, underlined text, no fill, the full height of the input (at least 48px).
+- **"Please avoid" on the card:** set between two 2px `--ink` rules, no colour, so its shape tells it apart from the hairline-divided sections.
 - **Rose tag:** kept for one tag type only, the family's confidence ("Usually").
 - **Styleguide code labels** use the system monospace font. They appear only on `/styleguide`, never on family or worker screens.
 
@@ -283,7 +292,9 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Account, delete, deleted, demo and team copy (`copy.account`, `copy.deleted`, `copy.demo`, `copy.team`), especially the delete warning: it must be unmistakable that deleting can't be undone.
 - The worker log form, the feedback buttons and the inbox (`copy.worker.log`, `copy.worker.feedback*`, `copy.inbox`), including the added question "What do you think they needed?".
 - Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
+- Worker view round C copy (`copy.worker`): "Call Sam", "From Ari's family", "If Ari does or says something you don't understand, type it here.", "I'm at", "Things Ari often does", "In other places", "Ari's family hasn't written what this means at camp. This is what they wrote for other places.", "Ari's family wrote different meanings for different places. Choose where you are, above the search.", "Show it large", "Add a note", "No matches from Ari's family", "Ari's first-shift card", "About 2 minutes to read.", "Ari's family hasn't written the card yet.", the reordered log form with "Add more detail", and the card's "Hide" / "Show" and "Call Sam on 0491 570 156" (`copy.card`).
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
+
 
 ## Questions for Jackie
 

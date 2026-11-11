@@ -1,15 +1,24 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CalmWave, WorkerPhone } from '../assets/illustrations';
-import { FirstShiftCard } from '../components/card/FirstShiftCard';
-import { MeaningView, type MeaningDensity } from '../components/cues/MeaningView';
-import { Banner, Button, Card, ChipGroup, ChoiceChip, SearchField, Sheet, Wordmark } from '../components/ui';
+import { CalmWave } from '../assets/illustrations';
+import { CardOpening, FirstShiftCard, telHref } from '../components/card/FirstShiftCard';
+import { MeaningView } from '../components/cues/MeaningView';
+import { Banner, Button, ChipGroup, ChoiceChip, PhoneIcon, SearchField, Sheet, Wordmark } from '../components/ui';
 import { copy } from '../copy/en-AU';
 import type { ContextTag } from '../data/types';
-import { cardMeaning, type CardModel } from '../lib/card';
+import {
+  cardMeaning,
+  cardText,
+  contextPhrase,
+  countWords,
+  isEmptyCard,
+  readingMinutes,
+  type CardModel,
+} from '../lib/card';
 import { friendlyError } from '../lib/errors';
 import { normaliseQuery } from '../lib/search';
 import { formatUntil } from '../lib/share';
 import { usePageTitle } from '../lib/usePageTitle';
+import { arrangeMeanings } from './arrange';
 import { emptyLog, LogForm, type LogDraft } from './LogForm';
 import { workerCard } from './toCard';
 import type { SearchHit, WorkerCardData, WorkerSource } from './types';
@@ -19,11 +28,14 @@ const w = copy.worker;
 const SEARCH_DELAY = 400;
 const CONTEXTS = w.contexts as readonly ContextTag[];
 
+type HitMeaning = SearchHit['meanings'][number];
+
+/**
+ * 'loading' is the first search, before there is anything to show. While the worker refines a
+ * search, the last results stay on screen ('pending') so nothing jumps under their thumb.
+ */
 type SearchState =
-  | { kind: 'idle' }
-  | { kind: 'searching' }
-  | { kind: 'results'; hits: SearchHit[] }
-  | { kind: 'error'; message: string };
+  { kind: 'idle' } | { kind: 'loading' } | { kind: 'results'; hits: SearchHit[] } | { kind: 'error'; message: string };
 
 function readContext(): ContextTag | null {
   try {
@@ -43,73 +55,169 @@ function saveContext(value: ContextTag | null) {
   }
 }
 
-function Meanings({ hit, density }: { hit: SearchHit; density: MeaningDensity }) {
-  return (
-    <div className={styles.meanings}>
-      {hit.meanings.map((m, i) => (
-        <MeaningView key={i} meaning={cardMeaning(m)} inContext={m.in_context} density={density} />
-      ))}
-    </div>
-  );
-}
-
 type FeedbackState = 'sending' | 'done' | 'error';
+type Helpful = boolean;
 
-function Feedback({ label, state, onAnswer }: { label: string; state?: FeedbackState; onAnswer: (helpful: boolean) => void }) {
-  if (state === 'done') return <p className={styles.feedbackThanks} role="status">{w.feedbackThanks}</p>;
-  return (
-    <div className={styles.feedback}>
-      <p className={styles.contextLegend}>{w.feedbackQuestion}</p>
-      <div className={styles.feedbackButtons}>
-        <Button variant="outlined" disabled={state === 'sending'} onClick={() => onAnswer(true)} aria-label={w.feedbackYesLabel(label)}>
-          {w.feedbackYes}
-        </Button>
-        <Button variant="outlined" disabled={state === 'sending'} onClick={() => onAnswer(false)} aria-label={w.feedbackNoLabel(label)}>
-          {w.feedbackNo}
-        </Button>
+/** One quiet line under a result. After an answer it thanks the worker and offers a note. */
+function Feedback({
+  label,
+  state,
+  onAnswer,
+  onNote,
+}: {
+  label: string;
+  state?: FeedbackState;
+  onAnswer: (helpful: Helpful) => void;
+  onNote?: () => void;
+}) {
+  const thanksRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (state === 'done') thanksRef.current?.focus();
+  }, [state]);
+
+  if (state === 'done') {
+    return (
+      <div className={styles.quietLine}>
+        <p ref={thanksRef} tabIndex={-1} className={styles.thanks} role="status">
+          {w.feedbackThanks}
+        </p>
+        {onNote ? (
+          <button type="button" className={styles.textButton} onClick={onNote} aria-label={w.feedbackNoteLabel(label)}>
+            {w.feedbackNote}
+          </button>
+        ) : null}
       </div>
-      {state === 'error' ? <p className="t-small">{copy.common.tryAgainSoon}</p> : null}
+    );
+  }
+  return (
+    <div className={styles.quietLine}>
+      <p className={styles.quietLabel}>{w.feedbackQuestion}</p>
+      <button
+        type="button"
+        className={styles.textButton}
+        disabled={state === 'sending'}
+        onClick={() => onAnswer(true)}
+        aria-label={w.feedbackYesLabel(label)}
+      >
+        {w.feedbackYes}
+      </button>
+      <button
+        type="button"
+        className={styles.textButton}
+        disabled={state === 'sending'}
+        onClick={() => onAnswer(false)}
+        aria-label={w.feedbackNoLabel(label)}
+      >
+        {w.feedbackNo}
+      </button>
+      {state === 'error' ? <p className={styles.quietLabel}>{copy.common.tryAgainSoon}</p> : null}
     </div>
   );
 }
 
+/** A result, set as the answer: the meaning for here leads; other places sit quieter beneath. */
 function Result({
   hit,
+  name,
+  place,
   onOpen,
   feedback,
   onFeedback,
+  onNote,
 }: {
   hit: SearchHit;
+  name: string;
+  place: ContextTag | null;
   onOpen: () => void;
   feedback?: FeedbackState;
-  onFeedback: (helpful: boolean) => void;
+  onFeedback: (helpful: Helpful) => void;
+  onNote?: () => void;
 }) {
+  const { lead, others, notice } = arrangeMeanings(hit.meanings, place);
   return (
-    <Card as="li" className={styles.result}>
+    <li className={styles.result}>
       <h3 className={styles.resultLabel}>{hit.label}</h3>
-      <Meanings hit={hit} density="full" />
-      <div>
-        <Button variant="secondary" onClick={onOpen} aria-label={w.biggerLabel(hit.label)}>
+      {notice === 'notHere' && place ? (
+        <p className={styles.notice}>{w.notWrittenHere(name, copy.labels.contextPhrase[place])}</p>
+      ) : null}
+      {notice === 'choosePlace' ? <p className={styles.notice}>{w.choosePlace(name)}</p> : null}
+      {lead.map((m, i) => (
+        <MeaningView key={i} meaning={cardMeaning(m)} density="lead" inContext={place !== null} />
+      ))}
+      {others.length ? (
+        <div className={styles.others}>
+          {lead.length ? <p className={styles.othersLabel}>{w.otherPlaces}</p> : null}
+          {others.map((m, i) => (
+            <MeaningView key={i} meaning={cardMeaning(m)} density="compact" />
+          ))}
+        </div>
+      ) : null}
+      <div className={styles.resultActions}>
+        <button type="button" className={styles.textButton} onClick={onOpen} aria-label={w.biggerLabel(hit.label)}>
           {w.bigger}
-        </Button>
+        </button>
+        <Feedback label={hit.label} state={feedback} onAnswer={onFeedback} onNote={onNote} />
       </div>
-      <Feedback label={hit.label} state={feedback} onAnswer={onFeedback} />
-    </Card>
+    </li>
   );
 }
 
-function Shell({ name, expiresAt, demoNote, children }: { name: string; expiresAt?: string; demoNote?: ReactNode; children: ReactNode }) {
+/** "Show it large": the meaning for here at hero size, to hold out to a colleague. */
+function Large({ hit, place }: { hit: SearchHit; place: ContextTag | null }) {
+  const { lead, others } = arrangeMeanings(hit.meanings, place);
+  const ordered: HitMeaning[] = [...lead, ...others];
+  const [shown, setShown] = useState(0);
+  const current = ordered[shown];
+  if (!current) return null;
+  const rest = ordered.map((m, i) => ({ m, i })).filter(({ i }) => i !== shown);
   return (
-    <div className={styles.page}>
+    <div className={styles.large}>
+      <MeaningView meaning={cardMeaning(current)} density="large" />
+      {rest.length ? (
+        <div className={styles.largeOther}>
+          <p className={styles.othersLabel}>{w.largeOther}</p>
+          {rest.map(({ m, i }) => {
+            const where = contextPhrase(m.context_tags, m.context_text) || copy.meaning.anywhere;
+            return (
+              <Button key={i} variant="outlined" onClick={() => setShown(i)} aria-label={w.largeOtherLabel(where)}>
+                {where}
+              </Button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CallLink({ who }: { who: NonNullable<CardModel['whoToCall']> }) {
+  return (
+    <a href={telHref(who.phone)} className={styles.call} aria-label={w.callLabel(who.name, who.phone)}>
+      <PhoneIcon size={20} />
+      <span>{w.call(who.name)}</span>
+    </a>
+  );
+}
+
+function Shell({
+  name,
+  who,
+  demoNote,
+  children,
+}: {
+  name: string;
+  who?: CardModel['whoToCall'];
+  demoNote?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className={[styles.page, demoNote ? styles.withNote : ''].join(' ')}>
       <a className="skip-link" href="#main">
         {copy.layout.skipLink}
       </a>
-      <header className={styles.header}>
+      <header className={styles.masthead}>
         <Wordmark width={88} />
-        <div className={styles.headerText}>
-          <p className={styles.sharedBy}>{w.sharedBy(name)}</p>
-          {expiresAt ? <p className="t-small t-muted">{w.openUntil(formatUntil(expiresAt))}</p> : null}
-        </div>
+        {who ? <CallLink who={who} /> : null}
       </header>
       {demoNote}
       <main id="main" className={styles.main}>
@@ -153,9 +261,33 @@ function Retry({ message, onRetry }: { message: string; onRetry: () => void }) {
   );
 }
 
+/** While the card loads: the page's frame, so nothing jumps when it arrives. */
+function Opening() {
+  return (
+    <div className={styles.page}>
+      <header className={styles.masthead}>
+        <Wordmark width={88} />
+      </header>
+      <main id="main" className={styles.main}>
+        <div className={styles.intro}>
+          <p role="status" className={styles.openingLine}>
+            {w.opening}
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function wantsScroll(): boolean {
+  // On a wide screen the search sits beside the card, so there is nothing to bring into view.
+  return !(typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 960px)').matches);
+}
+
 /**
- * The worker's screen: search first, the card underneath. Shows only what the family wrote.
- * When nothing matches it says so and offers the family's calming advice; it never guesses.
+ * The worker's screen: who this is and who to call, the family's note, search, then the card.
+ * Shows only what the family wrote. When nothing matches it says so and offers the family's
+ * calming advice; it never guesses.
  */
 export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNote?: ReactNode }) {
   usePageTitle(w.title);
@@ -165,11 +297,14 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const [query, setQuery] = useState('');
   const [context, setContext] = useState<ContextTag | null>(readContext);
   const [search, setSearch] = useState<SearchState>({ kind: 'idle' });
+  const [pending, setPending] = useState(false);
   const [open, setOpen] = useState<SearchHit | null>(null);
-  const [feedback, setFeedback] = useState<Record<string, FeedbackState>>({});
+  const [feedback, setFeedback] = useState<Record<string, { state: FeedbackState; helpful: Helpful }>>({});
   const [log, setLog] = useState<{ key: number; draft: LogDraft } | null>(null);
   const requestId = useRef(0);
-  const contextId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  const placeId = useId();
+  const quickId = useId();
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -194,40 +329,68 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const model: CardModel | null = useMemo(() => (card ? workerCard(card) : null), [card]);
   const canSearch = card?.scope !== 'card';
   const canLog = card?.scope === 'card_search_log';
+  const cueIds = useMemo(() => new Set((card?.cue_options ?? []).map((c) => c.id)), [card]);
 
-  async function sendFeedback(cueId: string, helpful: boolean) {
-    setFeedback((f) => ({ ...f, [cueId]: 'sending' }));
+  async function sendFeedback(cueId: string, helpful: Helpful) {
+    setFeedback((f) => ({ ...f, [cueId]: { state: 'sending', helpful } }));
     try {
       const result = await source.feedback(cueId, helpful);
       if (result.status === 'closed') return setStatus('closed');
-      setFeedback((f) => ({ ...f, [cueId]: result.status === 'ok' ? 'done' : 'error' }));
+      setFeedback((f) => ({
+        ...f,
+        [cueId]: { state: result.status === 'ok' ? 'done' : 'error', helpful },
+      }));
     } catch {
-      setFeedback((f) => ({ ...f, [cueId]: 'error' }));
+      setFeedback((f) => ({ ...f, [cueId]: { state: 'error', helpful } }));
     }
   }
 
-  function openLog(cueText = '') {
-    setLog({ key: Date.now(), draft: emptyLog(cueText, context) });
+  function openLog(draft: Partial<LogDraft> = {}) {
+    setLog({ key: Date.now(), draft: { ...emptyLog('', context), ...draft } });
   }
+
+  /** A note about the cue the worker is reading, with what they already told us filled in. */
+  function noteAbout(hit: SearchHit) {
+    const answer = feedback[hit.id];
+    openLog({
+      ...(cueIds.has(hit.id) ? { cueId: hit.id } : { cueText: hit.label }),
+      ...(answer ? { outcome: answer.helpful ? 'worked' : 'no' } : {}),
+    });
+  }
+
   const normalised = normaliseQuery(query);
+  const hasQuery = normalised !== '';
+
+  // Bring the search box to the top of the screen when the worker starts, so the answer sits
+  // above the keyboard. Only on the first character, never while they type.
+  useEffect(() => {
+    if (hasQuery && wantsScroll()) formRef.current?.scrollIntoView?.({ block: 'start' });
+  }, [hasQuery]);
 
   useEffect(() => {
     if (!card || !canSearch || !normalised) {
+      requestId.current += 1;
       setSearch({ kind: 'idle' });
+      setPending(false);
       return;
     }
     const id = ++requestId.current;
-    setSearch({ kind: 'searching' });
+    setPending(true);
+    setSearch((s) => (s.kind === 'results' ? s : { kind: 'loading' }));
     const timer = setTimeout(async () => {
       try {
         const result = await source.search(query, context);
         if (id !== requestId.current) return;
+        setPending(false);
         if (result.status === 'ok') setSearch({ kind: 'results', hits: result.results });
         else if (result.status === 'closed') setStatus('closed');
         else if (result.status === 'busy') setSearch({ kind: 'error', message: copy.common.tryAgainSoon });
         else setSearch({ kind: 'idle' });
       } catch (err) {
-        if (id === requestId.current) setSearch({ kind: 'error', message: friendlyError(err) });
+        if (id === requestId.current) {
+          setPending(false);
+          setSearch({ kind: 'error', message: friendlyError(err) });
+        }
       }
     }, SEARCH_DELAY);
     return () => clearTimeout(timer);
@@ -237,29 +400,59 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   if (status === 'closed') return <ClosedView name={model?.name} />;
   if (status === 'busy') return <Retry message={copy.common.tryAgainSoon} onRetry={() => void load()} />;
   if (status === 'error') return <Retry message={loadError} onRetry={() => void load()} />;
-  if (status === 'loading' || !card || !model) {
-    return (
-      <div className={styles.page}>
-        <main id="main" className={styles.main}>
-          <p role="status" className="t-muted">
-            {copy.common.loading}
-          </p>
-        </main>
-      </div>
-    );
-  }
+  if (status === 'loading' || !card || !model) return <Opening />;
 
+  const name = model.name;
   const calms = model.sections.find((s) => s.key === 'calms')?.lines ?? [];
+  const minutes = readingMinutes(countWords(cardText(model)));
+  const noMatch = search.kind === 'results' && search.hits.length === 0;
+  const empty = isEmptyCard(model);
+
+  let statusText = '';
+  if (search.kind === 'results') statusText = w.resultCount(search.hits.length, name);
+  const shownStatus = pending ? (search.kind === 'results' ? w.updating : w.searching(name)) : statusText;
 
   return (
-    <Shell name={model.name} expiresAt={card.expires_at} demoNote={demoNote}>
+    <Shell name={name} who={model.whoToCall} demoNote={demoNote}>
+      <section className={styles.intro} aria-labelledby="worker-name">
+        <h1 id="worker-name" className={styles.name}>
+          {name}
+        </h1>
+        <p className={styles.byline}>
+          {w.sharedBy(name)}
+          <span className={styles.until}>{w.openUntil(formatUntil(card.expires_at))}</span>
+        </p>
+        <CardOpening model={model} className={styles.opening} />
+      </section>
+
       {canSearch ? (
-        <section className={styles.search} aria-label={w.searchLabel}>
-          <form role="search" onSubmit={(e) => e.preventDefault()}>
+        <div className={styles.search}>
+          <ChipGroup aria-labelledby={placeId} className={styles.place}>
+            <span id={placeId} className={styles.placeLead}>
+              {w.placeLead}
+              <span className="visually-hidden"> ({w.placeLegend})</span>
+            </span>
+            {CONTEXTS.map((tag) => (
+              <ChoiceChip
+                key={tag}
+                selected={context === tag}
+                onClick={() => {
+                  const next = context === tag ? null : tag;
+                  setContext(next);
+                  saveContext(next);
+                }}
+              >
+                {copy.labels.context[tag]}
+              </ChoiceChip>
+            ))}
+          </ChipGroup>
+
+          <form ref={formRef} role="search" className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            {/* Once they are typing, the hint gives its room to the answer above the keyboard. */}
             <SearchField
               size="large"
-              label={w.searchLabel}
-              hint={w.searchHint}
+              label={w.searchLabel(name)}
+              hint={query ? undefined : w.searchHint}
               autoCapitalize="none"
               spellCheck={false}
               enterKeyHint="search"
@@ -269,96 +462,102 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
             />
           </form>
 
-          <div className={styles.contexts}>
-            <p id={contextId} className={styles.contextLegend}>
-              {w.contextLegend}
-            </p>
-            <ChipGroup aria-labelledby={contextId}>
-              {CONTEXTS.map((tag) => (
-                <ChoiceChip
-                  key={tag}
-                  selected={context === tag}
-                  onClick={() => {
-                    const next = context === tag ? null : tag;
-                    setContext(next);
-                    saveContext(next);
-                  }}
-                >
-                  {copy.labels.context[tag]}
-                </ChoiceChip>
+          {/* Announces only a short status (a count, or "nothing matches"), never every result. */}
+          <p role="status" aria-live="polite" className={shownStatus ? styles.status : 'visually-hidden'}>
+            {shownStatus}
+          </p>
+
+          {search.kind === 'idle' && model.cues.length ? (
+            <div className={styles.quick}>
+              <p id={quickId} className={styles.quickHeading}>
+                {w.quickHeading(name)}
+              </p>
+              <ul className={styles.quickList} aria-labelledby={quickId}>
+                {model.cues.map((cue) => (
+                  <li key={cue.id}>
+                    <button type="button" className={styles.quickButton} onClick={() => setQuery(cue.label)}>
+                      {cue.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.hint}>{w.quickHint}</p>
+            </div>
+          ) : null}
+
+          {search.kind === 'loading' ? <div className={styles.loadingFrame} aria-hidden="true" /> : null}
+          {search.kind === 'error' ? <Banner tone="error">{search.message}</Banner> : null}
+
+          {search.kind === 'results' && search.hits.length > 0 ? (
+            <ul className={[styles.answer, styles.resultList].join(' ')}>
+              {search.hits.map((hit) => (
+                <Result
+                  key={hit.id}
+                  hit={hit}
+                  name={name}
+                  place={context}
+                  onOpen={() => setOpen(hit)}
+                  feedback={feedback[hit.id]?.state}
+                  onFeedback={(helpful) => void sendFeedback(hit.id, helpful)}
+                  onNote={canLog ? () => noteAbout(hit) : undefined}
+                />
               ))}
-            </ChipGroup>
-          </div>
+            </ul>
+          ) : null}
 
-          <div aria-live="polite" className={styles.results}>
-            {search.kind === 'idle' ? <WorkerPhone className={styles.idleArt} /> : null}
-            {search.kind === 'searching' ? <p className="t-muted">{w.searching}</p> : null}
-            {search.kind === 'error' ? <Banner tone="error">{search.message}</Banner> : null}
-            {search.kind === 'results' && search.hits.length > 0 ? (
-              <>
-                <p className="t-small t-muted">{w.resultCount(search.hits.length)}</p>
-                <ul className={styles.resultList}>
-                  {search.hits.map((hit) => (
-                    <Result
-                      key={hit.id}
-                      hit={hit}
-                      onOpen={() => setOpen(hit)}
-                      feedback={feedback[hit.id]}
-                      onFeedback={(helpful) => void sendFeedback(hit.id, helpful)}
-                    />
+          {noMatch ? (
+            <div className={[styles.answer, styles.noMatch].join(' ')}>
+              <p className={styles.noMatchHeading}>{w.noMatch(name)}</p>
+              {calms.length ? (
+                <div className={styles.calm}>
+                  <p className={styles.othersLabel}>{w.noMatchCalm}</p>
+                  {calms.map((line) => (
+                    <p key={line.text} className={styles.calmText}>
+                      {line.text}
+                    </p>
                   ))}
-                </ul>
-              </>
-            ) : null}
-            {search.kind === 'results' && search.hits.length === 0 ? (
-              <Card className={styles.noMatch}>
-                <p className="t-body-lg">
-                  <strong>{w.noMatch(model.name)}</strong>
-                </p>
-                {calms.length ? (
-                  <>
-                    <p>{w.noMatchCalm}</p>
-                    {calms.map((line) => (
-                      <p key={line.text}>{line.text}</p>
-                    ))}
-                  </>
-                ) : null}
-                {canLog ? (
-                  <div>
-                    <Button variant="outlined" onClick={() => openLog(query.trim())}>
-                      {w.tellFamily(model.name)}
-                    </Button>
-                  </div>
-                ) : null}
-              </Card>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
+                </div>
+              ) : null}
+              {canLog ? (
+                <div>
+                  <Button variant="outlined" onClick={() => openLog({ cueText: query.trim() })}>
+                    {w.tellFamily(name)}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
-      {canLog ? (
-        <Card className={styles.logPrompt}>
-          <p>{w.logPrompt(model.name)}</p>
-          <div>
-            <Button variant="outlined" onClick={() => openLog()}>
-              {w.logOpen}
-            </Button>
-          </div>
-        </Card>
+          {canLog && !noMatch ? (
+            <div className={styles.logLine}>
+              <p>{w.logPrompt(name)}</p>
+              <button type="button" className={styles.textButton} onClick={() => openLog()}>
+                {w.logOpen}
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <section aria-labelledby="worker-card" className={styles.card}>
-        <h2 id="worker-card" className="t-h3">
-          {w.cardHeading}
-        </h2>
-        <FirstShiftCard model={model} variant="worker" headingLevel={3} showEmergency={false} />
+        <div className={styles.cardHead}>
+          <h2 id="worker-card" className={styles.cardHeading}>
+            {w.cardHeading(name)}
+          </h2>
+          {!empty ? <p className={styles.hint}>{w.readTime(minutes)}</p> : null}
+        </div>
+        {empty ? (
+          <p>{w.emptyCard(name)}</p>
+        ) : (
+          <FirstShiftCard model={model} variant="worker" headingLevel={3} showEmergency={false} showOpening={false} />
+        )}
       </section>
 
       <Sheet open={log !== null} onClose={() => setLog(null)} title={w.log.title}>
         {log ? (
           <LogForm
             key={log.key}
-            name={model.name}
+            name={name}
             source={source}
             cueOptions={card.cue_options ?? []}
             contexts={CONTEXTS}
@@ -372,7 +571,7 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
       </Sheet>
 
       <Sheet open={open !== null} onClose={() => setOpen(null)} title={open?.label ?? ''}>
-        {open ? <Meanings hit={open} density="large" /> : null}
+        {open ? <Large key={open.id} hit={open} place={context} /> : null}
       </Sheet>
     </Shell>
   );

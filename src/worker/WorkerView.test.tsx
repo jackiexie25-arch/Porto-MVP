@@ -67,12 +67,57 @@ afterEach(() => {
 });
 
 describe('worker view', () => {
+  it('names the child, offers the call and opens with the family’s own note', async () => {
+    render(<WorkerView source={source()} />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Ari' })).toBeInTheDocument();
+    const [call] = screen.getAllByRole('link', { name: /^Call Sam on 0491 570 156/ });
+    expect(call).toHaveAttribute('href', 'tel:0491570156');
+    expect(screen.getByText(ARI_PROFILE.connect_note)).toBeInTheDocument();
+    expect(screen.getAllByText(ARI_PROFILE.connect_note)).toHaveLength(1);
+  });
+
+  it('offers the family’s pinned cues as quick searches', async () => {
+    const user = userEvent.setup();
+    const src = source();
+    render(<WorkerView source={src} />);
+    await user.click(await screen.findByRole('button', { name: 'Cookie time' }));
+    expect(screen.getByRole('searchbox')).toHaveValue('Cookie time');
+    await screen.findByRole('heading', { name: 'Cookie time', level: 3 });
+    expect(src.search).toHaveBeenLastCalledWith('Cookie time', null);
+  });
+
+  it('says plainly when the family has written nothing for this place', async () => {
+    const user = userEvent.setup();
+    const away = { ...cookieHit, meanings: cookieHit.meanings.map((m) => ({ ...m, in_context: false })) };
+    render(<WorkerView source={source({ search: vi.fn().mockResolvedValue({ status: 'ok', results: [away] }) })} />);
+    await user.click(await screen.findByRole('button', { name: copy.labels.context.camp }));
+    await user.type(screen.getByRole('searchbox'), 'cookie');
+    expect(await screen.findByText(w.notWrittenHere('Ari', 'at camp'))).toBeInTheDocument();
+  });
+
+  it('asks for the place when meanings differ and none is chosen', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source()} />);
+    await user.type(await screen.findByRole('searchbox'), 'cookie');
+    expect(await screen.findByText(w.choosePlace('Ari'))).toBeInTheDocument();
+  });
+
+  it('keeps the last results on screen while the worker refines the search', async () => {
+    const user = userEvent.setup();
+    render(<WorkerView source={source()} />);
+    const box = await screen.findByRole('searchbox');
+    await user.type(box, 'cookie');
+    await screen.findByRole('heading', { name: 'Cookie time', level: 3 });
+    await user.type(box, ' t');
+    expect(screen.getByRole('heading', { name: 'Cookie time', level: 3 })).toBeInTheDocument();
+  });
+
   it('leads with who shared it, when the link closes, and the search', async () => {
     render(<WorkerView source={source()} />);
     expect(await screen.findByText(w.sharedBy('Ari'))).toBeInTheDocument();
     expect(screen.getByText(/^Link open until /)).toBeInTheDocument();
-    expect(screen.getByRole('searchbox', { name: w.searchLabel })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: w.cardHeading })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: w.searchLabel('Ari') })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: w.cardHeading('Ari') })).toBeInTheDocument();
     expect(screen.getByText(w.privacy('Ari'))).toBeInTheDocument();
     expect(screen.getAllByText(copy.layout.emergency)).toHaveLength(1);
   });
@@ -91,7 +136,7 @@ describe('worker view', () => {
     const lines = within(item).getAllByText(/I need a break|I’m hungry/);
     expect(lines[0]).toHaveTextContent('I need a break');
     expect(within(item).getByText('Don’t offer food.')).toBeInTheDocument();
-    expect(screen.getByText(w.resultCount(1))).toBeInTheDocument();
+    expect(screen.getByText(w.resultCount(1, 'Ari'))).toBeInTheDocument();
     expect(sessionStorage.getItem('porto.context')).toBe('school');
   });
 
@@ -114,7 +159,7 @@ describe('worker view', () => {
 
   it('hides search on a card-only link', async () => {
     render(<WorkerView source={source({ getCard: vi.fn().mockResolvedValue(cardData({ scope: 'card' })) })} />);
-    expect(await screen.findByRole('heading', { name: w.cardHeading })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: w.cardHeading('Ari') })).toBeInTheDocument();
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
   });
 

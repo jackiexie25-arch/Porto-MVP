@@ -4,14 +4,17 @@ import styles from './MeaningView.module.css';
 
 const m = copy.meaning;
 
-export type MeaningDensity = 'compact' | 'full' | 'large';
+export type MeaningDensity = 'compact' | 'full' | 'lead' | 'large';
 
 export interface MeaningViewProps {
   /** The family's words for one meaning, with its place phrased (see `cardMeaning` in lib/card). */
   meaning: CardCueMeaning;
   /** The meaning for where the worker says they are: marked with an ink rule on the left. */
   inContext?: boolean;
-  /** compact: lists (library, setup, card). full: worker search results. large: held out to show someone. */
+  /**
+   * compact: lists (library, setup, card). full: worker search results. lead: the one answer for
+   * where the worker is, a step louder than full. large: held out to show someone.
+   */
   density?: MeaningDensity;
   /** Which parts to show. Everything is shown by default; empty answers are always left out. */
   show?: { confidence?: boolean; whatToDo?: boolean; avoid?: boolean };

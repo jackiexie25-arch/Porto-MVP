@@ -91,7 +91,7 @@ export function CardPage() {
         ) : (
           <div className={styles.sections}>
             <EditableSection title={c.sections.about(model.name)} editor={(close) => <AboutEditor onDone={close} />}>
-              <Lines lines={model.about.map((text) => ({ text }))} />
+              <Lines lines={[...model.about, model.note].filter(Boolean).map((text) => ({ text }))} />
             </EditableSection>
 
             {model.sections.map((section) => (
