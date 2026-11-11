@@ -75,7 +75,7 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 
 - **Search lives in the database as `search_cues(profile, query, context)`.** It's internal (no client role can call it). Phase 4's `worker_search(token, …)` will check the share token, call it and write `search_log`. Building the ranking now keeps it testable before tokens exist.
 - **Ranking, as briefed:** exact label (4) → exact alias (3) → trigram (2) → full text over the description and meanings (1).
-  - The trigram tier uses `max(similarity, word_similarity) ≥ 0.25` on the label and each alias. `word_similarity` means a part phrase like "bathroom door" or a half-typed "coo" still finds a long label.
+  - The trigram tier uses `max(similarity, word_similarity) ≥ 0.25` on the label and each alias. `word_similarity` means a part phrase like "bathroom door" or a half-typed "coo" still finds a long label. *Replaced: see "Search relevance (design round 1)".*
   - Full text uses the `english` configuration, so "hungry" finds "I'm hungry".
   - Up to 5 results. An empty or punctuation-only query returns nothing, never a guess.
 - **Context boost:**
@@ -163,7 +163,7 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Export** builds the JSON in the browser from the family's own rows (`schema_version: 1`): profile, card sections, cues with meanings (including source and source note), links (never tokens or hashes), notes, searches, feedback and consent records. The file is called `porto-{name}-{date}.json`. The PDF is the existing print view.
 - **The Account page** holds the settings (About and Who to call, saving as the family types), download, "Go through setup again", sign out and delete. The nav is now Cues · First-shift card · Inbox · Account, plus the Share button.
 - **`/demo`:**
-  - The real worker view, fed by `demoSource`: the fictional Ari profile and a simple in-browser search. The tiers and context ordering match the database's, using word prefixes instead of trigrams.
+  - The real worker view, fed by `demoSource`: the fictional Ari profile and a simple in-browser search. The tiers, rules and context ordering match the database's (see "Search relevance (design round 1)").
   - It makes no network calls. Notes and feedback are acknowledged and dropped, and a sticky line says "Demo profile (fictional). Not a real child. Nothing you type here is saved or sent."
   - It loads as its own small bundle and is linked from the welcome page.
 
@@ -192,6 +192,42 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Lighthouse, mobile, live site:** worker view (`/demo`) scores performance 94 and accessibility 100; closed link 96 and 100; welcome page 95 and 100. Best practices is 93 on all three, only because of console errors from Netlify's injected script (next point).
 - **Netlify injects a script into every page it serves:** `/.netlify/scripts/hud?variant=public`, tagged `data-account-tier="free"`. Porto's CSP blocks its inline frame, it loads nothing from other domains, and visitors don't see it. But it's code Porto didn't write, running on pages that show children's information. **Question for Jackie:** turn it off in Netlify if your plan allows it (look for a toolbar, HUD or badge setting), or ask Netlify support how. It's in the runbook checklist.
 - **Trial runbook:** `docs/RUNBOOK.md` covers inviting families, closing links, deleting a family's data on request, team access, metrics, common problems, making changes, and keys and secrets.
+
+### Search relevance (design round 1)
+
+- **The problem:** two reviewers searched the fictional Ari profile and got cues that only shared a few letters with what they typed. "hungry" put "Hands over ears and humming" first and "Cookie time" (I'm hungry) last; "hit" returned four unrelated cues; "swimming" found humming. The Phase 3 close-match tier compared the whole query with a whole label at `≥ 0.25`, which short words pass just by starting with the same two letters, and it ranked above the meanings. A worker acts on the first result, so this looked like the app guessing.
+- **New ranking** (`supabase/migrations/20261111000100_search_relevance.sql`), highest first:
+  - 4 exact label, 3 exact alias (unchanged).
+  - 2 close match on the label or an alias, either:
+    - the whole query is very close to a whole label or alias (trigram similarity `≥ 0.45`, for "cokie tme"), or
+    - every word typed matches a word of the label or aliases: the same word; the start of it when 3 or more letters are typed ("coo", "knock"); or a near spelling when 4 or more letters are typed, starting with the same letter, with word-to-word similarity `≥ 0.4` ("cokie", "bathrom", "fredy"). Stop words ("the", "his", "at") are skipped and never match on their own.
+  - 1 full text (english stemming) over the label, aliases, description and meanings. Adding the label and aliases lets "waving" find "wave" and "shoe" find "shoes".
+  - Context boost rules are unchanged.
+- **How it was chosen:** a table of 56 queries with the expected first cue, or nothing (`supabase/tests/search-cases.json`): 40 on Ari (all the reported cases and the near-misses to keep) and 16 on a second fictional profile shape ("Juno": an echolalia phrase, a description, a meaning with place text). A query is fully right when the expected cue comes first (or nothing comes back when nothing should) and nothing unrelated appears. Candidates, scored on the 57-query draft (one case was later dropped, below):
+
+  | Candidate | First result right | No unrelated results | Empty when it should be | Fully right |
+  |---|---|---|---|---|
+  | A. Phase 3 as it was | 45 | 30 | 6 of 14 | **30 of 57** |
+  | B. Phase 3 with threshold 0.5 | 49 | 48 | 8 of 14 | 46 |
+  | C. Phase 3 with meanings ranked above close matches | 49 | 30 | 6 of 14 | 30 |
+  | D. Per-word matching, 0.3 | 52 | 51 | 9 of 14 | 51 |
+  | E. D plus same first letter | 53 | 52 | 10 of 14 | 52 |
+  | F. E with 0.4 | 53 | 54 | 11 of 14 | 53 |
+  | **J. F plus stop words skipped (chosen)** | 56 | 57 | 14 of 14 | **56 of 57** |
+
+  Sensitivity checks around J: word threshold 0.35 scores 54 ("shoe" also finds "Short, low mm-mm"; "squeeze" finds "Squeals"); 0.45 scores 56; whole-query threshold 0.4 scores 56 and 0.5 scores 55 (loses "cokie tme"). Ranking meanings above close matches scores the same as J, so the briefed order (close match above meanings) stays. Leaving the label out of the full text loses "waving". J sits in the middle of a flat range, so small data changes shouldn't tip it.
+- **Known miss, accepted:** swapped letters in a short word ("rokcing") no longer find the cue. Its similarity to "rocking" (0.33) is the same as "swimming" to "humming" (0.31), so no threshold catches one without the other. It was dropped from the table, which now has 56 cases.
+- **Allowed second results:** "humming" also shows "Short, low mm-mm" (alias "hum", the same word stemmed), and "hum" also shows "Hands over ears and humming". Both are words the family wrote.
+- **Before and after on the reported queries (Ari):**
+  - "hungry": humming, mm-mm, Cookie time → **Cookie time**
+  - "biting": humming, rocking → **nothing** (honest no-match)
+  - "hit": shoes, wave, humming, mm-mm → **nothing**
+  - "swimming": humming → **nothing**
+  - "water": Blue bottle, wave, rocking → **Blue bottle**
+  - "cookie": Cookie time, humming → **Cookie time**
+  - Kept: "cokie", "cokie tme", "coo" → Cookie time; "bathrom door", "taps door", "toilet" → the door cue.
+- **The demo search** (`src/demo/demoSource.ts`) now follows the same rules: it computes trigram similarity the way pg_trgm does, uses Postgres's english stop words, and a simple suffix trim stands in for stemming. The same 56 cases run against it in `src/demo/demoSource.test.ts`, and against the database in `supabase/tests/search-relevance.test.ts`.
+- `normalise_query` is unchanged.
 
 ## Brand gaps
 
@@ -235,3 +271,4 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 1. **Live setup: done.** Site: **https://porto-app.com** (Netlify project `porto-communicate`, auto-deploys from `main`; `www` and `http` redirect to it; Let's Encrypt HTTPS). Database: Supabase project `qcjtiypfexmdyogaoled` (all migrations through `…800_metrics_and_account` pushed). Domain and DNS: Cloudflare. Sign-in email: Resend via custom SMTP from `hello@porto-app.com`, email limit raised in Supabase. Checked live: headers, worker pages, `/demo`, database connection and a real magic-link sign-in. **Still to confirm:** the dashboard shows the region as Sydney (ap-southeast-2). **Before families sign up:** reword the Supabase email templates, set `VITE_PRIVACY_CONTACT_EMAIL` in Netlify, and add to the privacy text that an email service (Resend, US) sends sign-in links. **Consider Supabase Pro while the trial runs:** free projects pause after a week of inactivity and have no daily backups.
 2. **Trial values:** the invite codes (`<<TRIAL_INVITE_CODES>>`), the privacy contact email (`<<PRIVACY_CONTACT_EMAIL>>`) and the team emails for `/team` (`<<TEAM_EMAILS>>`). Placeholders are used until then.
 4. **Home-screen installs for workers:** the manifest can't carry a per-share link. Since Phase 4, the token is kept only for the browser tab (the address becomes `/s/open`), so an icon added to the home screen won't reopen the profile once the tab is closed. For the trial, workers open the link from their messages each shift. Keeping the token longer on the worker's phone would make the icon work, but it's a privacy trade-off. Is the current behaviour acceptable?
+5. **Search relevance migration needs pushing live.** `20261111000100_search_relevance.sql` changes the worker search. Push it with `npm run db:push` before (or with) the site deploy, so real worker links get the fix and match what `/demo` shows. The site code doesn't depend on it, so nothing breaks if the order slips.
