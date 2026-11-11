@@ -119,12 +119,24 @@
 }
 
 /* Right now: a sentence for the place, a short question, a box, then the answer. */
+/*
+ * On a phone, "Right now" opens with a full-width ink rule and room above it: a deliberate turn
+ * from reading about Ari to the moment in front of you. One rule, no card, no colour.
+ */
 .now {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  border-top: 1px solid var(--blob);
-  padding-top: var(--space-6);
+  margin: var(--space-4) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-8) var(--space-4) 0;
+  border-top: 1px solid var(--ink);
+  min-width: 0;
+}
+
+.answerArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -134,14 +146,24 @@
   gap: var(--space-4);
 }
 
-.place {
-  align-items: center;
+/* "I'm at [Home] [School] …": the chips hang beside the words, so a second row lines up after them. */
+.places {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
 }
 
 .placeLead {
+  /* Centred on the first row of 48px chips. */
+  padding-top: 11px;
   font-weight: 600;
   color: var(--ink);
-  margin-right: var(--space-2);
+}
+
+.placeChips {
+  flex: 1 1 13rem;
+  min-width: 0;
 }
 
 /* Typing brings the box itself to the top of the screen, so the answer sits above the keyboard. */
@@ -168,6 +190,12 @@
   gap: 0 var(--space-2);
   min-height: var(--control-height);
   color: var(--ink-soft);
+}
+
+.statusItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .status {
@@ -345,6 +373,10 @@
   gap: var(--space-4);
 }
 
+.noMatch .hint {
+  margin-top: calc(-1 * var(--space-2));
+}
+
 .noMatchHeading {
   font-family: var(--font-display);
   font-weight: 600;
@@ -353,10 +385,21 @@
   color: var(--ink);
 }
 
+/* What usually helps: the family's calming words, grouped between hairlines. */
 .calm {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--blob);
+  border-bottom: 1px solid var(--blob);
+}
+
+.calmLabel {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .calmText {
@@ -396,8 +439,8 @@
   gap: var(--space-8);
 }
 
+/* Other places follow straight after Avoid, so the screen has no empty gap in the middle. */
 .largeOther {
-  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -452,6 +495,27 @@
   color: var(--ink);
 }
 
+/* From "Add a note": what they saw is the family's cue, as a line with "Change". */
+.logSaw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.logSawLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+}
+
+.logSawCue {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .more {
   border-top: 1px solid var(--blob);
   padding-top: var(--space-2);
@@ -485,7 +549,7 @@
   .main {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 420px;
-    column-gap: 72px;
+    column-gap: var(--space-12);
     row-gap: var(--space-8);
     align-items: start;
   }
@@ -495,20 +559,42 @@
     grid-row: 1;
   }
 
+  /* "Before you start" heads the whole left column. */
+  .intro .kicker {
+    order: -1;
+    margin-top: 0;
+  }
+
+  .intro .opening {
+    margin-top: var(--space-4);
+  }
+
+  /* The family's note outranks the card heading. */
+  .intro .opening blockquote p {
+    font-size: var(--text-h2);
+    line-height: var(--text-h2-lh);
+    max-width: 22ch;
+  }
+
+  /* Right now: its own column behind a vertical hairline, as tall as the page so its search can stay pinned. */
   .now {
     grid-column: 2;
     grid-row: 1 / span 2;
+    align-self: stretch;
+    margin: 0;
+    padding: 0 0 0 var(--space-8);
     border-top: 0;
-    padding-top: 0;
+    border-left: 1px solid var(--blob);
   }
 
-  /* The place and the search box stay in reach while reading the card; results flow beneath. */
+  /* The place, the search box and the count line stay in reach while the card scrolls; results flow beneath. */
   .searchBar {
     position: sticky;
     top: 0;
     z-index: 1;
     background: var(--ground);
-    padding: var(--space-4) 0;
+    padding: var(--space-4) 0 var(--space-2);
+    border-bottom: 1px solid var(--blob);
   }
 
   .card {
@@ -516,7 +602,13 @@
     grid-row: 2;
   }
 
+  /* One step under the family's note, which sits at h2 size above it. */
+  .cardHeading {
+    font-size: var(--text-h3);
+    line-height: var(--text-h3-lh);
+  }
+
   .footer {
-    max-width: calc(100% - 420px - 72px);
+    max-width: calc(100% - 420px - var(--space-12));
   }
 }

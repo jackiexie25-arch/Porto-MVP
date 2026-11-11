@@ -7,6 +7,7 @@ import { cardText, countWords, isEmptyCard, readingMinutes, type CardModel } fro
 import { friendlyError } from '../lib/errors';
 import { usePageTitle } from '../lib/usePageTitle';
 import { LargeView } from './LargeView';
+import { landingDelta } from './landing';
 import { emptyLog, LogForm, type LogDraft } from './LogForm';
 import { NoMatch } from './NoMatch';
 import { CONTEXTS, placeLine, readContext, saveContext } from './place';
@@ -42,7 +43,9 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const [open, setOpen] = useState<SearchHit | null>(null);
   const [feedback, setFeedback] = useState<Record<string, { state: FeedbackState; helpful: boolean }>>({});
   const [log, setLog] = useState<{ key: number; draft: LogDraft } | null>(null);
-  const nowRef = useRef<HTMLElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const answerAreaRef = useRef<HTMLDivElement>(null);
+  const [returnY, setReturnY] = useState<number | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const answerRef = useRef<HTMLElement | null>(null);
@@ -79,16 +82,29 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const onClosed = useCallback(() => setStatus('closed'), []);
   const { search, pending, hasQuery } = useWorkerSearch({ source, query, place, enabled: Boolean(card) && canSearch, onClosed });
 
-  // When the worker starts typing, bring the search box to the top of a phone screen so the answer
-  // sits above the keyboard. On a wide screen, bring the "Right now" column back into view.
+  // When the worker starts typing on a phone, bring the search box to the top of the screen so the
+  // answer sits above the keyboard. Clearing the search forgets where to go back to.
   useEffect(() => {
-    if (!hasQuery) return;
-    if (isWide()) {
-      if ((nowRef.current?.getBoundingClientRect().top ?? 0) < 0) nowRef.current?.scrollIntoView?.({ block: 'start' });
-    } else {
-      formRef.current?.querySelector('input')?.scrollIntoView?.({ block: 'start' });
+    if (!hasQuery) {
+      setReturnY(null);
+      return;
     }
+    if (!isWide()) formRef.current?.querySelector('input')?.scrollIntoView?.({ block: 'start' });
   }, [hasQuery]);
+
+  // On a wide screen the search stays pinned while the card scrolls. When an answer arrives out of
+  // sight, land it just under the pinned search, and offer a way back to where they were reading.
+  useEffect(() => {
+    if (search.kind !== 'results' || pending || !isWide()) return;
+    const area = answerAreaRef.current?.getBoundingClientRect();
+    const bar = barRef.current?.getBoundingClientRect();
+    if (!area || !bar) return;
+    const delta = landingDelta(area.top, bar.bottom, window.innerHeight);
+    if (delta === null) return;
+    const from = window.scrollY;
+    setReturnY((y) => y ?? from);
+    window.scrollBy?.({ top: delta });
+  }, [search, pending]);
 
   // After a quick cue, focus moves to the answer (the button that was tapped has gone).
   useEffect(() => {
@@ -160,17 +176,18 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
       />
 
       {canSearch ? (
-        <section ref={nowRef} id="right-now" className={styles.now} aria-labelledby="right-now-heading">
-          <div className={styles.searchBar}>
+        <section id="right-now" className={styles.now} aria-labelledby="right-now-heading">
+          <div ref={barRef} className={styles.searchBar}>
             <h2 id="right-now-heading" className={styles.kicker}>
               {w.nowHeading}
             </h2>
-            <div ref={chipsRef}>
-              <ChipGroup aria-labelledby={placeId} className={styles.place}>
-                <span id={placeId} className={styles.placeLead}>
-                  {w.placeLead}
-                  <span className="visually-hidden"> ({w.placeLegend})</span>
-                </span>
+            {/* "I'm at" with the chips hanging beside it, so a second row lines up after the words. */}
+            <div ref={chipsRef} className={styles.places}>
+              <span id={placeId} className={styles.placeLead}>
+                {w.placeLead}
+                <span className="visually-hidden"> ({w.placeLegend})</span>
+              </span>
+              <ChipGroup aria-labelledby={placeId} className={styles.placeChips}>
                 {CONTEXTS.map((tag) => (
                   <ChoiceChip key={tag} selected={place === tag} onClick={() => choosePlace(tag)}>
                     {copy.labels.context[tag]}
@@ -198,61 +215,84 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
               </p>
               {hasQuery ? (
                 <>
-                  <span aria-hidden="true">·</span>
-                  <span className={styles.status}>{place ? placeLine(place) : w.noPlace}</span>
-                  <span aria-hidden="true">·</span>
-                  <button
-                    type="button"
-                    className={styles.textButton}
-                    onClick={focusPlace}
-                    aria-label={place ? w.changeLabel : w.chooseLabel}
-                  >
-                    {place ? w.change : w.choose}
-                  </button>
+                  {/* Each separator travels with the item after it, so a wrapped line never ends on a dot. */}
+                  <span className={styles.statusItem}>
+                    <span aria-hidden="true">·</span>
+                    <span className={styles.status}>{place ? placeLine(place) : w.noPlace}</span>
+                  </span>
+                  <span className={styles.statusItem}>
+                    <span aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      className={styles.textButton}
+                      onClick={focusPlace}
+                      aria-label={place ? w.changeLabel : w.chooseLabel}
+                    >
+                      {place ? w.change : w.choose}
+                    </button>
+                  </span>
+                  {returnY !== null ? (
+                    <span className={styles.statusItem}>
+                      <span aria-hidden="true">·</span>
+                      <button
+                        type="button"
+                        className={styles.textButton}
+                        aria-label={w.backToCardLabel}
+                        onClick={() => {
+                          window.scrollTo?.({ top: returnY });
+                          setReturnY(null);
+                        }}
+                      >
+                        {w.backToCard}
+                      </button>
+                    </span>
+                  ) : null}
                 </>
               ) : null}
             </div>
           </div>
 
-          {search.kind === 'idle' ? (
-            <QuickCues
-              name={name}
-              cues={model.cues}
-              onPick={(label) => {
-                focusAnswer.current = true;
-                setQuery(label);
-              }}
-            />
-          ) : null}
-          {search.kind === 'loading' ? <div className={styles.loadingFrame} aria-hidden="true" /> : null}
-          {search.kind === 'error' ? <Banner tone="error">{search.message}</Banner> : null}
+          <div ref={answerAreaRef} className={styles.answerArea}>
+            {search.kind === 'idle' ? (
+              <QuickCues
+                name={name}
+                cues={model.cues}
+                onPick={(label) => {
+                  focusAnswer.current = true;
+                  setQuery(label);
+                }}
+              />
+            ) : null}
+            {search.kind === 'loading' ? <div className={styles.loadingFrame} aria-hidden="true" /> : null}
+            {search.kind === 'error' ? <Banner tone="error">{search.message}</Banner> : null}
 
-          {hits && hits.length ? (
-            <ul className={[styles.answer, styles.resultList].join(' ')}>
-              {hits.map((hit, i) => (
-                <WorkerResult
-                  key={hit.id}
-                  hit={hit}
-                  name={name}
-                  place={place}
-                  headingRef={i === 0 ? setAnswer : undefined}
-                  onOpen={() => setOpen(hit)}
-                  feedback={feedback[hit.id]?.state}
-                  onFeedback={(helpful) => void sendFeedback(hit.id, helpful)}
-                  onNote={canLog ? () => noteAbout(hit) : undefined}
-                />
-              ))}
-            </ul>
-          ) : null}
+            {hits && hits.length ? (
+              <ul className={[styles.answer, styles.resultList].join(' ')}>
+                {hits.map((hit, i) => (
+                  <WorkerResult
+                    key={hit.id}
+                    hit={hit}
+                    name={name}
+                    place={place}
+                    headingRef={i === 0 ? setAnswer : undefined}
+                    onOpen={() => setOpen(hit)}
+                    feedback={feedback[hit.id]?.state}
+                    onFeedback={(helpful) => void sendFeedback(hit.id, helpful)}
+                    onNote={canLog ? () => noteAbout(hit) : undefined}
+                  />
+                ))}
+              </ul>
+            ) : null}
 
-          {noMatch ? (
-            <NoMatch
-              name={name}
-              calms={calms}
-              headingRef={setAnswer}
-              onTell={canLog ? () => openLog({ cueText: query.trim() }) : undefined}
-            />
-          ) : null}
+            {noMatch ? (
+              <NoMatch
+                name={name}
+                calms={calms}
+                headingRef={setAnswer}
+                onTell={canLog ? () => openLog({ cueText: query.trim() }) : undefined}
+              />
+            ) : null}
+          </div>
 
           {canLog && !noMatch ? (
             <div className={styles.logLine}>

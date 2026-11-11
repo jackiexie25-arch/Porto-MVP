@@ -264,6 +264,19 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Card:** the setup preview and family card page keep the "About Ari" heading, with the family's note inside it, and the reading-time word count is unchanged (the "From Ari's family" attribution isn't counted). Every rule inside the sheet is a 1px hairline except "Please avoid", which keeps its two ink rules with clear space outside them. Who to call has extra space above its rule. Long single-word headings ("Overstimulation" at 360px) stay whole and the Hide or Edit control moves to the next line.
 - **Code:** the worker view is split into `WorkerView` (state and layout), `WorkerShell`, `WorkerIntro`, `QuickCues`, `WorkerResult`, `NoMatch`, `LargeView`, `place.ts` and `useWorkerSearch.ts`.
 
+### Worker view, final round (variant C with pieces from A)
+
+- **Desktop search stays pinned.** "Right now" is its own column behind a vertical hairline, stretched to the page's height, and its place, search box and count line are sticky at the top (no nested scroll). When the worker types while scrolled down the card, the answer lands just under the pinned search: the page moves only as far as needed (`landingDelta`, unit-tested), and the count line offers "Back to where you were", which returns to the exact spot in the card.
+- **Desktop door:** "Before you start" heads the left column; the family's note is set at h2 size (36/42) so it outranks the card heading, which drops to h3 size on desktop.
+- **Phones: the turn to "Right now"** is a full-width 1px ink rule with room above it. It's the only full-width rule on the page, so it reads as structure, not decoration.
+- **"I'm at" hangs:** the chips sit beside the words, and a second row lines up after them.
+- **Card rhythm:** 8px from label to answer, 16px between pairs, 32px between sections (16px either side of the hairline). "Please avoid" keeps its two ink rules with 16px outside them.
+- **Top cues as one calm unit:** the family's label, then each meaning at body size with its place and confidence after it on the same line, quieter ("I'm hungry · At home or at mealtimes · usually"), then What to do and Avoid in a fixed label column. This is MeaningView's new `brief` density, shown on /styleguide.
+- **No match:** the Fraunces line, "Try fewer words, or how it looks or sounds.", then "What usually helps" (ink, no colon) between hairlines, then the one action.
+- **Log from "Add a note":** what they saw is a line, "What did you see or hear? Cookie time · Change", instead of a dropdown. Change turns it into the text field, filled in, with focus.
+- **Show it large:** "Other places" follows straight after Avoid.
+- **Family card page below 400px:** section headings are 20/26 so every heading keeps Edit on its row ("Overstimulation" included).
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -282,6 +295,7 @@ Things the brand doesn't define, and how each was derived from existing tokens.
 - **"What to do" is ink 600 in every MeaningView density,** because it's the line a worker scans for.
 - **"Show it large" meaning on phones: 44/48,** a step above the 36/40 phone hero size, for reading at arm's length. Wider screens use the 56/60 hero size.
 - **Full-screen sheet:** no scrim edge, no radius, `--surface` panel filling the viewport; on wide screens the content is centred in a 960px measure.
+- **Family card section headings below 400px: 20/26,** between body-lg and h3, so the longest heading and its Edit button share a row.
 - **Rose tag:** kept for one tag type only, the family's confidence ("Usually").
 - **Styleguide code labels** use the system monospace font. They appear only on `/styleguide`, never on family or worker screens.
 
@@ -309,6 +323,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Worker view copy (`copy.worker`), especially the privacy footer ("Please don't screenshot or forward this page") and the no-match wording.
 - Worker view round C copy (`copy.worker`): "Call Sam", "From Ari's family", "If Ari does or says something you don't understand, type it here.", "I'm at", "Things Ari often does", "In other places", "Ari's family hasn't written what this means at camp. This is what they wrote for other places.", "Ari's family wrote different meanings for different places. Choose where you are, above the search.", "Show it large", "Add a note", "No matches from Ari's family", "Ari's first-shift card", "About 2 minutes to read.", "Ari's family hasn't written the card yet.", the reordered log form with "Add more detail", and the card's "Hide" / "Show" and "Call Sam on 0491 570 156" (`copy.card`).
 - Worker view round 2 copy (`copy.worker`): "What did Ari do or say?", "Before you start", "Right now", "Read Ari's card first · about 2 minutes", "Skip to search", "1 match · At school · Change" (and "No place chosen · Choose"), "Something happened?", "Tell Ari's family what happened" as the log title, "Say what you saw or heard.", and the styleguide's full-screen sheet sample.
+- Worker view final-round copy: "Back to where you were", "Try fewer words, or how it looks or sounds.", "What usually helps" (no colon), "Change" for what they saw in the log, and the styleguide label for the brief meaning.
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 

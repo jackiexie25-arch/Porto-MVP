@@ -98,7 +98,7 @@ test.describe('worker view', () => {
     await worker.getByRole('button', { name: 'Yes: Cookie time helped' }).click();
     await worker.getByRole('button', { name: 'Add a note about Cookie time' }).click();
     const sheet = worker.getByRole('dialog', { name: 'Tell Ari’s family what happened' });
-    await expect(sheet.getByLabel('What did you see or hear?')).toHaveValue(/.+/);
+    await expect(sheet.getByText('Cookie time')).toBeVisible();
     await sheet.getByText('Add more detail').click();
     await sheet.getByLabel(/^What do you think they needed\?/).fill('A drink after swimming');
     await sheet.getByRole('button', { name: 'Camp' }).click();

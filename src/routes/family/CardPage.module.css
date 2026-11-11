@@ -36,10 +36,18 @@
   gap: var(--space-2) var(--space-4);
 }
 
-/* A long single word ("Overstimulation" at 360px) keeps whole: Edit moves to the next line instead. */
+/* Long single words stay whole; Edit only drops to its own line when the screen is very narrow. */
 .sectionHeader h2 {
   max-width: 100%;
   overflow-wrap: break-word;
+}
+
+/* Below 400px a slightly smaller heading keeps "Overstimulation" and Edit on one row, like every section. */
+@media (max-width: 399px) {
+  .sectionHeader h2 {
+    font-size: 20px;
+    line-height: 26px;
+  }
 }
 
 .lines {

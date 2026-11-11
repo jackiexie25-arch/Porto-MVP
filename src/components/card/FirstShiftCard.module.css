@@ -59,8 +59,9 @@
   line-height: var(--text-body-lh);
 }
 
+/* Rhythm: 8px label to answer, 16px between pairs, 32px between sections (16 either side of the rule). */
 .block {
-  padding: var(--space-6) 0;
+  padding: var(--space-4) 0;
 }
 
 /* Inside "About", the opening needs no padding of its own. */
@@ -191,7 +192,7 @@ details:not([open]) > .summary .hide {
  * reads as a deliberate warning line rather than a heavier hairline. No colour.
  */
 .worker .avoid {
-  margin: var(--space-6) 0;
+  margin: var(--space-4) 0;
   border-top: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
 }
@@ -208,7 +209,7 @@ details:not([open]) > .summary .hide {
 .cues {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -217,16 +218,16 @@ details:not([open]) > .summary .hide {
 .cue {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .cue + .cue {
   border-top: 1px solid var(--blob);
-  padding-top: var(--space-6);
+  padding-top: var(--space-4);
 }
 
+/* Top cues: one calm unit each, all at body size. What you'd see, then what it means. */
 .cueLabel {
-  font-weight: 600;
   color: var(--ink-soft);
 }
 

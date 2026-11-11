@@ -4,7 +4,7 @@ import styles from './MeaningView.module.css';
 
 const m = copy.meaning;
 
-export type MeaningDensity = 'compact' | 'full' | 'lead' | 'large';
+export type MeaningDensity = 'brief' | 'compact' | 'full' | 'lead' | 'large';
 
 export interface MeaningViewProps {
   /** The family's words for one meaning, with its place phrased (see `cardMeaning` in lib/card). */
@@ -12,7 +12,8 @@ export interface MeaningViewProps {
   /** The meaning for where the worker says they are: marked with an ink rule on the left. */
   inContext?: boolean;
   /**
-   * compact: lists (library, setup, card). full: worker search results. lead: the one answer for
+   * brief: one calm unit, the place and confidence after the meaning on the same line (the card's
+   * Top cues). compact: lists (library, setup). full: worker search results. lead: the one answer for
    * where the worker is, a step louder than full. large: held out to show someone.
    */
   density?: MeaningDensity;
@@ -29,15 +30,23 @@ export interface MeaningViewProps {
 export function MeaningView({ meaning, inContext = false, density = 'full', show = {}, className }: MeaningViewProps) {
   const { confidence = true, whatToDo = true, avoid = true } = show;
   const where = meaning.context || m.anywhere;
+  const contextText = confidence ? m.contextLine(where, copy.labels.confidenceInline[meaning.confidence]) : where;
   const doText = whatToDo ? meaning.whatToDo.trim() : '';
   const avoidText = avoid ? meaning.whatToAvoid.trim() : '';
 
   return (
     <div className={[styles.root, styles[density], inContext ? styles.inContext : '', className ?? ''].join(' ')}>
-      <p className={styles.context}>
-        {confidence ? m.contextLine(where, copy.labels.confidenceInline[meaning.confidence]) : where}
-      </p>
-      <p className={styles.meaning}>{meaning.meaning}</p>
+      {density === 'brief' ? (
+        <p className={styles.meaning}>
+          {meaning.meaning}
+          <span className={styles.where}> · {contextText}</span>
+        </p>
+      ) : (
+        <>
+          <p className={styles.context}>{contextText}</p>
+          <p className={styles.meaning}>{meaning.meaning}</p>
+        </>
+      )}
       {doText || avoidText ? (
         <dl className={styles.actions}>
           {doText ? (

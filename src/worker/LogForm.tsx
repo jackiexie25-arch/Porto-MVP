@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
-import { Banner, Button, ChipGroup, ChoiceChip, FieldStack, Select, TextArea, TextField } from '../components/ui';
+import { Banner, Button, ChipGroup, ChoiceChip, FieldStack, TextArea, TextField } from '../components/ui';
 import { copy } from '../copy/en-AU';
 import type { ContextTag } from '../data/types';
 import { friendlyError } from '../lib/errors';
@@ -82,8 +82,9 @@ export function LogForm({
   const [sent, setSent] = useState(false);
   const cueRef = useRef<HTMLTextAreaElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
-  // The family's cue list only when the note is about one of their cues; otherwise one text field.
-  const withSelect = Boolean(initial.cueId) && cueOptions.length > 0;
+  // A note about one of the family's cues shows that cue as a line with "Change"; otherwise one text field.
+  const chosen = cueOptions.find((c) => c.id === draft.cueId);
+  const focusCue = useRef(false);
   const formErrorRef = useRevealOn<HTMLDivElement>(errors.form);
   // The outcome comes first in the form, so its error is revealed first.
   const outcomeErrorRef = useRevealOn<HTMLDivElement>(errors.outcome);
@@ -93,6 +94,13 @@ export function LogForm({
   useEffect(() => {
     if (sent) doneRef.current?.focus();
   }, [sent]);
+
+  useEffect(() => {
+    if (focusCue.current && !chosen) {
+      focusCue.current = false;
+      cueRef.current?.focus();
+    }
+  }, [chosen]);
 
   const set = <K extends keyof LogDraft>(key: K, value: LogDraft[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
@@ -179,18 +187,29 @@ export function LogForm({
           ) : null}
         </div>
 
-        {withSelect ? (
-          <Select
-            label={l.cueLabel}
-            value={draft.cueId}
-            onChange={(e) => set('cueId', e.target.value)}
-            options={[{ value: '', label: l.cueOther }, ...cueOptions.map((c) => ({ value: c.id, label: c.label }))]}
-          />
-        ) : null}
-        {!draft.cueId ? (
+        {chosen ? (
+          <div className={styles.logSaw}>
+            <p className={styles.logLegend}>{l.cueLabel}</p>
+            <p className={styles.logSawLine}>
+              <span className={styles.logSawCue}>{chosen.label}</span>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className={styles.textButton}
+                aria-label={l.changeLabel(chosen.label)}
+                onClick={() => {
+                  focusCue.current = true;
+                  setDraft((d) => ({ ...d, cueId: '', cueText: chosen.label }));
+                }}
+              >
+                {l.change}
+              </button>
+            </p>
+          </div>
+        ) : (
           <TextArea
             ref={cueRef}
-            label={withSelect ? l.describeLabel : l.cueLabel}
+            label={l.cueLabel}
             hint={l.describeHint}
             rows={2}
             maxLength={MAX}
@@ -198,7 +217,7 @@ export function LogForm({
             onChange={(e) => set('cueText', e.target.value)}
             error={errors.cue}
           />
-        ) : null}
+        )}
 
         <TextField
           label={l.nameLabel}

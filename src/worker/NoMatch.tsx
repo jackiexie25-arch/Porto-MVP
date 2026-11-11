@@ -23,9 +23,10 @@ export function NoMatch({
       <p ref={headingRef} tabIndex={-1} className={styles.noMatchHeading}>
         {w.noMatch(name)}
       </p>
+      <p className={styles.hint}>{w.noMatchTry}</p>
       {calms.length ? (
         <div className={styles.calm}>
-          <p className={styles.othersLabel}>{w.noMatchCalm}</p>
+          <p className={styles.calmLabel}>{w.noMatchCalm}</p>
           {calms.map((line) => (
             <p key={line.text} className={styles.calmText}>
               {line.text}

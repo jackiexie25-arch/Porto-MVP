@@ -275,6 +275,10 @@ export function Styleguide() {
         <Section title={c.sections.meaning}>
           <p className="t-small t-muted">{c.demoLabel}</p>
           <div className={styles.stack}>
+            <p className="t-label">{c.meaning.brief}</p>
+            <Card>
+              <MeaningView meaning={sampleMeaning} density="brief" />
+            </Card>
             <p className="t-label">{c.meaning.compact}</p>
             <Card>
               <MeaningView meaning={sampleMeaning} density="compact" />

@@ -141,7 +141,12 @@ describe('did this help', () => {
     await user.click(await screen.findByRole('button', { name: w.feedbackYesLabel('Cookie time') }));
     await user.click(await screen.findByRole('button', { name: w.feedbackNoteLabel('Cookie time') }));
     const dialog = screen.getByRole('dialog', { name: l.title('Ari') });
-    expect(within(dialog).getByLabelText(l.cueLabel)).toHaveValue('demo-cookie');
+    expect(within(dialog).getByText('Cookie time')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('combobox')).not.toBeInTheDocument();
+    // Change turns the cue into a text field, filled in, with focus.
+    await user.click(within(dialog).getByRole('button', { name: l.changeLabel('Cookie time') }));
+    expect(within(dialog).getByLabelText(l.cueLabel)).toHaveValue('Cookie time');
+    expect(within(dialog).getByLabelText(l.cueLabel)).toHaveFocus();
     expect(within(dialog).getByRole('button', { name: l.outcomes.worked })).toHaveAttribute('aria-pressed', 'true');
   });
 });

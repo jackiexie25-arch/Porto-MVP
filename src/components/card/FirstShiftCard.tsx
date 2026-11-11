@@ -124,7 +124,7 @@ export function FirstShiftCard({ model, variant, headingLevel = 2, showEmergency
               <li key={cue.id} className={styles.cue}>
                 <p className={styles.cueLabel}>{cue.label}</p>
                 {cue.meanings.map((m, i) => (
-                  <MeaningView key={i} meaning={m} density="compact" className={styles.meaning} />
+                  <MeaningView key={i} meaning={m} density="brief" className={styles.meaning} />
                 ))}
               </li>
             ))}

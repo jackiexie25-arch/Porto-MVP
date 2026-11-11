@@ -70,6 +70,30 @@
 }
 
 /* Densities */
+
+/* Brief: one calm unit at body size. The place and confidence follow the meaning, quieter. */
+.brief {
+  gap: var(--space-2);
+}
+
+.brief .meaning {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+}
+
+.where {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.brief .row {
+  display: grid;
+  /* One fixed label column, so "What to do" and "Avoid" answers line up. */
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  column-gap: var(--space-3);
+  align-items: baseline;
+}
 .compact .meaning {
   font-family: var(--font-sans);
   font-size: var(--text-body-lg);
