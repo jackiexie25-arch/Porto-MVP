@@ -42,7 +42,8 @@ test.describe('worker view', () => {
     expect(Date.now() - started).toBeLessThan(10_000);
     const item = result.locator('xpath=ancestor::li[1]');
     await expect(item.getByText('I need a break')).toBeVisible();
-    await expect(item.getByText(/^At school:/).first()).toBeVisible();
+    await expect(item.getByText(/^At school · /).first()).toBeVisible();
+    await expect(item.getByText('What to do').first()).toBeVisible();
 
     await worker.getByRole('searchbox').fill('giraffe trampoline');
     await expect(worker.getByText('Nothing in Ari’s profile matches yet.')).toBeVisible();
@@ -51,6 +52,40 @@ test.describe('worker view', () => {
     // The card is there too, and the page doesn't scroll sideways on a 360px phone.
     await expect(worker.getByRole('heading', { name: 'First-shift card' })).toBeVisible();
     expect(await worker.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await close();
+  });
+
+  test('a very long unbroken label never makes the page scroll sideways', async ({ page, browser }) => {
+    const { profileId, link } = await familyWithLink(page);
+    const long = 'Bluebottle'.repeat(12); // 120 characters, no spaces: the longest label allowed.
+    const [cue] = await sql<{ id: string }>(
+      `insert into public.cues (profile_id, label, cue_type, category) values ($1, $2, 'phrase', 'other') returning id`,
+      [profileId, long],
+    );
+    await sql(
+      `insert into public.cue_meanings (cue_id, context_tags, context_text, meaning, what_to_do, what_to_avoid)
+       values ($1, '{other}', $2, $2, $2, $2)`,
+      [cue!.id, long],
+    );
+    const fits = (p: Page) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+    for (const width of [320, 360]) {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto('/cues');
+      await expect(page.getByRole('heading', { name: long })).toBeVisible();
+      expect(await fits(page), `library at ${width}px`).toBe(true);
+      await page.goto(`/cues/${cue!.id}`);
+      await expect(page.getByRole('heading', { level: 1, name: long })).toBeVisible();
+      expect(await fits(page), `editor at ${width}px`).toBe(true);
+    }
+
+    const { worker, close } = await openAsWorker(browser, link);
+    for (const width of [320, 360]) {
+      await worker.setViewportSize({ width, height: 780 });
+      await worker.getByRole('searchbox', { name: 'Type what you heard or saw' }).fill(long);
+      await expect(worker.getByRole('heading', { name: long, level: 3 })).toBeVisible();
+      expect(await fits(worker), `worker search at ${width}px`).toBe(true);
+    }
     await close();
   });
 

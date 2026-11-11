@@ -1,15 +1,17 @@
 import { useId, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { WorkerPhone } from '../../assets/illustrations';
+import { MeaningView } from '../../components/cues/MeaningView';
 import { FamilyShell } from '../../components/family/FamilyShell';
-import { Banner, Button, ButtonLink, Card, ChipGroup, ChoiceChip, Tag, TextField } from '../../components/ui';
+import { Banner, ButtonLink, Card, ChipGroup, ChoiceChip, SearchField, Tag } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import { CUE_CATEGORIES, type Cue, type CueCategory } from '../../data/types';
 import { useFamilyData } from '../../family/FamilyDataProvider';
-import { contextPhrase } from '../../lib/card';
+import { cardMeaning } from '../../lib/card';
 import { filterCues } from '../../lib/search';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Cues.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.cues;
 
@@ -28,23 +30,11 @@ function CueSummary({ cue }: { cue: Cue }) {
         {cue.pinned ? <Tag>{c.pinned}</Tag> : null}
       </div>
       <ul className={styles.meanings}>
-        {cue.cue_meanings.map((m) => {
-          const where = contextPhrase(m.context_tags, m.context_text);
-          return (
-            <li key={m.id}>
-              <p>
-                {where ? <strong>{where}: </strong> : null}
-                {m.meaning} <Tag tone="rose">{copy.labels.confidence[m.confidence]}</Tag>
-              </p>
-              {m.what_to_do ? (
-                <p>
-                  <strong>{copy.card.tryLabel}: </strong>
-                  {m.what_to_do}
-                </p>
-              ) : null}
-            </li>
-          );
-        })}
+        {cue.cue_meanings.map((m) => (
+          <li key={m.id}>
+            <MeaningView meaning={cardMeaning(m)} density="compact" />
+          </li>
+        ))}
       </ul>
     </Card>
   );
@@ -65,7 +55,7 @@ export function CueLibrary() {
     <FamilyShell>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p>{c.intro}</p>
           <div>
             <ButtonLink to="/cues/new">{c.add}</ButtonLink>
@@ -83,17 +73,15 @@ export function CueLibrary() {
         ) : (
           <>
             <div className={styles.controls}>
-              <TextField
+              <SearchField
                 label={c.searchLabel}
                 hint={c.searchHint}
-                type="search"
-                autoComplete="off"
                 maxLength={200}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onValueChange={setQuery}
               />
               <div className={styles.filter}>
-                <p id={filterId} className={styles.legend}>
+                <p id={filterId} className={`t-label ${styles.legend}`}>
                   {c.filterLabel}
                 </p>
                 <ChipGroup aria-labelledby={filterId}>
@@ -122,13 +110,6 @@ export function CueLibrary() {
             ) : (
               <div className={styles.noMatch}>
                 <p>{c.noMatches(query.trim())}</p>
-                {query ? (
-                  <div>
-                    <Button variant="outlined" onClick={() => setQuery('')}>
-                      {c.clear}
-                    </Button>
-                  </div>
-                ) : null}
               </div>
             )}
           </>

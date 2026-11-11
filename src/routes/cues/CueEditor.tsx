@@ -14,11 +14,13 @@ import {
 } from '../../components/cues/drafts';
 import { CueTypeChips, MeaningFields } from '../../components/cues/MeaningFields';
 import { FamilyShell } from '../../components/family/FamilyShell';
+import { PageHeading } from '../../components/layout/PageHeading';
 import { Banner, Button, Card, Checkbox, FieldStack, Select, Sheet, TextArea, TextField } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import { CUE_CATEGORIES, LIMITS, type CueCategory } from '../../data/types';
 import { MAX_PINNED, useFamilyData } from '../../family/FamilyDataProvider';
 import { friendlyError } from '../../lib/errors';
+import { reveal, useRevealOn } from '../../lib/reveal';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Cues.module.css';
 
@@ -63,6 +65,7 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
   const [confirmDelete, setConfirmDelete] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
   const meaningRefs = useRef(new Map<string, HTMLTextAreaElement>());
+  const formErrorRef = useRevealOn<HTMLDivElement>(formError);
 
   const set = <K extends keyof CueEditorDraft>(key: K, value: CueEditorDraft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -75,8 +78,7 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
     const found = validateCueEditor(draft);
     setErrors(found);
     if (hasErrors(found)) {
-      if (found.label) labelRef.current?.focus();
-      else meaningRefs.current.get(Object.keys(found.meanings)[0]!)?.focus();
+      reveal(found.label ? labelRef.current : meaningRefs.current.get(Object.keys(found.meanings)[0]!));
       return;
     }
     setSaving(true);
@@ -109,14 +111,18 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
   return (
     <FamilyShell>
       <form noValidate onSubmit={onSubmit} className={styles.form}>
-        <h1 className="t-h2">{draft.id ? draft.label || c.editTitle : c.newTitle}</h1>
+        <PageHeading className="t-h2">{draft.id ? draft.label || c.editTitle : c.newTitle}</PageHeading>
         {noteId ? (
           <Banner tone="info">
             {copy.inbox.fromNote}
             {draft.meanings.some((m) => !m.meaning.trim()) ? ` ${copy.inbox.needsMeaning}` : ''}
           </Banner>
         ) : null}
-        {formError ? <Banner tone="error">{formError}</Banner> : null}
+        {formError ? (
+          <Banner tone="error" ref={formErrorRef}>
+            {formError}
+          </Banner>
+        ) : null}
 
         <Card as="section" aria-label={c.cueHeading}>
           <h2 className="t-h3">{c.cueHeading}</h2>

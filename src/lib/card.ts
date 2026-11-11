@@ -68,6 +68,27 @@ export function contextPhrase(tags: readonly ContextTag[], text: string): string
   return parts.length ? capitalise(joinList(parts, 'or')) : '';
 }
 
+/** The fields of a stored meaning that a worker reads, with its place already phrased. */
+export interface StoredMeaning {
+  context_tags: readonly ContextTag[];
+  context_text: string;
+  meaning: string;
+  what_to_do: string;
+  what_to_avoid: string;
+  confidence: Confidence;
+}
+
+/** One meaning as every screen shows it (see MeaningView). */
+export function cardMeaning(m: StoredMeaning): CardCueMeaning {
+  return {
+    context: contextPhrase(m.context_tags, m.context_text),
+    meaning: m.meaning,
+    whatToDo: m.what_to_do,
+    whatToAvoid: m.what_to_avoid,
+    confidence: m.confidence,
+  };
+}
+
 function aboutLines(profile: Profile): string[] {
   const lines: string[] = [];
   if (profile.communication_modes.length) {
@@ -116,13 +137,7 @@ export function buildCard(profile: Profile, sections: readonly CardSection[], cu
     cues: pinned.map((cue) => ({
       id: cue.id,
       label: cue.label,
-      meanings: cue.cue_meanings.map((m) => ({
-        context: contextPhrase(m.context_tags, m.context_text),
-        meaning: m.meaning,
-        whatToDo: m.what_to_do,
-        whatToAvoid: m.what_to_avoid,
-        confidence: m.confidence,
-      })),
+      meanings: cue.cue_meanings.map(cardMeaning),
     })),
     whoToCall: profile.who_to_call_phone.trim()
       ? { name: profile.who_to_call_name.trim(), phone: profile.who_to_call_phone.trim() }

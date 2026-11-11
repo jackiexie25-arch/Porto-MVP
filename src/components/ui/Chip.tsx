@@ -1,27 +1,36 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { CheckIcon } from './Icons';
 import styles from './Chip.module.css';
 
-export type TagTone = 'sky' | 'rose';
+export type TagTone = 'quiet' | 'rose';
 
-/** A small, static label. Rose is kept for one tag type only (family confidence). */
-export function Tag({ tone = 'sky', children }: { tone?: TagTone; children: ReactNode }) {
-  return <span className={[styles.tag, tone === 'rose' ? styles.rose : ''].join(' ')}>{children}</span>;
+/**
+ * A small, static label. It must never look like something you can tap, so it has no pill fill:
+ * a quiet outline that wraps with its text. Rose is kept for one tag type only (family confidence),
+ * and is rarely needed now that MeaningView words confidence into the context line.
+ */
+export function Tag({ tone = 'quiet', children }: { tone?: TagTone; children: ReactNode }) {
+  return <span className={[styles.tag, styles[tone]].join(' ')}>{children}</span>;
 }
 
 export type ChoiceChipProps = Omit<ComponentPropsWithoutRef<'button'>, 'type'> & {
   selected: boolean;
 };
 
-/** A selectable chip, 44px tall. Selected shows a 2px ink border and a check. */
+/**
+ * A selectable chip, 48px tall. At rest: surface with a control border. Selected: sky fill,
+ * 2px ink border and a tick beside the word, so the choice reads at a glance.
+ */
 export function ChoiceChip({ selected, className, children, ...rest }: ChoiceChipProps) {
   return (
     <button
       type="button"
       aria-pressed={selected}
-      className={[styles.tag, styles.choice, selected ? styles.selected : '', className ?? ''].join(' ')}
+      className={[styles.choice, selected ? styles.selected : '', className ?? ''].join(' ')}
       {...rest}
     >
-      {children}
+      {selected ? <CheckIcon size={16} className={styles.tick} /> : null}
+      <span className={styles.choiceText}>{children}</span>
     </button>
   );
 }

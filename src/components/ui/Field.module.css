@@ -11,8 +11,8 @@
 }
 
 .label {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   font-weight: 600;
   color: var(--ink-soft);
   padding: 0;
@@ -23,8 +23,8 @@
 }
 
 .hint {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--muted);
 }
 
@@ -36,8 +36,8 @@
   border: 1.5px solid var(--control-border);
   border-radius: var(--radius-sm);
   color: var(--ink);
-  font-size: 16px;
-  line-height: 26px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
   transition: border-color var(--motion-fade) ease, box-shadow var(--motion-fade) ease;
 }
 
@@ -81,8 +81,8 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--ink);
   font-weight: 600;
 }

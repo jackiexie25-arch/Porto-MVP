@@ -11,14 +11,14 @@
 }
 
 .legend {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   font-weight: 600;
   color: var(--ink-soft);
 }
 
 .hint {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--muted);
 }

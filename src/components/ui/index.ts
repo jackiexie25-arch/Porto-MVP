@@ -7,4 +7,5 @@ export { AlertIcon, CheckIcon, CloseIcon, InfoIcon, MenuIcon } from './Icons';
 export { Mark, Wordmark } from './Logo';
 export { Nav, type NavItem } from './Nav';
 export { Progress } from './Progress';
+export { SearchField } from './SearchField';
 export { Sheet } from './Sheet';

@@ -7,6 +7,7 @@ import { copy } from '../copy/en-AU';
 import { nextFamilyStep } from '../lib/family';
 import { usePageTitle } from '../lib/usePageTitle';
 import styles from './Welcome.module.css';
+import { PageHeading } from '../components/layout/PageHeading';
 
 const c = copy.welcome;
 
@@ -18,7 +19,7 @@ export function Welcome() {
     <AppShell>
       <div className={styles.hero}>
         <SideBySide className={styles.art} />
-        <h1 className={styles.heading}>{c.heading}</h1>
+        <PageHeading className={styles.heading}>{c.heading}</PageHeading>
         <p className="t-body-lg">{c.intro}</p>
         <p>{c.who}</p>
         <p>{c.control}</p>

@@ -3,6 +3,7 @@ import { Banner, Button, ChipGroup, ChoiceChip, FieldStack, Select, TextArea, Te
 import { copy } from '../copy/en-AU';
 import type { ContextTag } from '../data/types';
 import { friendlyError } from '../lib/errors';
+import { reveal, useRevealOn } from '../lib/reveal';
 import type { WorkerNote, WorkerSource } from './types';
 import styles from './Worker.module.css';
 
@@ -81,6 +82,9 @@ export function LogForm({
   const cueRef = useRef<HTMLTextAreaElement>(null);
   const placeId = useId();
   const outcomeId = useId();
+  const formErrorRef = useRevealOn<HTMLDivElement>(errors.form);
+  // Shown only when the cue is filled in, so it never competes with the cue field for focus.
+  const outcomeErrorRef = useRevealOn<HTMLDivElement>(errors.cue ? undefined : errors.outcome);
 
   const set = <K extends keyof LogDraft>(key: K, value: LogDraft[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
@@ -88,7 +92,7 @@ export function LogForm({
     event.preventDefault();
     const found = validateLog(draft);
     setErrors(found);
-    if (found.cue) return cueRef.current?.focus();
+    if (found.cue) return reveal(cueRef.current);
     if (found.outcome) return;
     setSending(true);
     try {
@@ -131,7 +135,11 @@ export function LogForm({
   return (
     <form noValidate onSubmit={onSubmit} className={styles.logForm}>
       <p>{l.intro}</p>
-      {errors.form ? <Banner tone="error">{errors.form}</Banner> : null}
+      {errors.form ? (
+        <Banner tone="error" ref={formErrorRef}>
+          {errors.form}
+        </Banner>
+      ) : null}
       <FieldStack>
         {cueOptions.length ? (
           <Select
@@ -209,7 +217,11 @@ export function LogForm({
               </ChoiceChip>
             ))}
           </ChipGroup>
-          {errors.outcome ? <Banner tone="error">{errors.outcome}</Banner> : null}
+          {errors.outcome ? (
+            <Banner tone="error" ref={outcomeErrorRef}>
+              {errors.outcome}
+            </Banner>
+          ) : null}
         </div>
 
         <TextField

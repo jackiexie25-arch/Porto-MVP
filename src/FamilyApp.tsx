@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { FamilyGate, RequireSignIn } from './auth/FamilyGate';
+import { RouteScroll } from './components/layout/PageHeading';
 import { AccountPage } from './routes/account/AccountPage';
 import { Deleted } from './routes/account/Deleted';
 import { AuthCallback } from './routes/auth/AuthCallback';
@@ -27,6 +28,7 @@ import { Welcome } from './routes/Welcome';
 export default function FamilyApp() {
   return (
     <AuthProvider>
+      <RouteScroll />
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/signup" element={<SignUp />} />

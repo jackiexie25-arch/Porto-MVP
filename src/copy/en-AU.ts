@@ -176,7 +176,6 @@ export const copy = {
     emptyBody:
       'Start with something a new worker is likely to see on day one: a phrase your child repeats, a sound, or a gesture.',
     noMatches: (query: string) => (query ? `Nothing matches “${query}”.` : 'No cues in this group yet.'),
-    clear: 'Clear search',
     saved: 'Saved.',
     deleted: 'Cue deleted.',
   },
@@ -273,8 +272,6 @@ export const copy = {
     bigger: 'Show larger',
     biggerLabel: (label: string) => `Show larger: ${label}`,
     cardHeading: 'First-shift card',
-    tryLabel: 'Try',
-    avoidLabel: 'Avoid',
     privacy: (name: string) =>
       `Private to ${name}’s family and the people they share with. Please don’t screenshot or forward this page.`,
     closedHeading: 'This link has closed',
@@ -507,6 +504,26 @@ export const copy = {
       usually: 'Usually',
       sometimes: 'Sometimes',
     },
+    /** Lowercase, for the context line "At school · usually". */
+    confidenceInline: {
+      always: 'always',
+      usually: 'usually',
+      sometimes: 'sometimes',
+    },
+  },
+
+  /** One meaning of a cue, wherever it's shown (worker search, card, library, setup). */
+  meaning: {
+    /** When the family didn't name a place or person. */
+    anywhere: 'Anywhere',
+    contextLine: (where: string, confidence: string) => `${where} · ${confidence}`,
+    whatToDo: 'What to do',
+    avoid: 'Avoid',
+  },
+
+  searchField: {
+    clear: 'Clear',
+    clearLabel: 'Clear search',
   },
 
   setup: {
@@ -695,8 +712,6 @@ export const copy = {
     },
     cuesEmpty: 'No cues pinned yet.',
     addCues: 'Add cues',
-    tryLabel: 'Try',
-    avoidLabel: 'Avoid',
     who: {
       nameLabel: 'Contact’s first name',
       phoneLabel: 'Phone number',
@@ -776,6 +791,8 @@ export const copy = {
       illustrations: 'Illustrations',
       firstShiftCard: 'First-shift card (worker view)',
       firstShiftPrint: 'First-shift card (print)',
+      meaning: 'Meaning',
+      searchField: 'Search field',
     },
     demoLabel: 'Demo profile (fictional). Not a real child.',
     typeSamples: {
@@ -785,6 +802,7 @@ export const copy = {
       bodyLg: 'Body large: Offer the same food again before trying something new.',
       body: 'Body: Take him straight to the toilet. Don’t ask if he needs to go.',
       small: 'Small: You can use a nickname.',
+      label: 'Label: What to do',
       button: 'Button: Save and continue',
     },
     logoWordmark: 'Wordmark on ground',
@@ -822,9 +840,9 @@ export const copy = {
     navLinks: { cues: 'Cues', card: 'First-shift card', inbox: 'Inbox' },
     navPrimary: 'Share for a shift',
     chips: {
-      tagHome: 'Home',
-      tagSchool: 'School',
       tagRose: 'Usually',
+      tagQuiet: 'A phrase or word',
+      selectedNote: 'Selected: sky fill, ink border and a tick. Tags are quiet outlines and never look tappable.',
       chipGroup: 'Where are you?',
       places: ['Home', 'School', 'Camp', 'Out and about', 'Mealtime'],
     },
@@ -833,6 +851,12 @@ export const copy = {
       error: 'We couldn’t save that just now. Your words are still here. Please try again in a moment.',
       info: 'This is getting long. Workers read this on their first shift. Is anything here better kept in the cue library?',
     },
+    meaning: {
+      compact: 'Compact (library, setup)',
+      full: 'Full, in context (worker search)',
+      large: 'Large (shown to someone else)',
+    },
+    searchLabel: 'Type what you heard or saw',
     progressLabel: 'Profile setup',
     sheet: {
       open: 'Open the sheet',

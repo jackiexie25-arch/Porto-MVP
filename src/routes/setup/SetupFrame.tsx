@@ -1,7 +1,8 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AutosaveStatus } from '../../components/family/AutosaveStatus';
 import { FamilyShell } from '../../components/family/FamilyShell';
+import { PageHeading } from '../../components/layout/PageHeading';
 import { Button, Progress } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import type { AutosaveState } from '../../lib/useAutosave';
@@ -44,12 +45,6 @@ export function SetupFrame({
   children,
 }: SetupFrameProps) {
   usePageTitle(copy.setup.title(step));
-  const headingRef = useRef<HTMLHeadingElement>(null);
-
-  // Move focus to the new step's heading, so screen reader users hear where they are.
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, [step]);
 
   return (
     <FamilyShell>
@@ -57,9 +52,8 @@ export function SetupFrame({
         <Progress current={step} total={SETUP_STEPS} label={copy.setup.progressLabel} />
         {art ? <div className={styles.art}>{art}</div> : null}
         <header className={styles.header}>
-          <h1 ref={headingRef} tabIndex={-1} className={`t-h2 ${styles.heading}`}>
-            {heading}
-          </h1>
+          {/* Focus moves here on each new step, so screen reader users hear where they are. */}
+          <PageHeading className="t-h2">{heading}</PageHeading>
           <p className="t-body-lg">{intro}</p>
           {writingTips ? (
             <>

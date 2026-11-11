@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-// Self-hosted fonts. Never load fonts from a third-party CDN.
-import '@fontsource-variable/fraunces/wght.css';
+// Self-hosted fonts. Never load fonts from a third-party CDN. Fraunces uses the opsz file
+// (optical size + weight axes), so large headings get the display cut, not the 14pt text cut.
+import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/figtree/wght.css';
 import './styles/tokens.css';
 import './styles/derived-tokens.css';

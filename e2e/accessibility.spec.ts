@@ -140,6 +140,8 @@ test.describe('keyboard, zoom and small screens', () => {
     await page.getByRole('searchbox').focus();
     await page.keyboard.type('cookie');
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Clear search' })).toBeFocused();
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'School' })).toBeFocused();
     await page.keyboard.press('Enter');

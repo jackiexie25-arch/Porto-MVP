@@ -86,8 +86,9 @@ describe('cue library', () => {
   it('shows each meaning in its own context', () => {
     renderAt('/cues');
     const cookie = screen.getByRole('heading', { name: 'Cookie time' }).closest('li')!;
-    expect(within(cookie).getByText('At home or at mealtimes:')).toBeInTheDocument();
-    expect(within(cookie).getByText('At school:')).toBeInTheDocument();
+    expect(within(cookie).getByText(/^At home or at mealtimes · (always|usually|sometimes)$/)).toBeInTheDocument();
+    expect(within(cookie).getByText(/^At school · (always|usually|sometimes)$/)).toBeInTheDocument();
+    expect(within(cookie).getAllByText(copy.meaning.whatToDo).length).toBeGreaterThan(0);
   });
 
   it('says so plainly when nothing matches, and can clear the search', async () => {
@@ -95,8 +96,10 @@ describe('cue library', () => {
     renderAt('/cues');
     await user.type(screen.getByLabelText(copy.cues.searchLabel), 'giraffe');
     expect(screen.getByText(copy.cues.noMatches('giraffe'))).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: copy.cues.clear }));
+    await user.click(screen.getByRole('button', { name: copy.searchField.clearLabel }));
     expect(screen.getByLabelText(copy.cues.searchLabel)).toHaveValue('');
+    expect(screen.getByLabelText(copy.cues.searchLabel)).toHaveFocus();
+    expect(screen.queryByRole('button', { name: copy.searchField.clearLabel })).not.toBeInTheDocument();
   });
 
   it('has a friendly empty state', () => {

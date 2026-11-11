@@ -27,8 +27,8 @@
 
 .code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--ink);
 }
 

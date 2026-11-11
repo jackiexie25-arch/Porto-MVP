@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react';
 import { copy } from '../../copy/en-AU';
 import { CUE_CATEGORIES, LIMITS, type CueCategory, type CueType, type NewCue, type NewMeaning } from '../../data/types';
 import { friendlyError } from '../../lib/errors';
+import { reveal, useRevealOn } from '../../lib/reveal';
 import { Banner, Button, FieldStack, Select, TextField } from '../ui';
 import { emptyMeaning, toMeaningInput, type MeaningDraft } from './drafts';
 import { CueTypeChips, MeaningFields } from './MeaningFields';
@@ -48,6 +49,7 @@ export function CueQuickForm({
   const [adding, setAdding] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
   const meaningRef = useRef<HTMLTextAreaElement>(null);
+  const formErrorRef = useRevealOn<HTMLDivElement>(errors.form);
 
   const dirty = isQuickDraftDirty(draft);
   useEffect(() => {
@@ -63,7 +65,7 @@ export function CueQuickForm({
     setErrors(found);
     if (found.label || found.meaning) {
       onInvalid?.();
-      return (found.label ? labelRef.current : meaningRef.current)?.focus();
+      return reveal(found.label ? labelRef.current : meaningRef.current);
     }
     setAdding(true);
     try {
@@ -82,7 +84,11 @@ export function CueQuickForm({
 
   return (
     <form ref={formRef} noValidate onSubmit={onSubmit} className={styles.form}>
-      {errors.form ? <Banner tone="error">{errors.form}</Banner> : null}
+      {errors.form ? (
+        <Banner tone="error" ref={formErrorRef}>
+          {errors.form}
+        </Banner>
+      ) : null}
       <FieldStack>
         <CueTypeChips value={draft.cue_type} onChange={(cue_type) => setDraft((d) => ({ ...d, cue_type }))} />
         <TextField

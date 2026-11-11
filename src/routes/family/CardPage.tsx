@@ -11,6 +11,7 @@ import type { CardLine } from '../../lib/card';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { AboutEditor, SectionEditor, WhoEditor } from './CardEditors';
 import styles from './CardPage.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.card;
 
@@ -68,7 +69,7 @@ export function CardPage() {
     <FamilyShell>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{heading}</h1>
+          <PageHeading className="t-h2">{heading}</PageHeading>
           <p className={styles.readingTime}>{c.readingTime(words, minutes)}</p>
           <div className={styles.actions}>
             <Button variant="outlined" onClick={() => setPreview((p) => !p)} aria-pressed={preview}>

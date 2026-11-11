@@ -9,15 +9,33 @@
   --radius-pill: 999px;
   --control-height: 48px;
   --chip-height: 32px;
-  --chip-height-selectable: 44px;
+  --chip-height-selectable: 48px;            /* CLAUDE.md: 48px tap targets */
   --measure: 66ch;                            /* comfortable paragraph width */
   --motion-fade: 150ms;
   --section-gap: var(--space-12);
+
+  /* Type scale from CLAUDE.md as tokens, so components don't repeat raw sizes. */
+  --text-hero: 56px;
+  --text-hero-lh: 60px;
+  --text-h2: 36px;
+  --text-h2-lh: 42px;
+  --text-h3: 24px;
+  --text-h3-lh: 30px;
+  --text-body-lg: 18px;
+  --text-body-lg-lh: 28px;
+  --text-body: 16px;
+  --text-body-lh: 26px;
+  --text-small: 14px;
+  --text-small-lh: 20px;
 }
 
 @media (max-width: 599px) {
   :root {
     --section-gap: var(--space-16);
+    --text-hero: 36px;
+    --text-hero-lh: 40px;
+    --text-h2: 28px;
+    --text-h2-lh: 34px;
   }
 }
 

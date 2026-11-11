@@ -12,6 +12,8 @@
   font-weight: 600;
   text-align: center;
   text-decoration: none;
+  /* Overrides the inherited "anywhere" from list text: a button never shrinks to one letter per line. */
+  overflow-wrap: break-word;
   cursor: pointer;
   transition:
     background-color var(--motion-fade) ease,

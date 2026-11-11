@@ -7,6 +7,7 @@ import { friendlyError } from '../../lib/errors';
 import { getSupabase } from '../../lib/supabase';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Team.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.team;
 
@@ -97,7 +98,7 @@ export function TeamPage() {
     <AppShell width="wide">
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p>{c.intro}</p>
         </header>
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { copy } from '../../copy/en-AU';
 import type { CardModel } from '../../lib/card';
-import { Tag } from '../ui';
+import { MeaningView } from '../cues/MeaningView';
 import styles from './FirstShiftCard.module.css';
 
 const c = copy.card;
@@ -87,24 +87,7 @@ export function FirstShiftCard({ model, variant, headingLevel = 2, showEmergency
               <li key={cue.id} className={styles.cue}>
                 <p className={styles.cueLabel}>{cue.label}</p>
                 {cue.meanings.map((m, i) => (
-                  <div key={i} className={styles.meaning}>
-                    <p>
-                      {m.context ? <strong>{m.context}: </strong> : null}
-                      {m.meaning} <Tag tone="rose">{copy.labels.confidence[m.confidence]}</Tag>
-                    </p>
-                    {m.whatToDo ? (
-                      <p>
-                        <strong>{c.tryLabel}: </strong>
-                        {m.whatToDo}
-                      </p>
-                    ) : null}
-                    {m.whatToAvoid ? (
-                      <p>
-                        <strong>{c.avoidLabel}: </strong>
-                        {m.whatToAvoid}
-                      </p>
-                    ) : null}
-                  </div>
+                  <MeaningView key={i} meaning={m} density="compact" className={styles.meaning} />
                 ))}
               </li>
             ))}

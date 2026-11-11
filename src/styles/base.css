@@ -14,8 +14,8 @@ body {
   background: var(--ground);
   color: var(--ink-soft);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 26px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
 }
@@ -43,6 +43,7 @@ h3,
 .t-h3 {
   font-family: var(--font-display);
   font-weight: 600;
+  font-optical-sizing: auto;
   color: var(--ink);
   text-wrap: balance;
   margin: 0;
@@ -50,20 +51,20 @@ h3,
 
 h1,
 .t-hero {
-  font-size: 56px;
-  line-height: 60px;
+  font-size: var(--text-hero);
+  line-height: var(--text-hero-lh);
 }
 
 h2,
 .t-h2 {
-  font-size: 36px;
-  line-height: 42px;
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
 }
 
 h3,
 .t-h3 {
-  font-size: 24px;
-  line-height: 30px;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
 }
 
 p {
@@ -71,19 +72,42 @@ p {
   max-width: var(--measure);
 }
 
+/* Family-written text can be one long unbroken word; never let it push the page sideways.
+   Buttons and chips reset this to break-word so they keep whole words (see Button, Chip). */
+h1,
+h2,
+h3,
+h4,
+p,
+li,
+dt,
+dd,
+label,
+legend,
+summary {
+  overflow-wrap: anywhere;
+}
+
 .t-body-lg {
-  font-size: 18px;
-  line-height: 28px;
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
 }
 
 .t-body {
-  font-size: 16px;
-  line-height: 26px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
 }
 
 .t-small {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+}
+
+/* The one small label style: field labels, legends, "What to do", context lines. */
+.t-label {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
 }
 
 .t-muted {
@@ -92,23 +116,9 @@ p {
 
 .t-button {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: var(--text-body);
   line-height: 20px;
   font-weight: 600;
-}
-
-@media (max-width: 599px) {
-  h1,
-  .t-hero {
-    font-size: 36px;
-    line-height: 40px;
-  }
-
-  h2,
-  .t-h2 {
-    font-size: 28px;
-    line-height: 34px;
-  }
 }
 
 a {
@@ -120,6 +130,11 @@ a {
 :focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 3px;
+}
+
+/* Page headings take focus after a route change (PageHeading). They aren't controls, so no ring. */
+h1[tabindex='-1']:focus {
+  outline: none;
 }
 
 /* Skip link */

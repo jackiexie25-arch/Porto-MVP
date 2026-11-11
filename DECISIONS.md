@@ -193,6 +193,21 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Netlify injects a script into every page it serves:** `/.netlify/scripts/hud?variant=public`, tagged `data-account-tier="free"`. Porto's CSP blocks its inline frame, it loads nothing from other domains, and visitors don't see it. But it's code Porto didn't write, running on pages that show children's information. **Question for Jackie:** turn it off in Netlify if your plan allows it (look for a toolbar, HUD or badge setting), or ask Netlify support how. It's in the runbook checklist.
 - **Trial runbook:** `docs/RUNBOOK.md` covers inviting families, closing links, deleting a family's data on request, team access, metrics, common problems, making changes, and keys and secrets.
 
+### Design round 1
+
+- **Fraunces optical sizing.** `main.tsx` now imports `@fontsource-variable/fraunces/opsz.css` (opsz and wght axes) instead of `wght.css` (wght only, so every heading used the 14pt text cut). Same family name (`Fraunces Variable`), still self-hosted, same CSP (`font-src 'self'`). Headings set `font-optical-sizing: auto`. Cost: the latin file goes from about 36.6 KB to 67.3 KB (woff2 is already compressed, so gzip changes nothing): about 31 KB more on first load, cached after.
+- **MeaningView** (`src/components/cues/MeaningView.tsx`) is the one way a cue meaning is shown: context line, the meaning (the strongest text), then "What to do" and "Avoid". Densities: compact (library, setup, card Top cues), full (worker search) and large ("Show larger"). It replaces four hand-written copies. It's shared with the worker bundle, so it imports nothing from the family app.
+- **Confidence is worded into the context line** ("At school · usually") instead of a rose pill after the meaning, which wrapped onto its own line. The rose `Tag` stays for any other use but is now rarely needed.
+- **"Anywhere"** is shown as the place when the family didn't name one, so every meaning has a context line.
+- **One wording pair for the family's two answers:** "What to do" and "Avoid", everywhere (search, card, library, large view). "Try:" is retired. It matches the form ("What to do" / "What to avoid") and the card's section labels.
+- **Choice chips are 48px tall** (`--chip-height-selectable`), up from 44px, to match the 48px tap-target rule. At rest: surface fill, 1.5px control border. Selected: sky fill, 2px ink border and a tick before the word. The hover border only applies on devices that can hover.
+- **Static tags no longer look like chips:** no fill, a 1px control-border outline, `--ink-soft` 14px text, a small 6px radius, and they wrap. This fixes the share page scrolling sideways at 360px (the scope tag in "Your links").
+- **Type tokens** (`--text-*`, with phone sizes for hero and h2) and one label style (`.t-label`, 14/20 600). Raw font-size/line-height pairs in CSS modules now use the tokens.
+- **Route focus.** On a new page (not back or forward), the family app scrolls to the top (`RouteScroll`) and moves focus to the page's h1 (`PageHeading`, which also replaces Setup's and Deleted's own focus code). The first page load leaves focus alone. Form errors use one pattern (`src/lib/reveal.ts`): the first field with an error, or the error message, takes focus and scrolls to the middle of the screen. Used by the cue editor, the quick cue form, the log form and the share page.
+- **Long words wrap.** Headings, paragraphs and list text use `overflow-wrap: anywhere`; buttons and chips reset to `break-word` so they keep whole words. An e2e test checks a 120-character unbroken label at 320px and 360px in the library, the editor and worker search.
+- **SearchField** (`src/components/ui/SearchField.tsx`) is used by the worker view and the cue library. It uses the standard 3px ink focus outline, hides the browser's own clear cross and shows a 48px "Clear" text button (spoken as "Clear search") while there's text. The cue library's separate "Clear search" button under "Nothing matches" was removed, because it duplicated this one.
+- **Worker bundle guard** (`src/worker/bundle.test.ts`, part of `npm run check`): walks every import reachable from `src/worker/WorkerPage.tsx` and fails if any reach `@supabase/*`, `src/lib/supabase.ts`, `src/auth`, `src/family` or `src/data` (except `data/types.ts`).
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.
@@ -203,7 +218,10 @@ Things the brand doesn't define, and how each was derived from existing tokens.
 - **Disabled buttons:** not defined. Derived as a `--surface` fill, a `--control-border` edge and `--muted` text, with no shadow and no press movement.
 - **Info banner:** a neutral note, `--ink-soft` text on `--surface` with a `--blob` border and an ink "i" icon. Used for gentle notes such as the card-length nudge.
 - **Success banner:** `--success` text (600 weight) on `--surface` with a check icon and a `--blob` border.
-- **Selectable chips:** a 2px transparent border at rest, `--control-border` on hover, `--ink` when selected (`aria-pressed`).
+- **Selectable chips:** `--surface` fill and a 1.5px `--control-border` edge at rest, `--ink` edge on hover (hover devices only). Selected (`aria-pressed`): `--sky` fill, 2px `--ink` border and an ink tick. 48px tall.
+- **Static tags:** transparent, 1px `--control-border` outline, `--ink-soft` text, 6px radius. Rose tags keep the `--rose` fill with `--ink` text.
+- **Type tokens** in `derived-tokens.css`: `--text-hero`, `--text-h2`, `--text-h3`, `--text-body-lg`, `--text-body`, `--text-small`, each with a `-lh` line height, taken from the type scale in CLAUDE.md (hero and h2 change below 600px).
+- **SearchField Clear button:** ink, 600, underlined text, no fill, the full height of the input (at least 48px).
 - **Rose tag:** kept for one tag type only, the family's confidence ("Usually").
 - **Styleguide code labels** use the system monospace font. They appear only on `/styleguide`, never on family or worker screens.
 
@@ -221,7 +239,8 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Sign-up, sign-in, check-your-email, expired-link and set-up copy (`copy.signUp`, `copy.signIn`, `copy.checkEmail`, `copy.authCallback`, `copy.start`, `copy.home`).
 - Error messages (`copy.errors`).
 - All setup step copy, the prompts and their fictional examples (`copy.setup`, `copy.sectionFields`, `copy.cueForm`). Check the examples suit the age range of children in the trial.
-- Card copy, including the worker-facing labels "How they show it", "What to do", "Avoid" and "Try" (`copy.card`), and the enum labels (`copy.labels`).
+- Card copy, including the worker-facing labels "How they show it", "What to do" and "Avoid" (`copy.card`), and the enum labels (`copy.labels`).
+- **Design round 1 copy:** the meaning labels "What to do" / "Avoid" (replacing "Try"), "Anywhere" for a meaning with no place, the context line "At school · usually" with lowercase confidence (`copy.meaning`, `copy.labels.confidenceInline`), the search "Clear" button spoken as "Clear search" (`copy.searchField`), and new styleguide samples.
 - The demo profile content for Ari (`src/demo/ari.ts`).
 - Cue library and editor copy (`copy.cues`, `copy.cueEditor`), including the delete warning and the pin-limit message.
 - Sharing copy (`copy.share`), especially the scope labels, the "shown only once" note and the closed-link message.

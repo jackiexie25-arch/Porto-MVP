@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import appIconUrl from '../assets/brand/porto-app-icon.svg';
 import { CalmWave, ChecklistSun, QuietCorner, SideBySide, WorkerPhone } from '../assets/illustrations';
 import { FirstShiftCard } from '../components/card/FirstShiftCard';
+import { MeaningView } from '../components/cues/MeaningView';
 import { AppShell } from '../components/layout/AppShell';
 import { ARI_CUES, ARI_PROFILE, ARI_SECTIONS } from '../demo/ari';
 import { buildCard } from '../lib/card';
@@ -17,6 +18,7 @@ import {
   Mark,
   Nav,
   Progress,
+  SearchField,
   Select,
   Sheet,
   Tag,
@@ -27,6 +29,7 @@ import {
 import { copy } from '../copy/en-AU';
 import { usePageTitle } from '../lib/usePageTitle';
 import styles from './Styleguide.module.css';
+import { PageHeading } from '../components/layout/PageHeading';
 
 const c = copy.styleguide;
 
@@ -95,11 +98,13 @@ export function Styleguide() {
   const [checks, setChecks] = useState({ speech: false, sounds: true, gestures: true });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [notes, setNotes] = useState('');
+  const [search, setSearch] = useState('');
+  const sampleMeaning = demoCard.cues[0]?.meanings[0];
 
   return (
     <AppShell width="wide">
       <header className={styles.intro}>
-        <h1>{c.heading}</h1>
+        <PageHeading>{c.heading}</PageHeading>
         <p className="t-body-lg">{c.intro}</p>
       </header>
 
@@ -119,6 +124,7 @@ export function Styleguide() {
           <p className="t-body-lg">{c.typeSamples.bodyLg}</p>
           <p className="t-body">{c.typeSamples.body}</p>
           <p className="t-small t-muted">{c.typeSamples.small}</p>
+          <p className="t-label">{c.typeSamples.label}</p>
           <p className="t-button">{c.typeSamples.button}</p>
         </div>
       </Section>
@@ -241,10 +247,10 @@ export function Styleguide() {
 
       <Section title={c.sections.chips}>
         <div className={styles.row}>
-          <Tag>{c.chips.tagHome}</Tag>
-          <Tag>{c.chips.tagSchool}</Tag>
+          <Tag>{c.chips.tagQuiet}</Tag>
           <Tag tone="rose">{c.chips.tagRose}</Tag>
         </div>
+        <p className="t-small t-muted">{c.chips.selectedNote}</p>
         <p className="t-small" id="chip-group-label">
           <strong>{c.chips.chipGroup}</strong>
         </p>
@@ -256,6 +262,33 @@ export function Styleguide() {
           ))}
         </ChipGroup>
       </Section>
+
+      <Section title={c.sections.searchField}>
+        <div className={styles.stack}>
+          <SearchField size="large" label={c.searchLabel} value={search} onValueChange={setSearch} />
+          <SearchField label={copy.cues.searchLabel} hint={copy.cues.searchHint} value={search} onValueChange={setSearch} />
+        </div>
+      </Section>
+
+      {sampleMeaning ? (
+        <Section title={c.sections.meaning}>
+          <p className="t-small t-muted">{c.demoLabel}</p>
+          <div className={styles.stack}>
+            <p className="t-label">{c.meaning.compact}</p>
+            <Card>
+              <MeaningView meaning={sampleMeaning} density="compact" />
+            </Card>
+            <p className="t-label">{c.meaning.full}</p>
+            <Card>
+              <MeaningView meaning={sampleMeaning} density="full" inContext />
+            </Card>
+            <p className="t-label">{c.meaning.large}</p>
+            <Card>
+              <MeaningView meaning={sampleMeaning} density="large" />
+            </Card>
+          </div>
+        </Section>
+      ) : null}
 
       <Section title={c.sections.banners}>
         <div className={styles.stack}>

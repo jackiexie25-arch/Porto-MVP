@@ -10,6 +10,7 @@ import { looksLikeEmail, normaliseInviteCode } from '../../lib/invite';
 import { getSupabase } from '../../lib/supabase';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Auth.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.signUp;
 
@@ -79,7 +80,7 @@ export function SignUp() {
     <AppShell>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p>{c.intro}</p>
         </header>
         <Card as="form" noValidate onSubmit={onSubmit} className={styles.form}>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { FamilyShell } from '../../components/family/FamilyShell';
+import { PageHeading } from '../../components/layout/PageHeading';
 import { QrCode } from '../../components/share/QrCode';
 import { Banner, Button, Card, FieldStack, RadioGroup, Tag, TextField } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
@@ -7,6 +8,7 @@ import { createShare, listShares, revokeShare, type CreatedShare } from '../../d
 import { LIMITS } from '../../data/types';
 import { useCardModel } from '../../family/useCardModel';
 import { friendlyError } from '../../lib/errors';
+import { reveal, useRevealOn } from '../../lib/reveal';
 import { DURATIONS, durationHours, formatUntil, isOpen, shareStatus, shareUrl, type DurationKey, type ShareRow } from '../../lib/share';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Share.module.css';
@@ -127,6 +129,7 @@ export function SharePage() {
   const [listError, setListError] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const labelRef = useRef<HTMLInputElement>(null);
+  const formErrorRef = useRevealOn<HTMLDivElement>(formError);
 
   const load = useCallback(async () => {
     try {
@@ -149,7 +152,7 @@ export function SharePage() {
     setNotice(undefined);
     if (!form.label.trim()) {
       setLabelError(c.labelMissing);
-      labelRef.current?.focus();
+      reveal(labelRef.current);
       return;
     }
     setLabelError(undefined);
@@ -186,15 +189,14 @@ export function SharePage() {
     setCreated(null);
     setNotice(undefined);
     setForm({ ...emptyForm, label: share.label, workerName: share.worker_name, scope: share.scope });
-    window.scrollTo({ top: 0 });
-    labelRef.current?.focus();
+    reveal(labelRef.current);
   }
 
   return (
     <FamilyShell hideShare>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p>{c.intro}</p>
         </header>
 
@@ -202,7 +204,11 @@ export function SharePage() {
           <LinkReady created={created} name={model.name} onDone={() => setCreated(null)} />
         ) : (
           <Card as="form" noValidate onSubmit={onSubmit} className={styles.form}>
-            {formError ? <Banner tone="error">{formError}</Banner> : null}
+            {formError ? (
+              <Banner tone="error" ref={formErrorRef}>
+                {formError}
+              </Banner>
+            ) : null}
             <FieldStack>
               <TextField
                 ref={labelRef}

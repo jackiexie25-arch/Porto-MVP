@@ -45,6 +45,7 @@ details[open] > .summary::after {
 }
 
 .title {
+  min-width: 0;
   margin: 0;
 }
 
@@ -71,8 +72,8 @@ details .body {
 }
 
 .line dt {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   font-weight: 600;
   color: var(--ink);
 }
@@ -99,19 +100,12 @@ details .body {
 .cueLabel {
   font-weight: 600;
   color: var(--ink);
-  font-size: 18px;
-  line-height: 28px;
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
 }
 
 .meaning {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
   margin-top: var(--space-2);
-}
-
-.meaning strong {
-  color: var(--ink);
 }
 
 .phone {
@@ -163,6 +157,18 @@ details .body {
 .print .cueLabel {
   font-size: 11pt;
   line-height: 1.3;
+}
+
+.print .meaning {
+  gap: 2pt;
+  margin-top: 2pt;
+}
+
+.print .meaning p,
+.print .meaning dt,
+.print .meaning dd {
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .print .cue + .cue {

@@ -11,6 +11,7 @@ import { friendlyError } from '../../lib/errors';
 import { timeAgo } from '../../lib/share';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Inbox.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.inbox;
 
@@ -121,7 +122,7 @@ export function InboxPage() {
     <FamilyShell>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p>{c.intro}</p>
         </header>
 

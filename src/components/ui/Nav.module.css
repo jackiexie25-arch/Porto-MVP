@@ -118,7 +118,7 @@
   background: var(--sky);
   color: var(--ink);
   border-radius: var(--radius-pill);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   font-weight: 600;
 }

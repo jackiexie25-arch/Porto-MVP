@@ -23,9 +23,6 @@
 }
 
 .legend {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
   color: var(--ink-soft);
 }
 
@@ -46,6 +43,7 @@
 }
 
 .cueHeader h2 {
+  min-width: 0;
   padding-top: var(--space-2);
 }
 
@@ -64,19 +62,9 @@
   list-style: none;
 }
 
-.meanings li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .meanings li + li {
   border-top: 1px solid var(--blob);
   padding-top: var(--space-3);
-}
-
-.meanings strong {
-  color: var(--ink);
 }
 
 .empty,
@@ -107,6 +95,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+.meaningHeader h3 {
+  min-width: 0;
 }
 
 .actions {

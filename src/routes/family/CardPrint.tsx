@@ -6,6 +6,7 @@ import { useCardModel } from '../../family/useCardModel';
 import { formatDate } from '../../lib/card';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './CardPrint.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.card;
 
@@ -26,7 +27,7 @@ export function CardPrint() {
         <header className={styles.header}>
           <Wordmark width={96} />
           <div>
-            <h1 className={styles.name}>{model.name}</h1>
+            <PageHeading className={styles.name}>{model.name}</PageHeading>
             <p className={styles.meta}>{c.lastUpdated(formatDate(model.updatedAt))}</p>
           </div>
         </header>

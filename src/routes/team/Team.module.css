@@ -58,8 +58,8 @@
 }
 
 .measures dt {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--ink-soft);
 }
 
@@ -67,8 +67,8 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 24px;
-  line-height: 30px;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
   color: var(--ink);
 }
 
@@ -79,8 +79,8 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
 }
 
 .table th,

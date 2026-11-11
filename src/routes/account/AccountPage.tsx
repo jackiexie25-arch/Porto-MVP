@@ -11,6 +11,7 @@ import { friendlyError } from '../../lib/errors';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { AboutEditor, WhoEditor } from '../family/CardEditors';
 import styles from './Account.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.account;
 
@@ -102,7 +103,7 @@ export function AccountPage() {
     <FamilyShell>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           {session?.user.email ? <p className="t-muted">{c.signedInAs(session.user.email)}</p> : null}
           <div>
             <Button variant="outlined" onClick={() => navigate('/signout')}>

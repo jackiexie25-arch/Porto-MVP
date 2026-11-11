@@ -1,0 +1,122 @@
+/* One meaning in its context. The meaning is always the strongest text; the place sits just above. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--ink-soft);
+}
+
+.context {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.meaning {
+  color: var(--ink);
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.row dt {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.row dd {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+/* What to do is what a worker scans for. */
+.do {
+  color: var(--ink);
+}
+
+/* Wider screens: labels in their own column so the answers line up. */
+@media (min-width: 600px) {
+  .compact .actions,
+  .full .actions {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: var(--space-4);
+    row-gap: var(--space-2);
+  }
+
+  .compact .row,
+  .full .row {
+    display: contents;
+  }
+
+  .compact .row dt,
+  .full .row dt {
+    padding-top: 3px;
+  }
+}
+
+/* Densities */
+.compact .meaning {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+}
+
+.full .meaning {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+.large {
+  gap: var(--space-4);
+}
+
+.large .context {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+}
+
+.large .meaning {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: var(--text-hero);
+  line-height: var(--text-hero-lh);
+}
+
+.large .actions {
+  gap: var(--space-4);
+}
+
+.large .row dt {
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+}
+
+.large .do {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: 600;
+}
+
+.large .avoid {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+}
+
+/* The meaning for where the worker is: a calm ink edge, no colour change. */
+.inContext {
+  border-left: 3px solid var(--ink);
+  padding-left: var(--space-3);
+}

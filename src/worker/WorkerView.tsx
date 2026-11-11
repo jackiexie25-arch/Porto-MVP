@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CalmWave, WorkerPhone } from '../assets/illustrations';
 import { FirstShiftCard } from '../components/card/FirstShiftCard';
-import { Banner, Button, Card, ChipGroup, ChoiceChip, Sheet, Tag, Wordmark } from '../components/ui';
+import { MeaningView, type MeaningDensity } from '../components/cues/MeaningView';
+import { Banner, Button, Card, ChipGroup, ChoiceChip, SearchField, Sheet, Wordmark } from '../components/ui';
 import { copy } from '../copy/en-AU';
 import type { ContextTag } from '../data/types';
-import { contextPhrase, type CardModel } from '../lib/card';
+import { cardMeaning, type CardModel } from '../lib/card';
 import { friendlyError } from '../lib/errors';
 import { normaliseQuery } from '../lib/search';
 import { formatUntil } from '../lib/share';
@@ -42,26 +43,12 @@ function saveContext(value: ContextTag | null) {
   }
 }
 
-function Meaning({ m }: { m: SearchHit['meanings'][number] }) {
-  const where = contextPhrase(m.context_tags, m.context_text);
+function Meanings({ hit, density }: { hit: SearchHit; density: MeaningDensity }) {
   return (
-    <div className={[styles.meaning, m.in_context ? styles.inContext : ''].join(' ')}>
-      <p>
-        {where ? <strong>{where}: </strong> : null}
-        {m.meaning} <Tag tone="rose">{copy.labels.confidence[m.confidence]}</Tag>
-      </p>
-      {m.what_to_do ? (
-        <p>
-          <strong>{w.tryLabel}: </strong>
-          {m.what_to_do}
-        </p>
-      ) : null}
-      {m.what_to_avoid ? (
-        <p>
-          <strong>{w.avoidLabel}: </strong>
-          {m.what_to_avoid}
-        </p>
-      ) : null}
+    <div className={styles.meanings}>
+      {hit.meanings.map((m, i) => (
+        <MeaningView key={i} meaning={cardMeaning(m)} inContext={m.in_context} density={density} />
+      ))}
     </div>
   );
 }
@@ -100,9 +87,7 @@ function Result({
   return (
     <Card as="li" className={styles.result}>
       <h3 className={styles.resultLabel}>{hit.label}</h3>
-      {hit.meanings.map((m, i) => (
-        <Meaning key={i} m={m} />
-      ))}
+      <Meanings hit={hit} density="full" />
       <div>
         <Button variant="secondary" onClick={onOpen} aria-label={w.biggerLabel(hit.label)}>
           {w.bigger}
@@ -184,8 +169,6 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
   const [feedback, setFeedback] = useState<Record<string, FeedbackState>>({});
   const [log, setLog] = useState<{ key: number; draft: LogDraft } | null>(null);
   const requestId = useRef(0);
-  const inputId = useId();
-  const hintId = useId();
   const contextId = useId();
 
   const load = useCallback(async () => {
@@ -273,25 +256,17 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
       {canSearch ? (
         <section className={styles.search} aria-label={w.searchLabel}>
           <form role="search" onSubmit={(e) => e.preventDefault()}>
-            <label htmlFor={inputId} className={styles.searchLabel}>
-              {w.searchLabel}
-            </label>
-            <input
-              id={inputId}
-              type="search"
-              className={styles.searchInput}
-              aria-describedby={hintId}
-              autoComplete="off"
+            <SearchField
+              size="large"
+              label={w.searchLabel}
+              hint={w.searchHint}
               autoCapitalize="none"
               spellCheck={false}
               enterKeyHint="search"
               maxLength={200}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onValueChange={setQuery}
             />
-            <p id={hintId} className="t-small t-muted">
-              {w.searchHint}
-            </p>
           </form>
 
           <div className={styles.contexts}>
@@ -397,11 +372,7 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
       </Sheet>
 
       <Sheet open={open !== null} onClose={() => setOpen(null)} title={open?.label ?? ''}>
-        <div className={styles.bigger}>
-          {open?.meanings.map((m, i) => (
-            <Meaning key={i} m={m} />
-          ))}
-        </div>
+        {open ? <Meanings hit={open} density="large" /> : null}
       </Sheet>
     </Shell>
   );

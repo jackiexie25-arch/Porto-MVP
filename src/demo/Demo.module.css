@@ -9,6 +9,6 @@
   background: var(--surface);
   border-bottom: 2px solid var(--ink);
   color: var(--ink);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
 }

@@ -8,6 +8,7 @@ import { copy } from '../../copy/en-AU';
 import { nextFamilyStep } from '../../lib/family';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Auth.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.authCallback;
 
@@ -33,7 +34,7 @@ export function AuthCallback() {
       <AppShell>
         <div className={styles.page}>
           <CalmWave className={styles.art} />
-          <h1 className="t-h2">{c.expiredHeading}</h1>
+          <PageHeading className="t-h2">{c.expiredHeading}</PageHeading>
           <p>{c.expiredBody}</p>
           <div className={styles.actions}>
             <ButtonLink to="/signin">{c.newLink}</ButtonLink>

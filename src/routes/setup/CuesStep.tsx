@@ -1,10 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
 import { CueQuickForm } from '../../components/cues/CueQuickForm';
-import { Banner, Button, Card, ChipGroup, ChoiceChip, Tag } from '../../components/ui';
+import { MeaningView } from '../../components/cues/MeaningView';
+import { Banner, Button, Card, ChipGroup, ChoiceChip } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import type { CueType, NewCue, NewMeaning } from '../../data/types';
 import { useFamilyData } from '../../family/FamilyDataProvider';
-import { contextPhrase } from '../../lib/card';
+import { cardMeaning } from '../../lib/card';
 import { SetupFrame } from './SetupFrame';
 import styles from './Setup.module.css';
 import { useStepNav } from './useStepNav';
@@ -60,15 +61,11 @@ export function CuesStep() {
           <ul className={styles.added}>
             {cues.map((cue) => {
               const first = cue.cue_meanings[0];
-              const where = first ? contextPhrase(first.context_tags, first.context_text) : '';
               return (
                 <li key={cue.id} className={styles.addedItem}>
                   <strong>{cue.label}</strong>
                   {first ? (
-                    <span>
-                      {where ? `${where}: ` : ''}
-                      {first.meaning} <Tag tone="rose">{copy.labels.confidence[first.confidence]}</Tag>
-                    </span>
+                    <MeaningView meaning={cardMeaning(first)} density="compact" show={{ whatToDo: false, avoid: false }} />
                   ) : null}
                 </li>
               );

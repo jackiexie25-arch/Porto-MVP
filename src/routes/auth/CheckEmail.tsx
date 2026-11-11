@@ -4,6 +4,7 @@ import { AppShell } from '../../components/layout/AppShell';
 import { copy } from '../../copy/en-AU';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Auth.module.css';
+import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.checkEmail;
 
@@ -17,7 +18,7 @@ export function CheckEmail() {
       <div className={styles.page}>
         <WorkerPhone className={styles.art} />
         <header className={styles.header}>
-          <h1 className="t-h2">{c.heading}</h1>
+          <PageHeading className="t-h2">{c.heading}</PageHeading>
           <p className="t-body-lg" role="status">
             {email ? c.sentTo(email) : c.sentGeneric}
           </p>

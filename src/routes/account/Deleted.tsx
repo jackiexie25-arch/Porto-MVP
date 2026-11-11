@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { CalmWave } from '../../assets/illustrations';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppShell } from '../../components/layout/AppShell';
+import { PageHeading } from '../../components/layout/PageHeading';
 import { ButtonLink } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import { usePageTitle } from '../../lib/usePageTitle';
@@ -12,25 +13,20 @@ const c = copy.deleted;
 export function Deleted() {
   usePageTitle(c.title);
   const { signOut } = useAuth();
-  const headingRef = useRef<HTMLHeadingElement>(null);
 
   // The account no longer exists; clear what's left of the sign-in on this device.
   useEffect(() => {
     void signOut().catch(() => undefined);
   }, [signOut]);
 
-  // Move focus to the heading so screen readers announce that the deletion is done.
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, []);
-
   return (
     <AppShell>
       <div className={styles.hero}>
         <CalmWave className={styles.art} />
-        <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>
+        {/* Focus moves here so screen readers announce that the deletion is done. */}
+        <PageHeading focusOnMount className={styles.heading}>
           {c.heading}
-        </h1>
+        </PageHeading>
         <p className="t-body-lg">{c.body}</p>
         <p>{c.thanks}</p>
         <ButtonLink to="/" variant="outlined">

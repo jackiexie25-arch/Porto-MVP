@@ -3,13 +3,14 @@ import { PrivacyDetails } from '../components/PrivacyDetails';
 import { copy } from '../copy/en-AU';
 import { usePageTitle } from '../lib/usePageTitle';
 import styles from './auth/Auth.module.css';
+import { PageHeading } from '../components/layout/PageHeading';
 
 export function Privacy() {
   usePageTitle(copy.privacy.title);
   return (
     <AppShell>
       <div className={styles.page}>
-        <h1 className="t-h2">{copy.privacy.heading}</h1>
+        <PageHeading className="t-h2">{copy.privacy.heading}</PageHeading>
         <PrivacyDetails />
       </div>
     </AppShell>
