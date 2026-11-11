@@ -198,6 +198,10 @@
   gap: var(--space-2);
 }
 
+.statusBack {
+  flex-basis: 100%;
+}
+
 .status {
   font-size: var(--text-small);
   line-height: var(--text-small-lh);

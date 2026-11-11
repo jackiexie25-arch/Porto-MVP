@@ -232,8 +232,8 @@ export function WorkerView({ source, demoNote }: { source: WorkerSource; demoNot
                     </button>
                   </span>
                   {returnY !== null ? (
-                    <span className={styles.statusItem}>
-                      <span aria-hidden="true">·</span>
+                    // A different kind of action from the count and place, so it takes its own line, with no dot.
+                    <span className={styles.statusBack}>
                       <button
                         type="button"
                         className={styles.textButton}

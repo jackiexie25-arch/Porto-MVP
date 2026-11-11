@@ -82,7 +82,7 @@ test.describe('worker view', () => {
     const { worker, close } = await openAsWorker(browser, link);
     for (const width of [320, 360]) {
       await worker.setViewportSize({ width, height: 780 });
-      await worker.getByRole('searchbox', { name: 'Type what you heard or saw' }).fill(long);
+      await worker.getByRole('searchbox', { name: 'What did Ari do or say?' }).fill(long);
       await expect(worker.getByRole('heading', { name: long, level: 3 })).toBeVisible();
       expect(await fits(worker), `worker search at ${width}px`).toBe(true);
     }
