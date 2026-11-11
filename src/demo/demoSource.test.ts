@@ -3,8 +3,10 @@ import { exportFileName } from '../data/account';
 import { toCsv } from '../lib/csv';
 import { formatMeasure, metricsCsv, type TeamMetrics } from '../routes/team/TeamPage';
 import { confirmMatches, confirmWord } from '../routes/account/AccountPage';
+import type { ContextTag, Cue } from '../data/types';
+import searchCases from '../../supabase/tests/search-cases.json';
 import { ARI_CUES } from './ari';
-import { demoSearch, demoSource } from './demoSource';
+import { demoSearch, demoSource, similarity } from './demoSource';
 
 describe('demo search', () => {
   const labels = (q: string, ctx: Parameters<typeof demoSearch>[2] = null) => demoSearch(ARI_CUES, q, ctx).map((h) => h.label);
@@ -24,6 +26,44 @@ describe('demo search', () => {
   it('never guesses', () => {
     expect(labels('giraffe trampoline')).toEqual([]);
     expect(labels('  ?! ')).toEqual([]);
+  });
+
+  it('works out trigram similarity the way pg_trgm does', () => {
+    expect(similarity('bathrom', 'bathroom')).toBeCloseTo(0.7);
+    expect(similarity('hungry', 'humming')).toBeCloseTo(2 / 13);
+    expect(similarity('', '')).toBe(0);
+  });
+
+  const juno: Cue[] = searchCases.profiles.juno.map((c, i) => ({
+    ...c,
+    id: `juno-${i}`,
+    cue_type: c.cue_type as Cue['cue_type'],
+    category: c.category as Cue['category'],
+    pinned: false,
+    pin_order: null,
+    created_at: '',
+    updated_at: '',
+    cue_meanings: c.meanings.map((m, j) => ({
+      ...m,
+      id: `juno-${i}-${j}`,
+      cue_id: `juno-${i}`,
+      context_tags: m.context_tags as ContextTag[],
+      what_to_do: '',
+      what_to_avoid: '',
+      confidence: 'usually' as const,
+      source: 'family' as const,
+      created_at: '',
+    })),
+  }));
+
+  it.each(searchCases.cases)('matches the database search: $profile "$query" → $top', (c) => {
+    const got = demoSearch(c.profile === 'ari' ? ARI_CUES : juno, c.query, (c.context ?? null) as ContextTag | null).map((h) => h.label);
+    if (c.top === null) {
+      expect(got).toEqual([]);
+    } else {
+      expect(got[0]).toBe(c.top);
+      expect(got.filter((l) => l !== c.top && !(c.also ?? []).includes(l))).toEqual([]);
+    }
   });
 
   it('sends nothing for notes and feedback', async () => {

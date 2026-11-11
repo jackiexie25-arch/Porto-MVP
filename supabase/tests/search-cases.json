@@ -1,0 +1,81 @@
+{
+  "about": "Worker search relevance cases. 'top' is the cue that must come first (null means nothing may be returned). 'also' lists other cues that may appear because they genuinely match; anything else counts as an unrelated result. The Ari cues come from src/demo/ari.ts; the Juno profile below is a second fictional profile shape. Read by supabase/tests/search-relevance.test.ts and src/demo/demoSource.test.ts.",
+  "profiles": {
+    "juno": [
+      {"label": "Are you ready, Freddy?", "cue_type": "phrase", "category": "other", "aliases": ["ready freddy", "freddy"], "description": "", "meanings": [
+        {"context_tags": ["home"], "context_text": "", "meaning": "I want to start"},
+        {"context_tags": ["other"], "context_text": "with Grandma", "meaning": "I'm nervous about going out"}
+      ]},
+      {"label": "Chews his sleeve", "cue_type": "behaviour", "category": "overstimulation", "aliases": ["sleeve", "chewing"], "description": "Mostly when waiting in a line", "meanings": [
+        {"context_tags": [], "context_text": "", "meaning": "I'm anxious"}
+      ]},
+      {"label": "Points at the fridge", "cue_type": "gesture", "category": "food_drink", "aliases": ["fridge", "pointing"], "description": "", "meanings": [
+        {"context_tags": ["home"], "context_text": "", "meaning": "I want a drink"}
+      ]},
+      {"label": "Lies on the floor", "cue_type": "behaviour", "category": "other", "aliases": ["floor"], "description": "", "meanings": [
+        {"context_tags": [], "context_text": "after swimming", "meaning": "I'm tired"}
+      ]},
+      {"label": "Squeals", "cue_type": "sound", "category": "connection", "aliases": ["squeal", "high sound"], "description": "", "meanings": [
+        {"context_tags": [], "context_text": "", "meaning": "I'm excited"}
+      ]}
+    ]
+  },
+  "cases": [
+    {"profile": "ari", "query": "hungry", "top": "Cookie time"},
+    {"profile": "ari", "query": "biting", "top": null},
+    {"profile": "ari", "query": "hit", "top": null},
+    {"profile": "ari", "query": "swimming", "top": null},
+    {"profile": "ari", "query": "water", "top": "Blue bottle"},
+    {"profile": "ari", "query": "cookie", "top": "Cookie time"},
+    {"profile": "ari", "query": "cookie", "context": "school", "top": "Cookie time"},
+    {"profile": "ari", "query": "cokie", "top": "Cookie time"},
+    {"profile": "ari", "query": "cokie tme", "top": "Cookie time"},
+    {"profile": "ari", "query": "coo", "top": "Cookie time"},
+    {"profile": "ari", "query": "break", "top": "Cookie time"},
+    {"profile": "ari", "query": "bathroom door", "top": "Taps the bathroom door twice"},
+    {"profile": "ari", "query": "bathrom door", "top": "Taps the bathroom door twice"},
+    {"profile": "ari", "query": "taps door", "top": "Taps the bathroom door twice"},
+    {"profile": "ari", "query": "knock", "top": "Taps the bathroom door twice"},
+    {"profile": "ari", "query": "toilet", "top": "Taps the bathroom door twice"},
+    {"profile": "ari", "query": "thirsty", "top": "Blue bottle"},
+    {"profile": "ari", "query": "drink", "top": "Blue bottle"},
+    {"profile": "ari", "query": "blue", "top": "Blue bottle"},
+    {"profile": "ari", "query": "too loud", "top": "Hands over ears and humming"},
+    {"profile": "ari", "query": "humming", "top": "Hands over ears and humming", "also": ["Short, low “mm-mm”"]},
+    {"profile": "ari", "query": "hum", "top": "Short, low “mm-mm”", "also": ["Hands over ears and humming"]},
+    {"profile": "ari", "query": "ear", "top": "Hands over ears and humming"},
+    {"profile": "ari", "query": "mm", "top": "Short, low “mm-mm”"},
+    {"profile": "ari", "query": "rocking", "top": "Rocking faster than usual"},
+    {"profile": "ari", "query": "too much", "top": "Rocking faster than usual"},
+    {"profile": "ari", "query": "wave", "top": "Flat-hand wave near his face"},
+    {"profile": "ari", "query": "waving", "top": "Flat-hand wave near his face"},
+    {"profile": "ari", "query": "all done", "top": "Flat-hand wave near his face"},
+    {"profile": "ari", "query": "stop", "top": "Flat-hand wave near his face"},
+    {"profile": "ari", "query": "shoe", "top": "Brings you his shoes"},
+    {"profile": "ari", "query": "outside", "top": "Brings you his shoes"},
+    {"profile": "ari", "query": "giraffe trampoline", "top": null},
+    {"profile": "ari", "query": "head banging", "top": null},
+    {"profile": "ari", "query": "pasta", "top": null},
+    {"profile": "ari", "query": "upset", "top": null},
+    {"profile": "ari", "query": "school", "top": null},
+    {"profile": "ari", "query": "the", "top": null},
+    {"profile": "ari", "query": "his", "top": null},
+    {"profile": "ari", "query": "taps on the door", "top": "Taps the bathroom door twice"},
+    {"profile": "juno", "query": "swimming", "top": "Lies on the floor"},
+    {"profile": "juno", "query": "tired", "top": "Lies on the floor"},
+    {"profile": "juno", "query": "drink", "top": "Points at the fridge"},
+    {"profile": "juno", "query": "chew", "top": "Chews his sleeve"},
+    {"profile": "juno", "query": "chewing", "top": "Chews his sleeve"},
+    {"profile": "juno", "query": "waiting", "top": "Chews his sleeve"},
+    {"profile": "juno", "query": "fredy", "top": "Are you ready, Freddy?"},
+    {"profile": "juno", "query": "ready freddy", "top": "Are you ready, Freddy?"},
+    {"profile": "juno", "query": "nervous", "top": "Are you ready, Freddy?"},
+    {"profile": "juno", "query": "grandma", "top": "Are you ready, Freddy?"},
+    {"profile": "juno", "query": "point", "top": "Points at the fridge"},
+    {"profile": "juno", "query": "excited", "top": "Squeals"},
+    {"profile": "juno", "query": "squeeze", "top": null},
+    {"profile": "juno", "query": "hit", "top": null},
+    {"profile": "juno", "query": "hungry", "top": null},
+    {"profile": "juno", "query": "at the", "top": null}
+  ]
+}
