@@ -1,0 +1,39 @@
+/* Mirrors a worker's search result (src/worker/Worker.module.css .result), so the preview is honest. */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.others {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-top: 1px solid var(--blob);
+  padding-top: var(--space-4);
+}
+
+.othersLabel {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.empty {
+  color: var(--muted);
+}

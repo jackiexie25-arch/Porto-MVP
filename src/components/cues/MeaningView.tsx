@@ -17,8 +17,11 @@ export interface MeaningViewProps {
    * where the worker is, a step louder than full. large: held out to show someone.
    */
   density?: MeaningDensity;
-  /** Which parts to show. Everything is shown by default; empty answers are always left out. */
-  show?: { confidence?: boolean; whatToDo?: boolean; avoid?: boolean };
+  /**
+   * Which parts to show. Everything is shown by default; empty answers are always left out. Leave out
+   * the context line only where the place is already the heading just above (the cue editor).
+   */
+  show?: { context?: boolean; confidence?: boolean; whatToDo?: boolean; avoid?: boolean };
   className?: string;
 }
 
@@ -28,7 +31,7 @@ export interface MeaningViewProps {
  * import Supabase or anything from the family app.
  */
 export function MeaningView({ meaning, inContext = false, density = 'full', show = {}, className }: MeaningViewProps) {
-  const { confidence = true, whatToDo = true, avoid = true } = show;
+  const { context = true, confidence = true, whatToDo = true, avoid = true } = show;
   const where = meaning.context || m.anywhere;
   const contextText = confidence ? m.contextLine(where, copy.labels.confidenceInline[meaning.confidence]) : where;
   const doText = whatToDo ? meaning.whatToDo.trim() : '';
@@ -43,7 +46,7 @@ export function MeaningView({ meaning, inContext = false, density = 'full', show
         </p>
       ) : (
         <>
-          <p className={styles.context}>{contextText}</p>
+          {context ? <p className={styles.context}>{contextText}</p> : null}
           <p className={styles.meaning}>{meaning.meaning}</p>
         </>
       )}

@@ -1,0 +1,196 @@
+/* One meaning, as a section of the "What it means" sheet. Its place is the title. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  min-width: 0;
+}
+
+.section + .section {
+  border-top: 1px solid var(--blob);
+}
+
+/* Open: room between the fields. */
+.open {
+  gap: var(--space-6);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  min-width: 0;
+  padding-top: 9px;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  color: var(--ink);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.title:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.sure {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.textButton {
+  flex-shrink: 0;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  margin-right: calc(var(--space-2) * -1);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.done {
+  margin-left: calc(var(--space-2) * -1);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+}
+
+.reads {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fact {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.legend {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.more {
+  border-top: 1px solid var(--blob);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--control-height);
+  padding-top: var(--space-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summaryText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.summaryTitle {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The fold says what it does, "Show" or "Hide", never a bare chevron. The open state is announced natively. */
+.fold {
+  flex-shrink: 0;
+  color: var(--ink);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.whenOpen,
+.more[open] > .summary .whenClosed {
+  display: none;
+}
+
+.more[open] > .summary .whenOpen {
+  display: inline;
+}
+
+.summaryHint {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.moreBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+}
+
+/* Phones: what a worker will read, right under the words being written. */
+.here {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--blob);
+}
+
+.hereLabel {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Desktop has the whole worker preview in its own column. */
+@media (min-width: 1024px) {
+  .here {
+    display: none;
+  }
+}

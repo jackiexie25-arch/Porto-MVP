@@ -83,7 +83,7 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
     problems.push(...(await scan(page, '/card editing a section')));
 
     await page.goto('/cues');
-    await page.getByRole('link', { name: 'Edit Cookie time' }).click();
+    await page.getByRole('link', { name: 'Cookie time, edit' }).click();
     problems.push(...(await scan(page, '/cues/:id')));
 
     await page.goto('/account');

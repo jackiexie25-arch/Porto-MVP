@@ -72,7 +72,7 @@ test.describe('worker view', () => {
     for (const width of [320, 360]) {
       await page.setViewportSize({ width, height: 780 });
       await page.goto('/cues');
-      await expect(page.getByRole('heading', { name: long })).toBeVisible();
+      await expect(page.getByRole('link', { name: `${long}, edit` })).toBeVisible();
       expect(await fits(page), `library at ${width}px`).toBe(true);
       await page.goto(`/cues/${cue!.id}`);
       await expect(page.getByRole('heading', { level: 1, name: long })).toBeVisible();
