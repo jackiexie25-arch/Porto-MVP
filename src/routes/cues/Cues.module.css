@@ -110,10 +110,30 @@
   color: var(--ink-soft);
 }
 
+.sectionHint {
+  padding-top: var(--space-2);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
 .rows {
   margin: 0;
   padding: 0;
   list-style: none;
+  /* Rows lay themselves out by the width they get, not the window's. */
+  container-type: inline-size;
+}
+
+/* Quiet fact in place of a control: on desktop the card is changed in the side column. */
+.onCardFact {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 /* The name runs the full width; the meanings sit beneath it, the card control at their lower right. */
@@ -140,6 +160,30 @@
 .rowFoot {
   grid-area: foot;
   align-self: end;
+}
+
+/*
+ * In a narrow column (a phone, or 200% zoom) the card control takes its own line under the
+ * meanings, at the right, so a short meaning is never broken to make room for it.
+ */
+@container (max-width: 520px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'label'
+      'body'
+      'foot';
+    row-gap: 0;
+  }
+
+  .rowLabel {
+    margin-bottom: var(--space-2);
+  }
+
+  .rowFoot {
+    justify-self: end;
+    margin-top: calc(var(--space-2) * -1);
+  }
 }
 
 .row + .row {
@@ -361,30 +405,58 @@
     gap: var(--space-2);
   }
 
+  /* The card's five, numbered in the order a worker reads them, each with "Take off". */
   .cardList ol {
     margin: 0;
-    padding: 0 0 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+    counter-reset: card;
+  }
+
+  .cardList li {
+    counter-increment: card;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    column-gap: var(--space-2);
+    align-items: center;
+  }
+
+  .cardList li + li {
+    border-top: 1px solid var(--blob);
+  }
+
+  .cardList li::before {
+    content: counter(card);
+    font-size: var(--text-small);
+    line-height: var(--text-small-lh);
+    color: var(--muted);
+  }
+
+  .cardName {
+    padding: var(--space-2) 0;
     color: var(--ink);
     font-family: var(--font-display);
     font-optical-sizing: auto;
     font-weight: 600;
+    text-decoration: none;
     overflow-wrap: break-word;
+    border-radius: var(--radius-sm);
   }
 
-  .cardList li {
-    padding: var(--space-2) 0;
+  .cardName:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
-  .cardList li::marker {
-    font-family: var(--font-sans);
-    font-size: var(--text-small);
-    color: var(--muted);
+  .cardName:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
   }
 
   /* Places side by side with their meanings, so the meanings line up down the page. */
   .line {
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 240px minmax(0, 1fr);
     column-gap: var(--space-6);
     align-items: baseline;
     min-height: auto;
@@ -566,14 +638,62 @@
   color: var(--ink-soft);
 }
 
+/* The worker's answers in plain Figtree 18/28 ink: their words, read calmly, not set as headings. */
 .quoteBody dd {
   margin: 0;
   color: var(--ink);
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
   font-size: var(--text-body-lg);
   line-height: var(--text-body-lg-lh);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+/* From a note: what it means comes first in the sheet, the cue itself after. */
+.meaningsFirst {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.meaningsFirst .meaningsHead {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.cueAfter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0 var(--space-4);
+  border-top: 1px solid var(--ink);
+  min-width: 0;
+}
+
+/* "Cookie time comes off the card when you save. Keep it on" */
+.swapNote {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--ink);
+}
+
+.inlineButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.inlineButton:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @media (max-width: 599px) {

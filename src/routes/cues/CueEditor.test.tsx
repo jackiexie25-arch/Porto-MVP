@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { copy } from '../../copy/en-AU';
 import type { Cue, ShiftNote } from '../../data/types';
 import { ARI_CUES } from '../../demo/ari';
@@ -40,8 +40,8 @@ function note(overrides: Partial<ShiftNote> = {}): ShiftNote {
   };
 }
 
-function renderAt(path: string) {
-  render(
+function tree(path: string) {
+  return (
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/cues" element={<CueLibrary />} />
@@ -51,8 +51,12 @@ function renderAt(path: string) {
         <Route path="/card" element={<p>Card page</p>} />
       </Routes>
       <Link to="/card">Somewhere else</Link>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+}
+
+function renderAt(path: string) {
+  return render(tree(path));
 }
 
 const e = copy.cueEditor;
@@ -212,15 +216,19 @@ describe('cue editor', () => {
     cues = [];
     renderAt('/cues/new');
 
-    await user.type(screen.getByLabelText(f.labelLabel), 'Cookie time');
+    await user.type(screen.getByLabelText(e.seeHearQuestion), 'Cookie time');
     await user.type(screen.getByLabelText(new RegExp(`^${e.aliasesLabel}`)), 'cookie, Cookies, cookie');
-    const first = region(e.anywhere);
+    // The interview asks where first: no place heading, no meaning fields yet.
+    const first = region(e.placeLegend);
+    expect(within(first).queryByLabelText(f.meaningLabel)).not.toBeInTheDocument();
+    expect(within(first).getByRole('button', { name: e.anywhere })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: e.addMeaning })).not.toBeInTheDocument();
     await user.click(within(first).getByRole('button', { name: copy.labels.context.home }));
     const home = region('At home');
     await user.type(within(home).getByLabelText(f.meaningLabel), 'I’m hungry');
 
     await user.click(screen.getByRole('button', { name: e.addMeaning }));
-    const second = region(e.anywhere);
+    const second = region(e.placeLegend);
     expect(within(second).getByRole('heading', { level: 3 })).toHaveFocus();
     await user.click(within(second).getByRole('button', { name: copy.labels.context.school }));
     const school = region('At school');
@@ -267,7 +275,7 @@ describe('cue editor', () => {
   it('asks where with the common places first, the rest behind “More places”', async () => {
     const user = userEvent.setup();
     renderAt('/cues/new');
-    const place = region(e.anywhere);
+    const place = region(e.placeLegend);
     expect(within(place).getByRole('button', { name: copy.labels.context.school })).toBeInTheDocument();
     expect(within(place).queryByRole('button', { name: copy.labels.context.transport })).not.toBeInTheDocument();
     await user.click(within(place).getByRole('button', { name: e.morePlaces }));
@@ -301,21 +309,22 @@ describe('cue editor', () => {
     const user = userEvent.setup();
     renderAt('/cues/demo-cookie');
     await user.click(screen.getByRole('button', { name: e.addMeaning }));
-    expect(within(region(e.anywhere)).getByRole('heading', { level: 3 })).toHaveFocus();
+    expect(within(region(e.placeLegend)).getByRole('heading', { level: 3 })).toHaveFocus();
   });
 
   it('points to every missing piece, opening the meanings that need it, and keeps what was typed', async () => {
     const user = userEvent.setup();
     renderAt('/cues/new');
+    await user.click(within(region(e.placeLegend)).getByRole('button', { name: e.anywhere }));
     await user.click(screen.getByRole('button', { name: e.addMeaning }));
-    const [, second] = screen.getAllByRole('region', { name: e.anywhere });
-    await user.type(within(second!).getByLabelText(f.todoLabel), 'Offer the quiet corner');
-    await user.click(within(second!).getByRole('button', { name: e.doneLabel(e.anywhere) }));
+    await user.click(within(region(e.placeLegend)).getByRole('button', { name: copy.labels.context.school }));
+    await user.type(within(region('At school')).getByLabelText(f.todoLabel), 'Offer the quiet corner');
+    await user.click(within(region('At school')).getByRole('button', { name: e.doneLabel('At school') }));
     await user.click(screen.getByRole('button', { name: e.save }));
 
     expect(screen.getByText(f.labelMissing)).toBeInTheDocument();
     expect(screen.getAllByText(f.meaningMissing)).toHaveLength(2);
-    expect(screen.getByLabelText(f.labelLabel)).toHaveFocus();
+    expect(screen.getByLabelText(e.seeHearQuestion)).toHaveFocus();
     expect(screen.getAllByLabelText(f.todoLabel)[1]).toHaveValue('Offer the quiet corner');
     expect(saveCue).not.toHaveBeenCalled();
   });
@@ -409,10 +418,12 @@ describe('confirming a worker’s note', () => {
     const user = userEvent.setup();
     notes = [note()];
     renderAt('/cues/new?note=note-1');
-    expect(screen.getByText(/From a worker’s note/)).toHaveTextContent(copy.inbox.needsMeaning);
+    // No banner: the worker's quote stands alone, and the meaning says what's missing.
+    expect(screen.queryByText(/From a worker’s note/)).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(copy.inbox.needsMeaning))).toBeInTheDocument();
     expect(screen.getByLabelText(f.labelLabel)).toHaveValue('Flaps both hands');
     const meaning = region('At camp');
-    expect(within(meaning).getByText(e.fromNote('Jo'))).toBeInTheDocument();
+    expect(within(meaning).getByText(new RegExp('^' + e.fromNote('Jo').replace(/[.?]/g, '\\$&')))).toBeInTheDocument();
     expect(within(meaning).getByLabelText(f.todoLabel)).toHaveValue('Gave him space');
     // The worker's words, quoted above the form.
     const quote = screen.getByText(e.quoteHeading('Jo')).closest('figure')!;
@@ -446,6 +457,94 @@ describe('confirming a worker’s note', () => {
   it('ignores a note that has already been dealt with', () => {
     notes = [note({ status: 'approved' })];
     renderAt('/cues/new?note=note-1');
-    expect(screen.getByLabelText(f.labelLabel)).toHaveValue('');
+    expect(screen.getByLabelText(e.seeHearQuestion)).toHaveValue('');
+  });
+});
+
+describe('round 3', () => {
+  it('keeps the note’s meaning first and marked when the page renders again', () => {
+    notes = [note({ cue_id: 'demo-cookie', seemed_to_need: 'A drink' })];
+    const view = renderAt('/cues/demo-cookie?note=note-1');
+    // A later render builds a new draft with new keys; the editor must keep its own.
+    view.rerender(tree('/cues/demo-cookie?note=note-1'));
+    view.rerender(tree('/cues/demo-cookie?note=note-1'));
+    expect(screen.getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('At camp');
+    expect(within(region('At camp')).getByText(/^New, from Jo’s note/)).toBeInTheDocument();
+    expect(within(region('At camp')).getByLabelText(f.meaningLabel)).toHaveValue('A drink');
+  });
+
+  it('quotes what the worker saw, even when they picked a cue from the profile', () => {
+    notes = [note({ cue_id: 'demo-cookie', cue_text: '', seemed_to_need: 'A drink' })];
+    renderAt('/cues/demo-cookie?note=note-1');
+    const quote = screen.getByText(e.quoteHeading('Jo')).closest('figure')!;
+    expect(within(quote).getByText(e.quoteSaw)).toBeInTheDocument();
+    expect(within(quote).getByText('Cookie time')).toBeInTheDocument();
+  });
+
+  it('returns focus to the cue that was saved', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues/demo-cookie');
+    await user.type(screen.getByLabelText(f.labelLabel), '!');
+    await user.click(screen.getByRole('button', { name: e.save }));
+    await waitFor(() => expect(screen.getByRole('link', { name: l.editLabel('Cookie time') })).toHaveFocus());
+  });
+
+  it('a place gap row has one action and no card control, under a plain line', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues');
+    await user.click(screen.getByRole('button', { name: copy.labels.context.camp }));
+    const gaps = region(new RegExp('^' + l.gapsHeading('at camp')));
+    expect(within(gaps).getByText(l.gapsHint)).toBeInTheDocument();
+    expect(within(gaps).queryByRole('button', { name: /card/ })).not.toBeInTheDocument();
+    expect(within(gaps).getAllByRole('link', { name: /^Add what it means at camp/ })).toHaveLength(2);
+  });
+
+  it('numbers the swap list in card order', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues');
+    await user.click(screen.getByRole('button', { name: l.pinAddLabel('Blue bottle') }));
+    const dialog = screen.getByRole('dialog', { name: l.swapTitle });
+    const options = within(dialog).getAllByRole('button', { name: /Take off$/ });
+    expect(options.map((o) => o.textContent)).toEqual(
+      ARI_CUES.filter((x) => x.pinned).map((x, i) => `${i + 1}${x.label}${l.takeOff}`),
+    );
+  });
+
+  it('“Keep it on” undoes a swap chosen from the editor', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues/demo-shoes');
+    await user.click(screen.getByLabelText(e.pinLabel('Ari')));
+    await user.click(within(screen.getByRole('dialog', { name: l.swapTitle })).getByRole('button', { name: /^Cookie time/ }));
+    await user.click(screen.getByRole('button', { name: e.swapUndoLabel('Cookie time') }));
+    expect(screen.getByLabelText(e.pinLabel('Ari'))).not.toBeChecked();
+    expect(screen.getByText(e.pinFull)).toBeInTheDocument();
+  });
+
+  describe('on a wide screen', () => {
+    beforeEach(() => {
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: query.includes('min-width: 1024px'),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }));
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('keeps the card in the side column and lists every cue A to Z once', () => {
+      renderAt('/cues');
+      const card = region(new RegExp('^' + l.onCardHeading('Ari')));
+      expect(within(card).getAllByRole('listitem')).toHaveLength(5);
+      expect(within(card).getByRole('button', { name: l.pinRemoveLabel('Cookie time') })).toHaveTextContent(l.takeOff);
+      const all = region(new RegExp('^' + l.allHeading));
+      const names = within(all).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+      expect(names).toEqual([...names].sort((a, b) => a!.localeCompare(b!, 'en-AU', { sensitivity: 'base' })));
+      expect(names).toHaveLength(ARI_CUES.length);
+      // Pinned rows state the fact; only unpinned rows offer "Add to card".
+      expect(within(all).queryByRole('button', { name: /^Take off card/ })).not.toBeInTheDocument();
+      expect(within(all).getAllByText(l.onCardFact)).toHaveLength(5);
+      expect(within(all).getAllByRole('button', { name: /^Add to card/ })).toHaveLength(3);
+    });
   });
 });

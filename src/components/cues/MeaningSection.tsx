@@ -30,10 +30,22 @@ function usesMorePlaces(draft: MeaningDraft): boolean {
 }
 
 /** "Where does it mean this?": one question, the common places first. */
-function PlaceQuestion({ draft, onChange }: { draft: MeaningDraft; onChange: (draft: MeaningDraft) => void }) {
+function PlaceQuestion({
+  draft,
+  onChange,
+  asked = false,
+  labelledBy,
+}: {
+  draft: MeaningDraft;
+  onChange: (draft: MeaningDraft) => void;
+  /** Still the open question: nothing is chosen yet, not even "Anywhere". */
+  asked?: boolean;
+  /** The question is already the heading above, so the chips are named by it. */
+  labelledBy?: string;
+}) {
   const placeId = useId();
   const [more, setMore] = useState(() => usesMorePlaces(draft));
-  const anywhere = draft.context_tags.length === 0 && !draft.context_text.trim();
+  const anywhere = !asked && draft.context_tags.length === 0 && !draft.context_text.trim();
   const chip = (t: ContextTag) => (
     <ChoiceChip
       key={t}
@@ -46,10 +58,12 @@ function PlaceQuestion({ draft, onChange }: { draft: MeaningDraft; onChange: (dr
   return (
     <>
       <div className={styles.group}>
-        <p id={placeId} className={styles.legend}>
-          {c.placeLegend}
-        </p>
-        <ChipGroup aria-labelledby={placeId}>
+        {labelledBy ? null : (
+          <p id={placeId} className={styles.legend}>
+            {c.placeLegend}
+          </p>
+        )}
+        <ChipGroup aria-labelledby={labelledBy ?? placeId}>
           <ChoiceChip selected={anywhere} onClick={() => onChange({ ...draft, context_tags: [], context_text: '' })}>
             {c.anywhere}
           </ChoiceChip>
@@ -92,6 +106,8 @@ export function MeaningSection({
   headingRef,
   marker,
   hints = !draft.id,
+  fresh = false,
+  onPlaced,
 }: {
   draft: MeaningDraft;
   open: boolean;
@@ -106,6 +122,12 @@ export function MeaningSection({
   marker?: string;
   /** Examples under the fields. Only for a meaning the family is writing from scratch. */
   hints?: boolean;
+  /**
+   * A new meaning with nothing chosen: it asks "Where does it mean this?" as its heading, and the
+   * place title and fields follow once a place is chosen ("Anywhere" counts).
+   */
+  fresh?: boolean;
+  onPlaced?: () => void;
 }) {
   const titleId = useId();
   const sureId = useId();
@@ -117,6 +139,34 @@ export function MeaningSection({
   const [placeShown, setPlaceShown] = useState(() => !draft.id && draft.context_tags.length === 0 && !draft.context_text.trim());
   // Opens by itself only when something is already written in it; after that it's the person's choice.
   const [moreOpen] = useState(() => draft.what_to_avoid.trim() !== '');
+
+  if (open && fresh) {
+    return (
+      <section aria-labelledby={titleId} className={[styles.section, styles.open].join(' ')}>
+        <div className={styles.head}>
+          <h3 ref={headingRef} tabIndex={-1} id={titleId} className={styles.title}>
+            {c.placeLegend}
+          </h3>
+          {onRemove ? (
+            <button type="button" className={styles.textButton} onClick={onRemove} aria-label={c.removeMeaningLabel(c.placeLegend)}>
+              {c.removeMeaning}
+            </button>
+          ) : null}
+        </div>
+        <div className={styles.fields}>
+          <PlaceQuestion
+            draft={draft}
+            asked
+            labelledBy={titleId}
+            onChange={(next) => {
+              onChange(next);
+              onPlaced?.();
+            }}
+          />
+        </div>
+      </section>
+    );
+  }
 
   if (!open) {
     return (
@@ -194,7 +244,7 @@ export function MeaningSection({
         <details className={styles.more} open={moreOpen || undefined}>
           <summary className={styles.summary}>
             <span className={styles.summaryText}>
-              <span className={styles.summaryTitle}>{c.moreDetail}</span>
+              <span className={styles.summaryTitle}>{c.moreAboutMeaning}</span>
               <span className={styles.summaryHint}>{c.meaningMoreHint(sure)}</span>
             </span>
             <span className={styles.fold} aria-hidden="true">

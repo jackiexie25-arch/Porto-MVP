@@ -68,11 +68,17 @@
   list-style: none;
 }
 
+/* Name, bar, value; at 200% zoom they wrap rather than push the page sideways. */
 .spaceRow {
-  display: grid;
-  grid-template-columns: 110px auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
+}
+
+.spaceRow > code {
+  flex: 0 0 110px;
+  max-width: 100%;
 }
 
 .spaceBar {

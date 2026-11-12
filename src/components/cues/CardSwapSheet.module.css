@@ -35,7 +35,7 @@
 /* Whole words: at 200% zoom "Take off" drops under the name instead of squeezing it. */
 .option {
   flex-wrap: wrap;
-  column-gap: var(--space-4);
+  column-gap: var(--space-3);
 }
 
 .optionLabel {
@@ -46,6 +46,16 @@
 
 .optionAction {
   margin-left: auto;
+}
+
+.number {
+  flex: none;
+  min-width: 1.25rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .optionAction {

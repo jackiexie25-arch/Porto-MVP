@@ -279,37 +279,47 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 
 ### Design round 2: cue library
 
-- **The library is one typeset sheet** (edge to edge below 600px). Its parts sit under small Figtree 14/20 600 labels on a 1px ink rule, with the count at the right: "On Ari's card · 5 of 5" (the pinned cues, in the order a worker sees them) and "Other cues · 3" (A to Z). Cues are hairline rows. The cue name is Fraunces 600 18/28 with no underline. The whole row opens the cue (spoken "Cookie time, edit"). Category is not a filter or a group: with 8 to 40 cues, search plus the card split answers Sam's questions, and the category is still set in the editor's "More detail".
+- **The library is one typeset sheet** (edge to edge below 600px). Its parts sit under small Figtree 14/20 600 labels on a 1px ink rule, with the count at the right. Cues are hairline rows: the name in Fraunces 600 18/28, no underline, and the whole row opens the cue (spoken "Cookie time, edit"). Category is not a filter or a group: with 8 to 40 cues, search plus the card split answers Sam's questions, and the category is still set under "More about this cue".
+- **Phone and desktop list the cues differently.**
+  - Phones: "On Ari's card · 5 of 5" (card order), then "Other cues · 3" (A to Z).
+  - Desktop (1024px and wider): the side column holds "On Ari's card" as a numbered list, each name with "Take off". The main column is "All cues", A to Z, once. A pinned row there states the quiet fact "On the card"; only unpinned rows offer "Add to card".
+  - The layout is chosen with `matchMedia`, so each card control exists once on the page.
 - **The meaning has the weight.** Each meaning is a line pair: the place and how sure ("At school · usually", 14/20 600 ink-soft), then the meaning in ink 600. Each pair links to that meaning in the editor (`/cues/:id#meaning-<id>`).
 - **Gaps are plain facts, in the default view too.** "No “What to do” yet" sits under a meaning without one. "Not written for school, camp or out and about" names only the worker places a cue has nothing for: home, school, camp and out and about. Mealtime is a moment, not a place, so it's left out. Nothing is listed when a meaning holds anywhere. Muted text, never a warning colour.
-- **Place lens:** "See it as a worker at" uses the worker view's five places on one line of chips, which scrolls sideways on phones and wraps on desktop. With a place chosen:
-  - The list becomes "Nothing written at camp yet" first, each row showing "Written for: …" and "Add what it means at camp".
-  - Then "Written at camp", where each row leads with the meaning a worker there would read (the worker view's `arrangeMeanings`), then "Also written for: …".
+- **Place lens:** "See it as a worker at" offers the worker view's five places as slightly tighter chips that wrap to two rows at 360px. None is cut off at the edge. With a place chosen:
+  - "Nothing written at camp yet" comes first, with the line "A worker there reads what you wrote for other places." Each gap row shows "Written for: …" and one action, "Add what it means at camp", with no card control.
+  - Then "Written at camp", where each row leads with the meaning a worker there would read (`arrangeMeanings`), then "Also written for: …".
   - "Add what it means at camp" opens the editor (`?add=camp`) with a new meaning already set to camp, open, and its heading focused.
-- **Fixing one meaning:** tapping a meaning line opens the editor on that meaning, open, with its place heading focused and scrolled to the top. The other meanings stay closed. This takes 3 taps: the line, the field, then Save cue. We chose this over a one-meaning sheet because:
+- **Fixing one meaning:** tapping a meaning line opens the editor on that meaning, open, with its place heading focused and scrolled to the top. The others stay closed. This takes 3 taps: the line, the field, then Save cue. After saving, focus returns to that cue's row in the library (`focusCue` in the navigation state, then `data-cue`). We chose this over a one-meaning sheet because:
   - it keeps one save path (`saveCue`), the unsaved-changes guard and the live preview;
-  - Sam sees the cue's other places while changing one;
-  - there is no second editing surface to keep in step.
-- **Card control:** each row has one quiet text button, "Add to card" or "Take off card", at the lower right beside the meanings, so the name keeps the full width. Focus follows the cue to its new place on the page. With 5 on the card, it opens "The card holds 5 cues": the five as a ruled list of Fraunces names with "Take off" at the right, between ink rules, plus "Keep the card as it is". A swap saves in order: take one off, put the other on, and undo the first if the second fails.
-- **Editor: one written page.** One surface sheet holds:
-  - "What you'll see or hear" in a Fraunces input.
-  - "More detail", whose summary states the folded facts: kind, topic, also written as, description.
-  - The card tick.
-  - "What it means".
-- **Closed meanings read as a worker sees them:** a quiet place line with "Change" on it, then `MeaningView` without a second context line. The meaning is the only Fraunces line.
-- **Open meanings:** the place is the Fraunces 24 title, with "Remove". The text fields lead. For a meaning that already has a place, the place choice waits behind "Change where". "What to avoid" and "How sure" sit under the meaning's "More detail". Examples show only for a meaning written from scratch.
-- **"Where does it mean this?"** offers "Anywhere", Home, School, Camp and Out and about first. Mealtime, Transport, With a specific person and Other wait behind "More places". "Name the place or person" appears only when it's needed.
-- **"Add what it means in another place"** is a quiet underlined text action under the last meaning. It adds an open section and focuses its heading.
-- **A new cue is a short interview:** what you see or hear, then where, then what it means and what to do. "More detail" and the card tick come after.
-- **The card tick at 5 of 5** opens the same swap sheet, and the chosen cue comes off when Sam saves ("Cookie time comes off the card when you save."). The count line can no longer read "6 of 5" (`cardCountAfter`).
-- **From the inbox:** what the worker wrote is quoted above the form as a figure with the house 2px ink left rule. It shows "What Jo wrote", then only the note's own fields: what happened, where, they thought, they tried, did it help. The note's meaning comes first and open, marked "New, from Jo's note. Check it, then save." The page opens at the top, on the worker's words. The saved order of meanings is unchanged.
-- **Desktop:**
-  - The library has a 300px sticky column: heading, Add a cue, search, place, and "Ari's card, in order" as a numbered Fraunces list. Beside it is the index, with each place and its meaning side by side so meanings line up.
-  - The editor sits beside the sticky "What a worker sees" column, which sets the whole cue as a worker's search result for a chosen place.
-  - The phone-only "What a worker reads" preview inside an open meaning was removed: the closed meaning already reads as a worker sees it.
+  - Sam sees the cue's other places while changing one.
+- **The card control** is a quiet text button, "Add to card" or "Take off card". Where the row is narrower than 520px (phones, 200% zoom), it takes its own line under the meanings, at the right. This is a container query, so a short meaning is never broken to fit beside it. Focus follows the cue to its new place on the page.
+- **Swap sheet:** with 5 on the card, adding one opens "The card holds 5 cues". It shows the five as a numbered, ruled list in card order: Fraunces names with "Take off" at the right, between ink rules, plus "Keep the card as it is". A swap saves in order: take one off, put the other on, and undo the first if the second fails.
+- **Card tick at 5 of 5:** the editor's tick opens the same sheet. The chosen cue comes off when Sam saves ("Cookie time comes off the card when you save. Keep it on"). "Keep it on" undoes the choice. If the save fails after taking it off, it goes back on. The count line can't read "6 of 5" (`cardCountAfter`).
+- **Editor: one written page on one sheet.** It holds "What you'll see or hear" in a Fraunces input, "More about this cue" (its summary states kind, topic, also written as and description), the card tick, and "What it means".
+  - Closed meanings read as a worker sees them: a quiet place line with "Change", then `MeaningView` without a second context line.
+  - Open meanings: the place is the Fraunces 24 title, with "Remove". The text fields lead. A saved place waits behind "Change where". "What to avoid" and "How sure" sit under "More about this meaning".
+  - "Add what it means in another place" is a quiet underlined text action under the last meaning.
+- **A new cue is a real interview:**
+  1. "What do you see or hear?"
+  2. "Where does it mean this?" as the Fraunces step heading, with nothing chosen yet, not even Anywhere. The common worker places come first; Mealtime, Transport, With a specific person and Other wait behind "More places".
+  3. Once a place is chosen (Anywhere counts), the heading becomes the place and the meaning fields appear.
+  4. "More about this cue" and the card tick come last, once.
+  - A meaning added with "Add what it means in another place" asks the same way. The action itself waits until the open question is answered.
+- **From the inbox:**
+  - There is no info banner. The worker's words stand alone as a figure with the house 2px ink left rule: "What Jo wrote", then only the note's own fields (they saw, where, they thought, they tried, did it help).
+  - "They saw" is the worker's text, or the profile cue they picked. Answers are Figtree 18/28 ink: their words, read calmly, not set as headings.
+  - The sheet then starts with "What it means", the note's meaning first and open: "New, from Jo's note. Check it, then save.", plus the missing-meaning line when needed. The cue's name and details come after.
+  - Focus goes to the page heading, so Jo's quote is in view on arrival. The saved order of meanings is unchanged.
+- **The note's and the arrival meaning's keys come from the draft the editor froze on its first render** (`arrivalKeys`). A page render later builds a fresh draft with new keys, which used to drop the note's meaning out of first place.
+- **Desktop editor:** beside the form, the sticky "What a worker sees" column sets the whole cue as a worker's search result for a chosen place. Its notes are in family words ("Choose a place to see what a worker there reads first."; "Nothing written at camp yet. A worker there reads what you wrote for other places.").
 - **Nav:** "Share for a shift" is an outlined button, so each page keeps one apricot primary.
 - **Unsaved changes:** links to other pages are held by "Leave without saving?", and closing or reloading the tab gets the browser's own question. The browser's Back button isn't caught: the app uses a plain `BrowserRouter` (`useLeaveGuard`).
-- **Sheet titles keep whole words at 200% zoom:** "Close" drops under the title, and below 320px the title is 18/28. The swap list's names wrap by word, and "Take off" drops beneath them.
+- **200% zoom:**
+  - Sheet titles keep whole words: "Close" drops under the title, and below 320px the title is 18/28.
+  - The swap list wraps by word.
+  - The styleguide's spacing rows wrap.
+  - No touched screen scrolls sideways at 320 or 180px.
 - **Setup step 5:** after "Add to profile", focus moves to "Added to the profile." instead of being lost with the closed form.
 
 ## Brand gaps
@@ -359,7 +369,7 @@ All of this copy was drafted by Claude in the brief's voice. A person should che
 - Worker view round C copy (`copy.worker`): "Call Sam", "From Ari's family", "If Ari does or says something you don't understand, type it here.", "I'm at", "Things Ari often does", "In other places", "Ari's family hasn't written what this means at camp. This is what they wrote for other places.", "Ari's family wrote different meanings for different places. Choose where you are, above the search.", "Show it large", "Add a note", "No matches from Ari's family", "Ari's first-shift card", "About 2 minutes to read.", "Ari's family hasn't written the card yet.", the reordered log form with "Add more detail", and the card's "Hide" / "Show" and "Call Sam on 0491 570 156" (`copy.card`).
 - Worker view round 2 copy (`copy.worker`): "What did Ari do or say?", "Before you start", "Right now", "Read Ari's card first · about 2 minutes", "Skip to search", "1 match · At school · Change" (and "No place chosen · Choose"), "Something happened?", "Tell Ari's family what happened" as the log title, "Say what you saw or heard.", and the styleguide's full-screen sheet sample.
 - Worker view final-round copy: "Back to where you were", "Try fewer words, or how it looks or sounds.", "What usually helps" (no colon), "Change" for what they saw in the log, and the styleguide label for the brief meaning.
-- Design round 2 cue library and editor copy (`copy.cues`, `copy.cueEditor`): "What Ari says or does, and what it means in each place.", "See it as a worker at", "On Ari's card" with "5 of 5", "Other cues", "Ari's card, in order", "Add to card" / "Take off card", "Saved. Blue bottle is on the card instead of Rocking faster than usual.", "The card holds 5 cues", "Choose one to take off, to make room for Blue bottle.", "Take off", "Keep the card as it is", "No “What to do” yet", "Not written for school, camp or out and about", "Nothing written at camp yet", "Written at camp", "Written for: …", "Add what it means at camp", "Also written for: …", "More detail" with Show / Hide, "Where does it mean this?", "Anywhere", "More places", "Name the place or person", "Change", "Change where", "Done", "Remove", "What a worker sees", "Add what it means in another place", "The card already has 5 cues. Tick this to choose one to swap out.", "Cookie time comes off the card when you save.", "What Jo wrote", "New, from Jo's note. Check it, then save.", "Leave without saving?", "Keep editing".
+- Design round 2 cue library and editor copy (`copy.cues`, `copy.cueEditor`): "What Ari says or does, and what it means in each place.", "See it as a worker at", "On Ari's card" with "5 of 5", "Other cues", "All cues", "On the card", "Add to card" / "Take off card" / "Take off", "Saved. Blue bottle is on the card instead of Rocking faster than usual.", "The card holds 5 cues", "Choose one to take off, to make room for Blue bottle.", "Take off", "Keep the card as it is", "No “What to do” yet", "Not written for school, camp or out and about", "Nothing written at camp yet", "A worker there reads what you wrote for other places.", "Written at camp", "Written for: …", "Add what it means at camp", "Also written for: …", "More about this cue" and "More about this meaning" with Show / Hide, "What do you see or hear?", "Where does it mean this?", "Anywhere", "More places", "Name the place or person", "Change", "Change where", "Done", "Remove", "What a worker sees", "Add what it means in another place", "The card already has 5 cues. Tick this to choose one to swap out.", "Cookie time comes off the card when you save.", "Keep it on", "Choose a place to see what a worker there reads first.", "What Jo wrote", "They saw", "New, from Jo's note. Check it, then save.", "Leave without saving?", "Keep editing".
 - Supabase's own magic-link **email template**: it still says "Magic Link" and needs rewording in Porto's voice in the Supabase dashboard (Authentication, then Emails).
 
 

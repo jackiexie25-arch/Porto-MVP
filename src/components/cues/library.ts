@@ -10,14 +10,16 @@ export interface LibraryGroups {
   others: Cue[];
 }
 
+/** A to Z by the family's label, ignoring case, so a cue is where you expect it. */
+export function sortByLabel(cues: readonly Cue[]): Cue[] {
+  return [...cues].sort((a, b) => a.label.localeCompare(b.label, 'en-AU', { sensitivity: 'base' }));
+}
+
 /** Splits the (already filtered) cues into the card's cues and the rest. */
 export function groupForLibrary(cues: readonly Cue[]): LibraryGroups {
   const onCard = pinnedCues(cues);
   const pinnedIds = new Set(onCard.map((c) => c.id));
-  const others = cues
-    .filter((c) => !pinnedIds.has(c.id))
-    .sort((a, b) => a.label.localeCompare(b.label, 'en-AU', { sensitivity: 'base' }));
-  return { onCard, others };
+  return { onCard, others: sortByLabel(cues.filter((c) => !pinnedIds.has(c.id))) };
 }
 
 export type PlacedCueMeaning = CueMeaning & { in_context: boolean };

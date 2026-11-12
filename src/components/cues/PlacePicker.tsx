@@ -9,19 +9,16 @@ export const WORKER_PLACES = copy.worker.contexts as readonly ContextTag[];
 
 /**
  * "See it as a worker at [Home] [School] …": one place or none. Tapping the chosen place
- * again goes back to every place, as in the worker view. `oneRow` keeps the chips on a single line
- * that scrolls sideways on a phone, so the list below starts sooner.
+ * again goes back to every place, as in the worker view. The chips wrap: none is ever cut off.
  */
 export function PlacePicker({
   label,
   value,
   onChange,
-  oneRow = false,
 }: {
   label: string;
   value: ContextTag | null;
   onChange: (place: ContextTag | null) => void;
-  oneRow?: boolean;
 }) {
   const id = useId();
   return (
@@ -29,7 +26,7 @@ export function PlacePicker({
       <p id={id} className={styles.label}>
         {label}
       </p>
-      <ChipGroup aria-labelledby={id} className={oneRow ? styles.oneRow : undefined}>
+      <ChipGroup aria-labelledby={id} className={styles.chips}>
         {WORKER_PLACES.map((p) => (
           <ChoiceChip key={p} selected={value === p} onClick={() => onChange(value === p ? null : p)}>
             {copy.labels.context[p]}

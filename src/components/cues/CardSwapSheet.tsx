@@ -25,9 +25,13 @@ export function CardSwapSheet({
     <Sheet open={adding !== null} onClose={onClose} title={c.swapTitle}>
       <p>{adding !== null ? c.swapBody(adding) : null}</p>
       <ul className={styles.list}>
-        {pinned.map((cue) => (
+        {pinned.map((cue, i) => (
           <li key={cue.id}>
             <button type="button" className={styles.option} onClick={() => onSwap(cue)}>
+              {/* Its place on the card, the order a worker reads them. */}
+              <span className={styles.number} aria-hidden="true">
+                {i + 1}
+              </span>
               <span className={styles.optionLabel}>{cue.label}</span>
               <span className={styles.optionAction}>{c.takeOff}</span>
             </button>

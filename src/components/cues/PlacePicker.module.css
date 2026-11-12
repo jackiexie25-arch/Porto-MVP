@@ -12,27 +12,7 @@
   color: var(--ink-soft);
 }
 
-/* One line of chips on a phone; the last one peeks in at the edge, so it reads as more to the side. */
-.oneRow {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  /* Room for the focus ring inside the scroller, without moving the chips off the column edge. */
-  margin: calc(var(--space-2) * -1);
-  padding: var(--space-2);
-  scrollbar-width: none;
-}
-
-.oneRow::-webkit-scrollbar {
-  display: none;
-}
-
-.oneRow > * {
-  flex: none;
-}
-
-@media (min-width: 1024px) {
-  .oneRow {
-    flex-wrap: wrap;
-    overflow: visible;
-  }
+/* A little tighter than a form's chips, so the five places sit in two calm rows at 360px. */
+.chips > * {
+  padding-inline: var(--space-3);
 }

@@ -7,6 +7,7 @@ import {
   groupForLibrary,
   lacksWhatToDo,
   missingPlaces,
+  sortByLabel,
   splitForPlace,
   withPin,
 } from '../../components/cues/library';
@@ -25,6 +26,20 @@ import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Cues.module.css';
 
 const c = copy.cues;
+const WIDE = '(min-width: 1024px)';
+
+/** Desktop keeps the card in the side column, so the index can run A to Z without repeating it. */
+function useWide(): boolean {
+  const [wide, setWide] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia(WIDE).matches);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(WIDE);
+    const onChange = () => setWide(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return wide;
+}
 
 function placeNames(places: readonly ContextTag[]): string {
   return joinList(
@@ -58,16 +73,35 @@ function MeaningLines({ cue, meanings }: { cue: Cue; meanings: readonly CueMeani
 
 type RowMode = { kind: 'all' } | { kind: 'written'; place: ContextTag } | { kind: 'gap'; place: ContextTag };
 
+/** "Add to card" / "Take off card": a quiet 48px text button. */
+function PinButton({ cue, busy, onPin, short = false }: { cue: Cue; busy: boolean; onPin: (cue: Cue) => void; short?: boolean }) {
+  return (
+    <button
+      type="button"
+      data-pin={cue.id}
+      className={styles.pin}
+      disabled={busy}
+      onClick={() => onPin(cue)}
+      aria-label={cue.pinned ? c.pinRemoveLabel(cue.label) : c.pinAddLabel(cue.label)}
+    >
+      {cue.pinned ? (short ? c.takeOff : c.pinRemove) : c.pinAdd}
+    </button>
+  );
+}
+
 function CueRow({
   cue,
   mode,
   busy,
   onPin,
+  cardInSidebar,
 }: {
   cue: Cue;
   mode: RowMode;
   busy: boolean;
   onPin: (cue: Cue) => void;
+  /** Desktop: the card is managed in the side column, so a pinned row only states the fact. */
+  cardInSidebar: boolean;
 }) {
   let body;
   let facts: string | null = null;
@@ -104,7 +138,7 @@ function CueRow({
   return (
     <li className={styles.row}>
       <h3 className={styles.rowLabel}>
-        <Link to={`/cues/${cue.id}`} className={styles.rowLink} aria-label={c.editLabel(cue.label)}>
+        <Link to={`/cues/${cue.id}`} data-cue={cue.id} className={styles.rowLink} aria-label={c.editLabel(cue.label)}>
           {cue.label}
         </Link>
       </h3>
@@ -112,29 +146,40 @@ function CueRow({
         {body}
         {facts ? <p className={styles.fact}>{facts}</p> : null}
       </div>
-      <div className={styles.rowFoot}>
-        <button
-          type="button"
-          data-pin={cue.id}
-          className={styles.pin}
-          disabled={busy}
-          onClick={() => onPin(cue)}
-          aria-label={cue.pinned ? c.pinRemoveLabel(cue.label) : c.pinAddLabel(cue.label)}
-        >
-          {cue.pinned ? c.pinRemove : c.pinAdd}
-        </button>
-      </div>
+      {/* A gap row has one action, adding the meaning; the card waits for the full list. */}
+      {mode.kind === 'gap' ? null : (
+        <div className={styles.rowFoot}>
+          {cardInSidebar && cue.pinned ? (
+            <p className={styles.onCardFact}>{c.onCardFact}</p>
+          ) : (
+            <PinButton cue={cue} busy={busy} onPin={onPin} />
+          )}
+        </div>
+      )}
     </li>
   );
 }
 
 /** One labelled part of the index sheet: a label over an ink rule, its count at the right. */
-function Section({ id, title, count, children }: { id: string; title: string; count: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  count,
+  hint,
+  children,
+}: {
+  id: string;
+  title: string;
+  count: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
     <section aria-labelledby={id} className={styles.section}>
       <h2 id={id} className={styles.sectionHead}>
         <span>{title}</span> <span className={styles.sectionCount}>{count}</span>
       </h2>
+      {hint ? <p className={styles.sectionHint}>{hint}</p> : null}
       {children}
     </section>
   );
@@ -144,7 +189,9 @@ export function CueLibrary() {
   usePageTitle(c.title);
   const { cues, profile, saveCue } = useFamilyData();
   const location = useLocation();
-  const savedNotice = (location.state as { notice?: string } | null)?.notice;
+  const arrived = location.state as { notice?: string; focusCue?: string } | null;
+  const savedNotice = arrived?.notice;
+  const focusCue = arrived?.focusCue;
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<ContextTag | null>(null);
   const [notice, setNotice] = useState<string | undefined>(savedNotice);
@@ -152,20 +199,33 @@ export function CueLibrary() {
   const [busy, setBusy] = useState(false);
   const [swapFor, setSwapFor] = useState<Cue | null>(null);
   const [focusPin, setFocusPin] = useState<string | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const wide = useWide();
   const name = profile.display_name.trim() || c.child;
 
   const shown = useMemo(() => filterCues(cues, query, 'all'), [cues, query]);
   const { onCard, others } = useMemo(() => groupForLibrary(shown), [shown]);
-  const byPlace = useMemo(() => (place ? splitForPlace([...onCard, ...others], place) : null), [onCard, others, place]);
+  const aToZ = useMemo(() => sortByLabel(shown), [shown]);
+  // Phones keep the card's cues first; desktop lists A to Z, with the card in the side column.
+  const ordered = wide ? aToZ : [...onCard, ...others];
+  const byPlace = useMemo(() => (place ? splitForPlace(ordered, place) : null), [ordered, place]);
   const card = pinnedCues(cues);
   const searching = query.trim() !== '';
+
+  // Back from the editor: focus returns to the cue that was changed. Runs after the page heading's focus.
+  useEffect(() => {
+    if (!focusCue) return;
+    const el = layoutRef.current?.querySelector<HTMLElement>(`[data-cue="${CSS.escape(focusCue)}"]`);
+    el?.focus({ preventScroll: true });
+    el?.scrollIntoView?.({ block: 'center' });
+    // Only on arrival.
+  }, []);
 
   // A cue that moved on or off the card keeps focus on its button, in its new place on the page.
   useEffect(() => {
     if (!focusPin) return;
     const timer = window.setTimeout(() => {
-      const el = listRef.current?.querySelector<HTMLButtonElement>(`[data-pin="${CSS.escape(focusPin)}"]`);
+      const el = layoutRef.current?.querySelector<HTMLButtonElement>(`[data-pin="${CSS.escape(focusPin)}"]`);
       el?.focus({ preventScroll: true });
       el?.scrollIntoView?.({ block: 'center' });
       setFocusPin(null);
@@ -223,14 +283,14 @@ export function CueLibrary() {
   const rows = (list: readonly Cue[], mode: RowMode) => (
     <ul className={styles.rows}>
       {list.map((cue) => (
-        <CueRow key={cue.id} cue={cue} mode={mode} busy={busy} onPin={onPin} />
+        <CueRow key={cue.id} cue={cue} mode={mode} busy={busy} onPin={onPin} cardInSidebar={wide} />
       ))}
     </ul>
   );
 
   return (
     <FamilyShell width="wide">
-      <div className={styles.libraryLayout}>
+      <div className={styles.libraryLayout} ref={layoutRef}>
         <div className={styles.libraryAside}>
           <header className={styles.libraryHeader}>
             <div className={styles.titleRow}>
@@ -243,7 +303,7 @@ export function CueLibrary() {
           {cues.length ? (
             <div className={styles.controls}>
               <SearchField label={c.searchLabel} maxLength={200} value={query} onValueChange={setQuery} />
-              <PlacePicker label={c.placeLabel} value={place} onChange={setPlace} oneRow />
+              <PlacePicker label={c.placeLabel} value={place} onChange={setPlace} />
               {/* Always announced; only shown while searching, when the number is news. */}
               <p className={searching ? 't-small t-muted' : 'visually-hidden'} role="status" aria-live="polite">
                 {c.count(shown.length, cues.length)}
@@ -251,22 +311,31 @@ export function CueLibrary() {
             </div>
           ) : null}
 
-          {card.length ? (
+          {wide && cues.length ? (
             <section aria-labelledby="card-list" className={styles.cardList}>
               <h2 id="card-list" className={styles.sectionHead}>
-                <span>{c.cardOrderHeading(name)}</span>{' '}
+                <span>{c.onCardHeading(name)}</span>{' '}
                 <span className={styles.sectionCount}>{c.onCardCount(card.length, MAX_PINNED)}</span>
               </h2>
-              <ol>
-                {card.map((cue) => (
-                  <li key={cue.id}>{cue.label}</li>
-                ))}
-              </ol>
+              {card.length ? (
+                <ol>
+                  {card.map((cue) => (
+                    <li key={cue.id}>
+                      <Link to={`/cues/${cue.id}`} className={styles.cardName}>
+                        {cue.label}
+                      </Link>
+                      <PinButton cue={cue} busy={busy} onPin={onPin} short />
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className={styles.sectionEmpty}>{c.onCardEmpty}</p>
+              )}
             </section>
           ) : null}
         </div>
 
-        <div className={styles.libraryMain} ref={listRef}>
+        <div className={styles.libraryMain}>
           {notice ? <Banner tone="success">{notice}</Banner> : null}
           {error ? <Banner tone="error">{error}</Banner> : null}
 
@@ -285,6 +354,7 @@ export function CueLibrary() {
                   id="gaps"
                   title={c.gapsHeading(copy.labels.contextPhrase[place])}
                   count={String(byPlace.gaps.length)}
+                  hint={c.gapsHint}
                 >
                   {rows(byPlace.gaps, { kind: 'gap', place })}
                 </Section>
@@ -298,6 +368,12 @@ export function CueLibrary() {
                   {rows(byPlace.written, { kind: 'written', place })}
                 </Section>
               ) : null}
+            </div>
+          ) : wide ? (
+            <div className={styles.index}>
+              <Section id="all-cues" title={c.allHeading} count={String(aToZ.length)}>
+                {rows(aToZ, { kind: 'all' })}
+              </Section>
             </div>
           ) : (
             <div className={styles.index}>
