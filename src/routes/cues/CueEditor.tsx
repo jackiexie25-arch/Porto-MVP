@@ -1,6 +1,7 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { flushSync } from 'react-dom';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { CardSwapSheet } from '../../components/cues/CardSwapSheet';
 import {
   cueEditorDraftFrom,
   cueEditorDraftFromNote,
@@ -14,16 +15,18 @@ import {
   type CueErrors,
   type MeaningDraft,
 } from '../../components/cues/drafts';
+import { cardCountAfter, withPin } from '../../components/cues/library';
 import { CueTypeChips } from '../../components/cues/MeaningFields';
 import { MeaningSection } from '../../components/cues/MeaningSection';
-import { PlacePicker } from '../../components/cues/PlacePicker';
+import { PlacePicker, WORKER_PLACES } from '../../components/cues/PlacePicker';
 import { WorkerPreview } from '../../components/cues/WorkerPreview';
 import { FamilyShell } from '../../components/family/FamilyShell';
 import { PageHeading } from '../../components/layout/PageHeading';
 import { Banner, Button, Checkbox, Select, Sheet, TextArea, TextField } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
-import { CUE_CATEGORIES, LIMITS, type ContextTag, type CueCategory } from '../../data/types';
+import { CUE_CATEGORIES, LIMITS, type ContextTag, type Cue, type CueCategory, type ShiftNote } from '../../data/types';
 import { MAX_PINNED, useFamilyData } from '../../family/FamilyDataProvider';
+import { contextPhrase, pinnedCues } from '../../lib/card';
 import { friendlyError } from '../../lib/errors';
 import { reveal, useRevealOn } from '../../lib/reveal';
 import { useLeaveGuard } from '../../lib/useLeaveGuard';
@@ -32,15 +35,27 @@ import styles from './Cues.module.css';
 
 const c = copy.cueEditor;
 const f = copy.cueForm;
+const n = copy.inbox;
+
+/** Where the editor should start: a meaning to open and focus, if any. */
+interface Start {
+  draft: CueEditorDraft;
+  /** The meaning to open and bring into view (from the library, a place gap or a note). */
+  focusKey?: string;
+  /** The note's meaning, shown first and marked. */
+  noteKey?: string;
+}
 
 export function CueEditorPage() {
   const { id } = useParams();
   const [params] = useSearchParams();
+  const { hash } = useLocation();
   const { cues, notes } = useFamilyData();
   const isNew = id === undefined;
   const existing = isNew ? undefined : cues.find((cue) => cue.id === id);
   // "Edit then add" from the inbox: the note to confirm, if it's still waiting.
-  const note = notes.find((n) => n.id === params.get('note') && n.status === 'pending');
+  const note = notes.find((x) => x.id === params.get('note') && x.status === 'pending');
+  const add = params.get('add') as ContextTag | null;
   usePageTitle(isNew ? c.newTitle : c.editTitle);
 
   if (!isNew && !existing) {
@@ -55,20 +70,28 @@ export function CueEditorPage() {
       </FamilyShell>
     );
   }
-  const initial = note ? cueEditorDraftFromNote(note, cues) : existing ? cueEditorDraftFrom(existing) : undefined;
-  // Keyed so switching between cues (or notes) starts a fresh form.
-  return <CueEditor key={`${id ?? 'new'}-${note?.id ?? ''}`} initial={initial} noteId={note?.id} />;
-}
 
-/**
- * Which meanings start open: a new cue's first, a worker's note's (the last one), and any with
- * nothing written yet. A saved cue opens closed, each meaning reading as a worker sees it.
- */
-function initiallyOpen(draft: CueEditorDraft, fromNote: boolean): Set<string> {
-  const open = new Set(draft.meanings.filter((m) => !m.meaning.trim()).map((m) => m.key));
-  if (!draft.id) open.add(draft.meanings[0]!.key);
-  if (fromNote) open.add(draft.meanings[draft.meanings.length - 1]!.key);
-  return open;
+  let start: Start | undefined;
+  if (note) {
+    const draft = cueEditorDraftFromNote(note, cues);
+    const key = draft.meanings[draft.meanings.length - 1]!.key;
+    // Not focused: the page opens at the top, on the worker's words, with their meaning first below.
+    start = { draft, noteKey: key };
+  } else if (existing) {
+    const draft = cueEditorDraftFrom(existing);
+    const target = /^#meaning-(.+)$/.exec(hash)?.[1];
+    if (add && WORKER_PLACES.includes(add)) {
+      // "Add what it means at camp" from the library: a new meaning, already set to that place.
+      const added: MeaningDraft = { ...emptyMeaning(), context_tags: [add] };
+      start = { draft: { ...draft, meanings: [...draft.meanings, added] }, focusKey: added.key };
+    } else {
+      start = { draft, focusKey: draft.meanings.find((m) => m.id === target)?.key };
+    }
+  }
+  // Keyed so switching between cues (or notes) starts a fresh form.
+  return (
+    <CueEditor key={`${id ?? 'new'}-${note?.id ?? ''}-${add ?? ''}`} start={start} note={note} />
+  );
 }
 
 /** "A phrase or word · Food and drink · Also written as cookie, cookies": what's folded away, as facts. */
@@ -84,15 +107,55 @@ function cueFacts(draft: CueEditorDraft): string {
     .join(' · ');
 }
 
-function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: string }) {
+/** What the worker wrote, quoted in their words above the form. Only the note's own fields. */
+function NoteQuote({ note }: { note: ShiftNote }) {
+  const where = contextPhrase(note.context_tags, note.context_text);
+  const rows: [string, string][] = [
+    [n.happened, note.cue_text],
+    [n.where, where],
+    [n.needed, note.seemed_to_need],
+    [n.tried, note.tried],
+    [n.helped, n.outcomes[note.outcome]],
+  ];
+  return (
+    <figure className={styles.quote}>
+      <figcaption className={styles.quoteBy}>{c.quoteHeading(note.worker_name.trim())}</figcaption>
+      <blockquote className={styles.quoteBody}>
+        <dl>
+          {rows
+            .filter(([, text]) => text.trim())
+            .map(([label, text]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{text}</dd>
+              </div>
+            ))}
+        </dl>
+      </blockquote>
+    </figure>
+  );
+}
+
+function CueEditor({ start: given, note }: { start?: Start; note?: ShiftNote }) {
   const { cues, profile, saveCue, deleteCue, approveNote } = useFamilyData();
   const navigate = useNavigate();
   const name = profile.display_name.trim() || copy.cues.child;
-  const pinnedElsewhere = cues.filter((cue) => cue.pinned && cue.id !== initial?.id).length;
-  const [start] = useState<CueEditorDraft>(() => initial ?? emptyCueEditorDraft(pinnedElsewhere < MAX_PINNED));
+  const noteId = note?.id;
+  const othersOnCard = pinnedCues(cues).filter((cue) => cue.id !== given?.draft.id);
+  const [start] = useState<CueEditorDraft>(
+    () => given?.draft ?? emptyCueEditorDraft(othersOnCard.length < MAX_PINNED),
+  );
   const [draft, setDraft] = useState<CueEditorDraft>(start);
-  const [open, setOpen] = useState<Set<string>>(() => initiallyOpen(start, Boolean(noteId)));
+  const [open, setOpen] = useState<Set<string>>(() => {
+    const keys = new Set(start.meanings.filter((m) => !m.meaning.trim()).map((m) => m.key));
+    if (!start.id) keys.add(start.meanings[0]!.key);
+    if (given?.focusKey) keys.add(given.focusKey);
+    if (given?.noteKey) keys.add(given.noteKey);
+    return keys;
+  });
   const [previewPlace, setPreviewPlace] = useState<ContextTag | null>(null);
+  const [swapOut, setSwapOut] = useState<Cue | null>(null);
+  const [swapOpen, setSwapOpen] = useState(false);
   const [errors, setErrors] = useState<CueErrors>({ meanings: {} });
   const [formError, setFormError] = useState<string>();
   const [saving, setSaving] = useState(false);
@@ -102,8 +165,16 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
   const headingRefs = useRef(new Map<string, HTMLHeadingElement>());
   const formErrorRef = useRevealOn<HTMLDivElement>(formError);
 
-  const dirty = !saving && JSON.stringify(draft) !== JSON.stringify(start);
+  const dirty = !saving && (swapOut !== null || JSON.stringify(draft) !== JSON.stringify(start));
   const guard = useLeaveGuard(dirty);
+
+  // Arriving on one meaning (from the library, a place gap or a note): start there, its place heading focused.
+  useLayoutEffect(() => {
+    if (!given?.focusKey) return;
+    const heading = headingRefs.current.get(given.focusKey);
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView?.({ block: 'start' });
+  }, [given?.focusKey]);
 
   const set = <K extends keyof CueEditorDraft>(key: K, value: CueEditorDraft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -117,6 +188,11 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
       return next;
     });
 
+  // The note's meaning comes first, so it's the first thing to check. The saved order doesn't change.
+  const shown = given?.noteKey
+    ? [...draft.meanings].sort((a, b) => Number(b.key === given.noteKey) - Number(a.key === given.noteKey))
+    : draft.meanings;
+
   function addPlace() {
     const added = emptyMeaning();
     flushSync(() => {
@@ -129,10 +205,21 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
   }
 
   function removeMeaning(key: string) {
-    const index = draft.meanings.findIndex((m) => m.key === key);
-    const neighbour = draft.meanings[index - 1] ?? draft.meanings[index + 1];
+    const index = shown.findIndex((m) => m.key === key);
+    const neighbour = shown[index - 1] ?? shown[index + 1];
     flushSync(() => set('meanings', draft.meanings.filter((m) => m.key !== key)));
     if (neighbour) headingRefs.current.get(neighbour.key)?.focus();
+  }
+
+  function onPinChange(checked: boolean) {
+    if (!checked) {
+      set('pinned', false);
+      setSwapOut(null);
+    } else if (othersOnCard.length >= MAX_PINNED) {
+      setSwapOpen(true);
+    } else {
+      set('pinned', true);
+    }
   }
 
   async function onSubmit(event: FormEvent) {
@@ -141,13 +228,18 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
     const found = validateCueEditor(draft);
     setErrors(found);
     if (hasErrors(found)) {
-      const missing = Object.keys(found.meanings);
+      const missing = shown.filter((m) => found.meanings[m.key]).map((m) => m.key);
       flushSync(() => setOpen((o) => new Set([...o, ...missing])));
       reveal(found.label ? labelRef.current : meaningRefs.current.get(missing[0]!));
       return;
     }
     setSaving(true);
     try {
+      // A swap from the card tick: take the chosen cue off first, so the card never holds six.
+      if (swapOut && draft.pinned) {
+        const off = withPin(swapOut, false);
+        await saveCue(off.cue, off.meanings);
+      }
       const { cue, meanings } = toCueInput(draft);
       if (noteId) {
         await approveNote(noteId, cue, meanings);
@@ -177,6 +269,63 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
 
   const backTo = noteId ? '/inbox' : '/cues';
   const backText = noteId ? copy.inbox.backToInbox : c.cancel;
+  const cardFull = othersOnCard.length >= MAX_PINNED;
+  const isNew = !draft.id;
+
+  // The rarely changed facts about the cue, and whether it's on the card.
+  const cueExtras = (
+    <>
+      <details className={styles.more}>
+        <summary className={styles.summary}>
+          <span className={styles.summaryText}>
+            <span className={styles.summaryTitle}>{c.moreDetail}</span>
+            <span className={styles.summaryHint}>{cueFacts(draft)}</span>
+          </span>
+          <span className={styles.fold} aria-hidden="true">
+            <span className={styles.whenClosed}>{c.show}</span>
+            <span className={styles.whenOpen}>{c.hide}</span>
+          </span>
+        </summary>
+        <div className={styles.moreBody}>
+          <Select
+            label={f.categoryLabel}
+            value={draft.category}
+            onChange={(e) => set('category', e.target.value as CueCategory)}
+            options={CUE_CATEGORIES.map((k) => ({ value: k, label: copy.labels.category[k] }))}
+          />
+          <CueTypeChips value={draft.cue_type} onChange={(v) => set('cue_type', v)} />
+          <TextArea
+            label={c.descriptionLabel}
+            hint={c.descriptionHint}
+            optional
+            rows={2}
+            maxLength={500}
+            value={draft.description}
+            onChange={(e) => set('description', e.target.value)}
+          />
+          <TextField
+            label={c.aliasesLabel}
+            hint={c.aliasesHint}
+            optional
+            autoComplete="off"
+            maxLength={800}
+            value={draft.aliasesText}
+            onChange={(e) => set('aliasesText', e.target.value)}
+          />
+        </div>
+      </details>
+      <div className={styles.pinField}>
+        <Checkbox label={c.pinLabel(name)} checked={draft.pinned} onChange={(e) => onPinChange(e.target.checked)} />
+        <p className="t-small t-muted">
+          {swapOut && draft.pinned
+            ? c.swapPending(swapOut.label)
+            : !draft.pinned && cardFull
+              ? c.pinFull
+              : c.pinHint(cardCountAfter(othersOnCard.length, draft.pinned, swapOut !== null))}
+        </p>
+      </div>
+    </>
+  );
 
   return (
     <FamilyShell width="wide">
@@ -190,11 +339,14 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
               {draft.id ? draft.label || c.editTitle : c.newTitle}
             </PageHeading>
           </div>
-          {noteId ? (
-            <Banner tone="info">
-              {copy.inbox.fromNote}
-              {draft.meanings.some((m) => !m.meaning.trim()) ? ` ${copy.inbox.needsMeaning}` : ''}
-            </Banner>
+          {note ? (
+            <>
+              <Banner tone="info">
+                {copy.inbox.fromNote}
+                {draft.meanings.some((m) => !m.meaning.trim()) ? ` ${copy.inbox.needsMeaning}` : ''}
+              </Banner>
+              <NoteQuote note={note} />
+            </>
           ) : null}
           {formError ? (
             <Banner tone="error" ref={formErrorRef}>
@@ -202,74 +354,35 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
             </Banner>
           ) : null}
 
-          <section aria-label={c.cueSection} className={styles.cueSheet}>
-            <TextField
-              ref={labelRef}
-              label={f.labelLabel}
-              hint={f.labelHints[draft.cue_type]}
-              maxLength={LIMITS.cueLabel}
-              value={draft.label}
-              onChange={(e) => set('label', e.target.value)}
-              error={errors.label}
-            />
-            <details className={styles.more}>
-              <summary className={styles.summary}>
-                <span className={styles.summaryText}>
-                  <span className={styles.summaryTitle}>{c.moreDetail}</span>
-                  <span className={styles.summaryHint}>{cueFacts(draft)}</span>
-                </span>
-                <span className={styles.fold} aria-hidden="true">
-                  <span className={styles.whenClosed}>{c.show}</span>
-                  <span className={styles.whenOpen}>{c.hide}</span>
-                </span>
-              </summary>
-              <div className={styles.moreBody}>
-                <CueTypeChips value={draft.cue_type} onChange={(v) => set('cue_type', v)} />
-                <TextArea
-                  label={c.descriptionLabel}
-                  hint={c.descriptionHint}
-                  optional
-                  rows={2}
-                  maxLength={500}
-                  value={draft.description}
-                  onChange={(e) => set('description', e.target.value)}
-                />
-                <TextField
-                  label={c.aliasesLabel}
-                  hint={c.aliasesHint}
-                  optional
-                  autoComplete="off"
-                  maxLength={800}
-                  value={draft.aliasesText}
-                  onChange={(e) => set('aliasesText', e.target.value)}
-                />
-                <Select
-                  label={f.categoryLabel}
-                  value={draft.category}
-                  onChange={(e) => set('category', e.target.value as CueCategory)}
-                  options={CUE_CATEGORIES.map((k) => ({ value: k, label: copy.labels.category[k] }))}
-                />
-              </div>
-            </details>
-            <div className={styles.pinField}>
-              <Checkbox label={c.pinLabel(name)} checked={draft.pinned} onChange={(e) => set('pinned', e.target.checked)} />
-              <p className="t-small t-muted">{c.pinHint(pinnedElsewhere + (draft.pinned ? 1 : 0))}</p>
-            </div>
-          </section>
+          <div className={styles.page2}>
+            <section aria-label={c.cueSection} className={styles.cueSheet}>
+              <TextField
+                ref={labelRef}
+                label={f.labelLabel}
+                hint={draft.id ? undefined : f.labelHints[draft.cue_type]}
+                maxLength={LIMITS.cueLabel}
+                value={draft.label}
+                onChange={(e) => set('label', e.target.value)}
+                error={errors.label}
+                className={styles.labelInput}
+              />
+              {isNew ? null : cueExtras}
+            </section>
 
-          <section aria-labelledby="meanings-heading" className={styles.meanings}>
-            <div className={styles.meaningsHead}>
-              <h2 id="meanings-heading" className="t-h3">
-                {c.meaningsHeading}
-              </h2>
-              <p className={styles.intro}>{c.meaningsIntro}</p>
-            </div>
-            <div className={styles.meaningSheet}>
-              {draft.meanings.map((m) => (
+            <section aria-labelledby="meanings-heading" className={styles.meanings}>
+              <div className={styles.meaningsHead}>
+                <h2 id="meanings-heading" className={styles.kicker}>
+                  {c.meaningsHeading}
+                </h2>
+                <p className={styles.intro}>{c.meaningsIntro}</p>
+              </div>
+              {shown.map((m) => (
                 <MeaningSection
                   key={m.key}
                   draft={m}
                   open={open.has(m.key)}
+                  hints={!m.id && m.key !== given?.noteKey}
+                  marker={m.key === given?.noteKey ? c.fromNote(note?.worker_name.trim() ?? '') : undefined}
                   onOpenChange={(isOpen) => {
                     flushSync(() => setOpenFor(m.key, isOpen));
                     headingRefs.current.get(m.key)?.focus({ preventScroll: !isOpen });
@@ -287,11 +400,16 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
                   }}
                 />
               ))}
-            </div>
-            <Button variant="outlined" fullWidth onClick={addPlace}>
-              {c.addMeaning}
-            </Button>
-          </section>
+              <div className={styles.addPlaceRow}>
+                <button type="button" className={styles.addPlace} onClick={addPlace}>
+                  {c.addMeaning}
+                </button>
+              </div>
+            </section>
+
+            {/* A new cue is a short interview: what you see, where, what it means. The rest comes last. */}
+            {isNew ? <div className={styles.cueExtras}>{cueExtras}</div> : null}
+          </div>
 
           <div className={styles.actions}>
             <Button type="submit" disabled={saving}>
@@ -330,6 +448,17 @@ function CueEditor({ initial, noteId }: { initial?: CueEditorDraft; noteId?: str
           </div>
         </aside>
       </form>
+
+      <CardSwapSheet
+        adding={swapOpen ? draft.label.trim() || c.thisCue : null}
+        pinned={othersOnCard}
+        onSwap={(remove) => {
+          setSwapOpen(false);
+          setSwapOut(remove);
+          set('pinned', true);
+        }}
+        onClose={() => setSwapOpen(false)}
+      />
 
       <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title={c.deleteTitle(draft.label)}>
         <p>{c.deleteBody}</p>

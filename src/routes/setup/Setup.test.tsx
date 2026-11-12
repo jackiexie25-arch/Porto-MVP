@@ -116,6 +116,16 @@ describe('setup steps', () => {
     );
   });
 
+  it('step 5 moves focus to “Added to the profile.” after adding a cue, so it isn’t lost', async () => {
+    const user = userEvent.setup();
+    renderStep(5);
+    await user.click(screen.getByRole('button', { name: copy.setup.cues.examples[0]!.label }));
+    await user.type(screen.getByLabelText(copy.cueForm.labelLabel), 'Cookie time');
+    await user.type(screen.getByLabelText(copy.cueForm.meaningLabel), 'I’m hungry');
+    await user.click(screen.getByRole('button', { name: copy.cueForm.submit }));
+    await waitFor(() => expect(screen.getByText(copy.cueForm.added).closest('[role="status"]')).toHaveFocus());
+  });
+
   it('step 6 can go straight to sharing', async () => {
     const user = userEvent.setup();
     profile = makeProfile({ setup_step: 6 });

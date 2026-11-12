@@ -1,6 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { makeCue, makeMeaning } from '../../test/fixtures';
-import { asWorkerSees, groupForLibrary, lacksWhatToDo, withPin } from './library';
+import {
+  asWorkerSees,
+  cardCountAfter,
+  coversPlace,
+  groupForLibrary,
+  isAnywhere,
+  lacksWhatToDo,
+  missingPlaces,
+  splitForPlace,
+  withPin,
+} from './library';
+
+describe('place gaps', () => {
+  const home = makeCue({ id: 'home', cue_meanings: [makeMeaning({ context_tags: ['home', 'mealtime'] })] });
+  const anywhere = makeCue({ id: 'any', cue_meanings: [makeMeaning({ context_tags: [], context_text: '' })] });
+
+  it('lists the worker places a cue has nothing written for, leaving out mealtime', () => {
+    expect(missingPlaces(home)).toEqual(['school', 'camp', 'community']);
+  });
+
+  it('a meaning for anywhere covers every place', () => {
+    expect(isAnywhere(anywhere.cue_meanings[0]!)).toBe(true);
+    expect(missingPlaces(anywhere)).toEqual([]);
+    expect(coversPlace(anywhere, 'camp')).toBe(true);
+  });
+
+  it('a named person is not anywhere', () => {
+    expect(isAnywhere(makeMeaning({ context_tags: [], context_text: 'with Grandma' }))).toBe(false);
+  });
+
+  it('a cue with no meanings has no gaps to report', () => {
+    expect(missingPlaces(makeCue({ cue_meanings: [] }))).toEqual([]);
+  });
+
+  it('splits cues by whether a worker at a place finds something, keeping their order', () => {
+    expect(splitForPlace([home, anywhere], 'camp')).toEqual({ gaps: [home], written: [anywhere] });
+    expect(splitForPlace([home, anywhere], 'home')).toEqual({ gaps: [], written: [home, anywhere] });
+  });
+
+  it('counts the card after a save, never past five', () => {
+    expect(cardCountAfter(5, true, true)).toBe(5);
+    expect(cardCountAfter(4, true, false)).toBe(5);
+    expect(cardCountAfter(5, false, false)).toBe(5);
+    expect(cardCountAfter(3, false, false)).toBe(3);
+  });
+});
 
 describe('groupForLibrary', () => {
   it('keeps the card’s cues in card order and sorts the rest A to Z', () => {

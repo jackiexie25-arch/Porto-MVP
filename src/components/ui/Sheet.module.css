@@ -33,8 +33,30 @@
   margin-bottom: var(--space-4);
 }
 
-.title {
+/*
+ * The title keeps whole words: it takes the line, and Close drops beneath it when there isn't room
+ * for both (200% zoom). Only a single word longer than the line is ever broken.
+ */
+.header {
+  flex-wrap: wrap;
+}
+
+.header .title {
+  flex: 1 1 12ch;
+  min-width: 0;
   padding-top: var(--space-2);
+  overflow-wrap: break-word;
+}
+
+.close {
+  margin-left: auto;
+}
+
+@media (max-width: 319px) {
+  .header .title {
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg-lh);
+  }
 }
 
 .close {

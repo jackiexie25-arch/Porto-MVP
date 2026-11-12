@@ -5,6 +5,7 @@ import { Banner, Button, Card, ChipGroup, ChoiceChip } from '../../components/ui
 import { copy } from '../../copy/en-AU';
 import type { CueType, NewCue, NewMeaning } from '../../data/types';
 import { useFamilyData } from '../../family/FamilyDataProvider';
+import { useRevealOn } from '../../lib/reveal';
 import { cardMeaning } from '../../lib/card';
 import { SetupFrame } from './SetupFrame';
 import styles from './Setup.module.css';
@@ -21,6 +22,9 @@ export function CuesStep() {
   const [justAdded, setJustAdded] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const continueAfterAdd = useRef(false);
+  // After "Add to profile" the form closes; focus moves to "Added to the profile." so it isn't lost.
+  const [addedCount, setAddedCount] = useState(0);
+  const addedRef = useRevealOn<HTMLDivElement>(justAdded && !formType ? addedCount : 0);
 
   const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
 
@@ -28,6 +32,7 @@ export function CuesStep() {
     await addCue(cue, meaning);
     setFormType(null);
     setJustAdded(true);
+    setAddedCount((n) => n + 1);
     if (continueAfterAdd.current) {
       continueAfterAdd.current = false;
       void goNext();
@@ -74,7 +79,11 @@ export function CuesStep() {
         </Card>
       ) : null}
 
-      {justAdded && !formType ? <Banner tone="success">{copy.cueForm.added}</Banner> : null}
+      {justAdded && !formType ? (
+        <Banner tone="success" ref={addedRef}>
+          {copy.cueForm.added}
+        </Banner>
+      ) : null}
       {cues.length >= STARTER_COUNT && !formType ? <p>{s.enough}</p> : null}
 
       {formType ? (

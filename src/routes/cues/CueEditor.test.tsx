@@ -58,7 +58,9 @@ function renderAt(path: string) {
 const e = copy.cueEditor;
 const f = copy.cueForm;
 const l = copy.cues;
-const region = (name: string) => screen.getByRole('region', { name });
+const region = (name: string | RegExp) => screen.getByRole('region', { name });
+/** A closed meaning is named by its place line, "At school · usually". */
+const closed = (place: string) => region(new RegExp('^' + place + ' · '));
 
 beforeEach(() => {
   cues = ARI_CUES;
@@ -71,17 +73,17 @@ beforeEach(() => {
 describe('cue library', () => {
   it('sets the card’s cues apart, in card order, then the rest A to Z', () => {
     renderAt('/cues');
-    const onCard = within(region(l.onCardHeading('Ari'))).getAllByRole('heading', { level: 3 });
+    const onCard = within(region(new RegExp('^' + l.onCardHeading('Ari')))).getAllByRole('heading', { level: 3 });
     expect(onCard.map((h) => h.textContent)).toEqual(
       ARI_CUES.filter((c) => c.pinned).map((c) => c.label),
     );
-    const others = within(region(l.othersHeading)).getAllByRole('heading', { level: 3 });
+    const others = within(region(new RegExp('^' + l.othersHeading))).getAllByRole('heading', { level: 3 });
     expect(others.map((h) => h.textContent)).toEqual([
       'Blue bottle',
       'Brings you his shoes',
       'Short, low “mm-mm”',
     ]);
-    expect(screen.getByText(l.onCardCount(5, 5))).toBeInTheDocument();
+    expect(screen.getAllByText(l.onCardCount(5, 5)).length).toBeGreaterThan(0);
   });
 
   it('whole rows open the cue, with a spoken name that starts with the label', () => {
@@ -96,27 +98,58 @@ describe('cue library', () => {
     await user.type(screen.getByLabelText(l.searchLabel), 'cookie!');
     expect(screen.getByRole('heading', { name: /^Cookie time/ })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /^Blue bottle/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: l.othersHeading })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: new RegExp('^' + l.othersHeading) })).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(`Showing 1 of ${ARI_CUES.length} cues`);
   });
 
-  it('shows each meaning with its place, and states what isn’t written yet', () => {
+  it('shows each meaning with its place first, and states plainly what isn’t written yet', () => {
     cues = [makeCue({ label: 'Hums', pinned: false, cue_meanings: [makeMeaning({ context_tags: ['school'], what_to_do: '' })] })];
     renderAt('/cues');
     const row = screen.getByRole('heading', { name: /^Hums/ }).closest('li')!;
-    expect(within(row).getByText('At school:')).toBeInTheDocument();
+    expect(within(row).getByText('At school · usually')).toBeInTheDocument();
     expect(within(row).getByText(l.missingDo)).toBeInTheDocument();
+    expect(within(row).getByText(l.notWrittenFor('home, camp or out and about'))).toBeInTheDocument();
   });
 
-  it('reads cues as a worker at one place would, and says plainly when nothing is written for it', async () => {
+  it('says nothing is missing when a meaning holds anywhere', () => {
+    renderAt('/cues');
+    const wave = screen.getByRole('heading', { name: /^Flat-hand wave/ }).closest('li')!;
+    expect(within(wave).queryByText(/^Not written for/)).not.toBeInTheDocument();
+  });
+
+  it('links each meaning line straight to that meaning in the editor', () => {
+    renderAt('/cues');
+    const school = ARI_CUES[1]!.cue_meanings[1]!;
+    expect(screen.getByRole('link', { name: /^At school · usually I need a break/ })).toHaveAttribute(
+      'href',
+      `/cues/demo-cookie#meaning-${school.id}`,
+    );
+  });
+
+  it('with a place chosen, lists what isn’t written there first, each with a way to add it', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues');
+    await user.click(screen.getByRole('button', { name: copy.labels.context.camp }));
+    const gaps = region(new RegExp('^' + l.gapsHeading('at camp')));
+    const names = within(gaps).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    expect(names).toEqual(['Cookie time', 'Brings you his shoes']);
+    expect(within(gaps).getByRole('link', { name: l.addForLabel('at camp', 'Cookie time') })).toHaveAttribute(
+      'href',
+      '/cues/demo-cookie?add=camp',
+    );
+    // Cues written for anywhere are written for camp too.
+    const written = region(new RegExp('^' + l.writtenHeading('at camp')));
+    expect(within(written).getByRole('heading', { name: /^Blue bottle/ })).toBeInTheDocument();
+  });
+
+  it('with a place chosen, a written cue leads with the meaning for there', async () => {
     const user = userEvent.setup();
     renderAt('/cues');
     await user.click(screen.getByRole('button', { name: copy.labels.context.school }));
     const cookie = screen.getByRole('heading', { name: /^Cookie time/ }).closest('li')!;
     expect(within(cookie).getByText('I need a break')).toBeInTheDocument();
+    expect(within(cookie).queryByText('I’m hungry')).not.toBeInTheDocument();
     expect(within(cookie).getByText(l.alsoFor('At home or at mealtimes'))).toBeInTheDocument();
-    const shoes = screen.getByRole('heading', { name: /^Brings you his shoes/ }).closest('li')!;
-    expect(within(shoes).getByText(l.notWrittenFor('at school'))).toBeInTheDocument();
   });
 
   it('takes a cue off the card, saving only the pin', async () => {
@@ -136,7 +169,7 @@ describe('cue library', () => {
     await user.click(screen.getByRole('button', { name: l.pinAddLabel('Blue bottle') }));
     const dialog = screen.getByRole('dialog', { name: l.swapTitle });
     expect(saveCue).not.toHaveBeenCalled();
-    await user.click(within(dialog).getByRole('button', { name: l.swapOption('Cookie time') }));
+    await user.click(within(dialog).getByRole('button', { name: /^Cookie time/ }));
     await waitFor(() => expect(saveCue).toHaveBeenCalledTimes(2));
     expect(saveCue.mock.calls[0]![0]).toMatchObject({ id: 'demo-cookie', pinned: false });
     expect(saveCue.mock.calls[1]![0]).toMatchObject({ id: 'demo-bottle', pinned: true });
@@ -151,7 +184,7 @@ describe('cue library', () => {
     });
     renderAt('/cues');
     await user.click(screen.getByRole('button', { name: l.pinAddLabel('Blue bottle') }));
-    await user.click(screen.getByRole('button', { name: l.swapOption('Cookie time') }));
+    await user.click(screen.getByRole('button', { name: /^Cookie time/ }));
     await waitFor(() => expect(saveCue).toHaveBeenCalledTimes(3));
     expect(saveCue.mock.calls[2]![0]).toMatchObject({ id: 'demo-cookie', pinned: true });
   });
@@ -208,10 +241,12 @@ describe('cue editor', () => {
   it('opens a saved cue with each meaning reading as a worker sees it, one Change away', async () => {
     const user = userEvent.setup();
     renderAt('/cues/demo-cookie');
-    const school = region('At school');
+    const school = closed('At school');
     expect(within(school).getByText('I need a break')).toBeInTheDocument();
     expect(within(school).queryByLabelText(f.meaningLabel)).not.toBeInTheDocument();
     await user.click(within(school).getByRole('button', { name: e.changeLabel('At school') }));
+    // Open: the words lead; the saved place waits behind "Change where".
+    expect(within(region('At school')).queryByRole('button', { name: copy.labels.context.home })).not.toBeInTheDocument();
     await user.clear(within(region('At school')).getByLabelText(f.meaningLabel));
     await user.type(within(region('At school')).getByLabelText(f.meaningLabel), 'I need a quiet minute');
     await user.click(screen.getByRole('button', { name: e.save }));
@@ -224,8 +259,49 @@ describe('cue editor', () => {
     const user = userEvent.setup();
     renderAt('/cues/demo-shoes');
     await user.click(screen.getByRole('button', { name: e.changeLabel('At home') }));
+    await user.click(screen.getByRole('button', { name: e.changeWhereLabel('At home') }));
     await user.click(within(region('At home')).getByRole('button', { name: e.anywhere }));
     expect(region(e.anywhere)).toBeInTheDocument();
+  });
+
+  it('asks where with the common places first, the rest behind “More places”', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues/new');
+    const place = region(e.anywhere);
+    expect(within(place).getByRole('button', { name: copy.labels.context.school })).toBeInTheDocument();
+    expect(within(place).queryByRole('button', { name: copy.labels.context.transport })).not.toBeInTheDocument();
+    await user.click(within(place).getByRole('button', { name: e.morePlaces }));
+    await user.click(within(place).getByRole('button', { name: copy.labels.context.transport }));
+    expect(region('When travelling')).toBeInTheDocument();
+  });
+
+  it('opens on the meaning chosen in the library, its heading focused', () => {
+    const school = ARI_CUES[1]!.cue_meanings[1]!;
+    renderAt(`/cues/demo-cookie#meaning-${school.id}`);
+    expect(screen.getByRole('heading', { level: 3, name: 'At school' })).toHaveFocus();
+    expect(within(region('At school')).getByLabelText(f.meaningLabel)).toHaveValue('I need a break');
+    // The others stay closed, reading as a worker sees them.
+    expect(within(closed('At home or at mealtimes')).queryByLabelText(f.meaningLabel)).not.toBeInTheDocument();
+  });
+
+  it('“Add what it means at camp” opens a new meaning already set to camp', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues/demo-shoes?add=camp');
+    expect(screen.getByRole('heading', { level: 3, name: 'At camp' })).toHaveFocus();
+    await user.type(within(region('At camp')).getByLabelText(f.meaningLabel), 'I want to go to the lake');
+    await user.click(screen.getByRole('button', { name: e.save }));
+    await waitFor(() => expect(saveCue).toHaveBeenCalled());
+    expect(saveCue.mock.calls[0]![1]).toEqual([
+      expect.objectContaining({ context_tags: ['home'] }),
+      expect.objectContaining({ context_tags: ['camp'], meaning: 'I want to go to the lake' }),
+    ]);
+  });
+
+  it('adds another place as a quiet text action', async () => {
+    const user = userEvent.setup();
+    renderAt('/cues/demo-cookie');
+    await user.click(screen.getByRole('button', { name: e.addMeaning }));
+    expect(within(region(e.anywhere)).getByRole('heading', { level: 3 })).toHaveFocus();
   });
 
   it('points to every missing piece, opening the meanings that need it, and keeps what was typed', async () => {
@@ -287,11 +363,37 @@ describe('cue editor', () => {
     await waitFor(() => expect(deleteCue).toHaveBeenCalledWith('demo-wave'));
   });
 
-  it('explains when the card already has 5 cues', async () => {
+  it('at 5 of 5, ticking the card asks which cue to swap out, and swaps on save', async () => {
     const user = userEvent.setup();
-    saveCue.mockRejectedValue({ message: 'pin_limit' });
+    renderAt('/cues/demo-shoes');
+    expect(screen.getByText(e.pinFull)).toBeInTheDocument();
+    await user.click(screen.getByLabelText(e.pinLabel('Ari')));
+    const dialog = screen.getByRole('dialog', { name: l.swapTitle });
+    await user.click(within(dialog).getByRole('button', { name: /^Cookie time/ }));
+    expect(screen.getByLabelText(e.pinLabel('Ari'))).toBeChecked();
+    expect(screen.getByText(e.swapPending('Cookie time'))).toBeInTheDocument();
+    expect(screen.queryByText(/6 of 5/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: e.save }));
+    await waitFor(() => expect(saveCue).toHaveBeenCalledTimes(2));
+    expect(saveCue.mock.calls[0]![0]).toMatchObject({ id: 'demo-cookie', pinned: false });
+    expect(saveCue.mock.calls[1]![0]).toMatchObject({ id: 'demo-shoes', pinned: true });
+  });
+
+  it('keeps the card as it is when the swap is cancelled', async () => {
+    const user = userEvent.setup();
     renderAt('/cues/demo-shoes');
     await user.click(screen.getByLabelText(e.pinLabel('Ari')));
+    await user.click(screen.getByRole('button', { name: l.swapKeep }));
+    expect(screen.getByLabelText(e.pinLabel('Ari'))).not.toBeChecked();
+  });
+
+  it('explains when saving fails because the card is full', async () => {
+    const user = userEvent.setup();
+    saveCue.mockRejectedValue({ message: 'pin_limit' });
+    cues = ARI_CUES.map((c) => (c.id === 'demo-rocking' ? { ...c, pinned: false, pin_order: null } : c));
+    renderAt('/cues/demo-shoes');
+    await user.click(screen.getByLabelText(e.pinLabel('Ari')));
+    expect(screen.getByText(e.pinHint(5))).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: e.save }));
     expect(await screen.findByText(copy.errors.pinLimit)).toBeInTheDocument();
   });
@@ -310,8 +412,13 @@ describe('confirming a worker’s note', () => {
     expect(screen.getByText(/From a worker’s note/)).toHaveTextContent(copy.inbox.needsMeaning);
     expect(screen.getByLabelText(f.labelLabel)).toHaveValue('Flaps both hands');
     const meaning = region('At camp');
+    expect(within(meaning).getByText(e.fromNote('Jo'))).toBeInTheDocument();
     expect(within(meaning).getByLabelText(f.todoLabel)).toHaveValue('Gave him space');
-    expect(within(meaning).getByRole('button', { name: copy.labels.context.camp })).toHaveAttribute('aria-pressed', 'true');
+    // The worker's words, quoted above the form.
+    const quote = screen.getByText(e.quoteHeading('Jo')).closest('figure')!;
+    expect(within(quote).getByText('Flaps both hands')).toBeInTheDocument();
+    expect(within(quote).getByText('Gave him space')).toBeInTheDocument();
+    expect(within(quote).getByText(copy.inbox.outcomes.worked)).toBeInTheDocument();
 
     await user.type(within(meaning).getByLabelText(f.meaningLabel), 'I’m excited');
     await user.click(screen.getByRole('button', { name: e.save }));
@@ -328,9 +435,11 @@ describe('confirming a worker’s note', () => {
     notes = [note({ cue_id: 'demo-cookie', seemed_to_need: 'A drink', outcome: 'no', tried: 'Offered a biscuit' })];
     renderAt('/cues/demo-cookie?note=note-1');
     const camp = region('At camp');
+    // The note's meaning comes first, open.
+    expect(screen.getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('At camp');
     expect(within(camp).getByLabelText(f.meaningLabel)).toHaveValue('A drink');
     expect(within(camp).getByLabelText(/^What to avoid/)).toHaveValue('Offered a biscuit');
-    expect(within(region('At school')).queryByLabelText(f.meaningLabel)).not.toBeInTheDocument();
+    expect(within(closed('At school')).queryByLabelText(f.meaningLabel)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: e.delete })).not.toBeInTheDocument();
   });
 

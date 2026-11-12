@@ -1,8 +1,11 @@
-/* One meaning, as a section of the "What it means" sheet. Its place is the title. */
+/*
+ * One meaning, as a section of the "What it means" sheet. Closed, it reads as a worker sees it: a
+ * quiet place line, then the meaning. Open, the place is the title.
+ */
 .section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-6) 0;
   min-width: 0;
 }
@@ -11,9 +14,33 @@
   border-top: 1px solid var(--blob);
 }
 
-/* Open: room between the fields. */
+/* Open: room between the fields, and an ink rule so the open meaning reads as the one in hand. */
 .open {
   gap: var(--space-6);
+}
+
+.section + .open,
+.open + .section {
+  border-top-color: var(--ink);
+}
+
+/* Closed: "At school · usually" with "Change" on the same line. */
+.lineHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block: calc(var(--space-3) * -1) calc(var(--space-2) * -1);
+}
+
+.context {
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
 }
 
 .head {
@@ -36,21 +63,27 @@
   overflow-wrap: anywhere;
 }
 
-.title:focus {
+.title:focus,
+.context:focus {
   outline: none;
 }
 
-.title:focus-visible {
+.title:focus-visible,
+.context:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 3px;
 }
 
-.sure {
-  font-family: var(--font-sans);
+/* Where this meaning came from, such as a worker's note: the house ink edge, no colour. */
+.marker {
+  align-self: flex-start;
+  margin-top: calc(var(--space-2) * -1);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--ink);
+  color: var(--ink);
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
   font-weight: 600;
-  color: var(--muted);
 }
 
 .textButton {
@@ -71,23 +104,28 @@
   cursor: pointer;
 }
 
+.textButton:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Flush to the column, like every other tertiary action. */
+.flush {
+  align-self: flex-start;
+  margin-left: calc(var(--space-2) * -1);
+  margin-right: 0;
+}
+
 .done {
   margin-left: calc(var(--space-2) * -1);
   font-size: var(--text-body);
   line-height: var(--text-body-lh);
 }
 
-.reads {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .fact {
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
-  color: var(--ink-soft);
-  font-style: italic;
+  color: var(--muted);
 }
 
 .fields {
@@ -172,25 +210,3 @@
   padding-top: var(--space-6);
 }
 
-/* Phones: what a worker will read, right under the words being written. */
-.here {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--blob);
-}
-
-.hereLabel {
-  font-size: var(--text-small);
-  line-height: var(--text-small-lh);
-  font-weight: 600;
-  color: var(--muted);
-}
-
-/* Desktop has the whole worker preview in its own column. */
-@media (min-width: 1024px) {
-  .here {
-    display: none;
-  }
-}

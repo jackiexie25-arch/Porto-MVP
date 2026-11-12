@@ -1,16 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { WorkerPhone } from '../../assets/illustrations';
-import { asWorkerSees, groupForLibrary, lacksWhatToDo, withPin } from '../../components/cues/library';
-import { MeaningView } from '../../components/cues/MeaningView';
+import { CardSwapSheet } from '../../components/cues/CardSwapSheet';
+import {
+  asWorkerSees,
+  groupForLibrary,
+  lacksWhatToDo,
+  missingPlaces,
+  splitForPlace,
+  withPin,
+} from '../../components/cues/library';
+import { placeTitle } from '../../components/cues/MeaningSection';
 import { PlacePicker } from '../../components/cues/PlacePicker';
 import { FamilyShell } from '../../components/family/FamilyShell';
 import { PageHeading } from '../../components/layout/PageHeading';
-import { Banner, Button, ButtonLink, SearchField, Sheet } from '../../components/ui';
+import { Banner, ButtonLink, SearchField } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import type { ContextTag, Cue, CueMeaning } from '../../data/types';
 import { MAX_PINNED, useFamilyData } from '../../family/FamilyDataProvider';
-import { cardMeaning, pinnedCues } from '../../lib/card';
+import { joinList, pinnedCues } from '../../lib/card';
 import { friendlyError } from '../../lib/errors';
 import { filterCues } from '../../lib/search';
 import { usePageTitle } from '../../lib/usePageTitle';
@@ -18,60 +26,81 @@ import styles from './Cues.module.css';
 
 const c = copy.cues;
 
-/** "At school: I need a break", one line per meaning. The place first, as a worker reads it. */
-function MeaningLines({ meanings }: { meanings: readonly CueMeaning[] }) {
+function placeNames(places: readonly ContextTag[]): string {
+  return joinList(
+    places.map((p) => copy.labels.context[p].toLowerCase()),
+    'or',
+  );
+}
+
+/**
+ * Each meaning as a line pair, place first ("At school · usually", then "I need a break"). Each pair
+ * opens the editor on that meaning, so fixing one meaning is one tap away.
+ */
+function MeaningLines({ cue, meanings }: { cue: Cue; meanings: readonly CueMeaning[] }) {
   return (
     <ul className={styles.lines}>
       {meanings.map((m) => (
         <li key={m.id}>
-          <span className={styles.where}>{cardMeaning(m).context || copy.meaning.anywhere}:</span>{' '}
-          <span className={styles.says}>{m.meaning}</span>
-          {lacksWhatToDo(m) ? <span className={styles.fact}>{c.missingDo}</span> : null}
+          <Link to={`/cues/${cue.id}#meaning-${m.id}`} className={styles.line}>
+            <span className={styles.where}>
+              {copy.meaning.contextLine(placeTitle(m), copy.labels.confidenceInline[m.confidence])}
+            </span>
+            <span className={styles.says}>{m.meaning}</span>
+            {lacksWhatToDo(m) ? <span className={styles.fact}>{c.missingDo}</span> : null}
+            <span className="visually-hidden">, {cue.label}</span>
+          </Link>
         </li>
       ))}
     </ul>
   );
 }
 
-/** What a worker who chose `place` reads first for this cue, and what else is written. */
-function AsWorkerSees({ cue, place }: { cue: Cue; place: ContextTag }) {
-  const { lead, others, notice } = asWorkerSees(cue, place);
-  if (notice === 'notHere') {
-    return (
-      <>
-        <p className={styles.fact}>{c.notWrittenFor(copy.labels.contextPhrase[place])}</p>
-        <MeaningLines meanings={others} />
-      </>
-    );
-  }
-  return (
-    <>
-      {lead.map((m) => (
-        <div key={m.id} className={styles.lead}>
-          <MeaningView meaning={cardMeaning(m)} density="compact" inContext />
-          {lacksWhatToDo(m) ? <p className={styles.fact}>{c.missingDo}</p> : null}
-        </div>
-      ))}
-      {others.length ? (
-        <p className={styles.also}>
-          {c.alsoFor(others.map((m) => cardMeaning(m).context || copy.meaning.anywhere).join('; '))}
-        </p>
-      ) : null}
-    </>
-  );
-}
+type RowMode = { kind: 'all' } | { kind: 'written'; place: ContextTag } | { kind: 'gap'; place: ContextTag };
 
 function CueRow({
   cue,
-  place,
+  mode,
   busy,
   onPin,
 }: {
   cue: Cue;
-  place: ContextTag | null;
+  mode: RowMode;
   busy: boolean;
   onPin: (cue: Cue) => void;
 }) {
+  let body;
+  let facts: string | null = null;
+  if (mode.kind === 'all') {
+    const missing = missingPlaces(cue);
+    facts = missing.length ? c.notWrittenFor(placeNames(missing)) : null;
+    body = <MeaningLines cue={cue} meanings={cue.cue_meanings} />;
+  } else if (mode.kind === 'written') {
+    const { lead, others } = asWorkerSees(cue, mode.place);
+    body = (
+      <>
+        <MeaningLines cue={cue} meanings={lead} />
+        {others.length ? <p className={styles.also}>{c.alsoFor(others.map((m) => placeTitle(m)).join('; '))}</p> : null}
+      </>
+    );
+  } else {
+    const phrase = copy.labels.contextPhrase[mode.place];
+    body = (
+      <>
+        {cue.cue_meanings.length ? (
+          <p className={styles.also}>{c.writtenFor(cue.cue_meanings.map((m) => placeTitle(m)).join('; '))}</p>
+        ) : null}
+        <Link
+          to={`/cues/${cue.id}?add=${mode.place}`}
+          className={styles.addFor}
+          aria-label={c.addForLabel(phrase, cue.label)}
+        >
+          {c.addFor(phrase)}
+        </Link>
+      </>
+    );
+  }
+
   return (
     <li className={styles.row}>
       <h3 className={styles.rowLabel}>
@@ -79,20 +108,35 @@ function CueRow({
           {cue.label}
         </Link>
       </h3>
-      <button
-        type="button"
-        data-pin={cue.id}
-        className={styles.pin}
-        disabled={busy}
-        onClick={() => onPin(cue)}
-        aria-label={cue.pinned ? c.pinRemoveLabel(cue.label) : c.pinAddLabel(cue.label)}
-      >
-        {cue.pinned ? c.pinRemove : c.pinAdd}
-      </button>
       <div className={styles.rowBody}>
-        {place ? <AsWorkerSees cue={cue} place={place} /> : <MeaningLines meanings={cue.cue_meanings} />}
+        {body}
+        {facts ? <p className={styles.fact}>{facts}</p> : null}
+      </div>
+      <div className={styles.rowFoot}>
+        <button
+          type="button"
+          data-pin={cue.id}
+          className={styles.pin}
+          disabled={busy}
+          onClick={() => onPin(cue)}
+          aria-label={cue.pinned ? c.pinRemoveLabel(cue.label) : c.pinAddLabel(cue.label)}
+        >
+          {cue.pinned ? c.pinRemove : c.pinAdd}
+        </button>
       </div>
     </li>
+  );
+}
+
+/** One labelled part of the index sheet: a label over an ink rule, its count at the right. */
+function Section({ id, title, count, children }: { id: string; title: string; count: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id} className={styles.section}>
+      <h2 id={id} className={styles.sectionHead}>
+        <span>{title}</span> <span className={styles.sectionCount}>{count}</span>
+      </h2>
+      {children}
+    </section>
   );
 }
 
@@ -113,7 +157,8 @@ export function CueLibrary() {
 
   const shown = useMemo(() => filterCues(cues, query, 'all'), [cues, query]);
   const { onCard, others } = useMemo(() => groupForLibrary(shown), [shown]);
-  const pinnedCount = cues.filter((cue) => cue.pinned).length;
+  const byPlace = useMemo(() => (place ? splitForPlace([...onCard, ...others], place) : null), [onCard, others, place]);
+  const card = pinnedCues(cues);
   const searching = query.trim() !== '';
 
   // A cue that moved on or off the card keeps focus on its button, in its new place on the page.
@@ -143,7 +188,7 @@ export function CueLibrary() {
   }
 
   function onPin(cue: Cue) {
-    if (!cue.pinned && pinnedCount >= MAX_PINNED) {
+    if (!cue.pinned && card.length >= MAX_PINNED) {
       setSwapFor(cue);
       return;
     }
@@ -155,8 +200,10 @@ export function CueLibrary() {
     }, cue.id);
   }
 
-  function swap(off: Cue, on: Cue) {
+  function swap(off: Cue) {
+    const on = swapFor;
     setSwapFor(null);
+    if (!on) return;
     void run(async () => {
       const offNext = withPin(off, false);
       await saveCue(offNext.cue, offNext.meanings);
@@ -173,6 +220,14 @@ export function CueLibrary() {
     }, on.id);
   }
 
+  const rows = (list: readonly Cue[], mode: RowMode) => (
+    <ul className={styles.rows}>
+      {list.map((cue) => (
+        <CueRow key={cue.id} cue={cue} mode={mode} busy={busy} onPin={onPin} />
+      ))}
+    </ul>
+  );
+
   return (
     <FamilyShell width="wide">
       <div className={styles.libraryLayout}>
@@ -188,12 +243,26 @@ export function CueLibrary() {
           {cues.length ? (
             <div className={styles.controls}>
               <SearchField label={c.searchLabel} maxLength={200} value={query} onValueChange={setQuery} />
-              <PlacePicker label={c.placeLabel} value={place} onChange={setPlace} />
+              <PlacePicker label={c.placeLabel} value={place} onChange={setPlace} oneRow />
               {/* Always announced; only shown while searching, when the number is news. */}
               <p className={searching ? 't-small t-muted' : 'visually-hidden'} role="status" aria-live="polite">
                 {c.count(shown.length, cues.length)}
               </p>
             </div>
+          ) : null}
+
+          {card.length ? (
+            <section aria-labelledby="card-list" className={styles.cardList}>
+              <h2 id="card-list" className={styles.sectionHead}>
+                <span>{c.cardOrderHeading(name)}</span>{' '}
+                <span className={styles.sectionCount}>{c.onCardCount(card.length, MAX_PINNED)}</span>
+              </h2>
+              <ol>
+                {card.map((cue) => (
+                  <li key={cue.id}>{cue.label}</li>
+                ))}
+              </ol>
+            </section>
           ) : null}
         </div>
 
@@ -209,62 +278,47 @@ export function CueLibrary() {
             </div>
           ) : shown.length === 0 ? (
             <p className={styles.noMatch}>{c.noMatches(query.trim())}</p>
-          ) : (
-            <>
-              <section aria-labelledby="on-card" className={styles.group}>
-                <div className={styles.groupHead}>
-                  <h2 id="on-card" className={styles.groupTitle}>
-                    {c.onCardHeading(name)}
-                  </h2>
-                  <p className={styles.groupMeta}>{c.onCardCount(pinnedCount, MAX_PINNED)}</p>
-                </div>
-                {onCard.length ? (
-                  <ul className={styles.sheet}>
-                    {onCard.map((cue) => (
-                      <CueRow key={cue.id} cue={cue} place={place} busy={busy} onPin={onPin} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.groupEmpty}>{searching ? c.onCardNoMatch : c.onCardEmpty}</p>
-                )}
-              </section>
-
-              {others.length ? (
-                <section aria-labelledby="other-cues" className={styles.group}>
-                  <div className={styles.groupHead}>
-                    <h2 id="other-cues" className={styles.groupTitle}>
-                      {c.othersHeading}
-                    </h2>
-                    <p className={styles.groupMeta}>{c.othersCount(others.length)}</p>
-                  </div>
-                  <ul className={styles.sheet}>
-                    {others.map((cue) => (
-                      <CueRow key={cue.id} cue={cue} place={place} busy={busy} onPin={onPin} />
-                    ))}
-                  </ul>
-                </section>
+          ) : byPlace && place ? (
+            <div className={styles.index}>
+              {byPlace.gaps.length ? (
+                <Section
+                  id="gaps"
+                  title={c.gapsHeading(copy.labels.contextPhrase[place])}
+                  count={String(byPlace.gaps.length)}
+                >
+                  {rows(byPlace.gaps, { kind: 'gap', place })}
+                </Section>
               ) : null}
-            </>
+              {byPlace.written.length ? (
+                <Section
+                  id="written"
+                  title={c.writtenHeading(copy.labels.contextPhrase[place])}
+                  count={String(byPlace.written.length)}
+                >
+                  {rows(byPlace.written, { kind: 'written', place })}
+                </Section>
+              ) : null}
+            </div>
+          ) : (
+            <div className={styles.index}>
+              <Section id="on-card" title={c.onCardHeading(name)} count={c.onCardCount(card.length, MAX_PINNED)}>
+                {onCard.length ? (
+                  rows(onCard, { kind: 'all' })
+                ) : (
+                  <p className={styles.sectionEmpty}>{searching ? c.onCardNoMatch : c.onCardEmpty}</p>
+                )}
+              </Section>
+              {others.length ? (
+                <Section id="other-cues" title={c.othersHeading} count={c.othersCount(others.length)}>
+                  {rows(others, { kind: 'all' })}
+                </Section>
+              ) : null}
+            </div>
           )}
         </div>
       </div>
 
-      <Sheet open={swapFor !== null} onClose={() => setSwapFor(null)} title={c.swapTitle}>
-        {swapFor ? (
-          <>
-            <p>{c.swapBody(swapFor.label)}</p>
-            <ul className={styles.swapList}>
-              {pinnedCues(cues).map((cue) => (
-                  <li key={cue.id}>
-                    <Button variant="outlined" fullWidth className={styles.swapOption} onClick={() => swap(cue, swapFor)}>
-                      {c.swapOption(cue.label)}
-                    </Button>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-      </Sheet>
+      <CardSwapSheet adding={swapFor?.label ?? null} pinned={card} onSwap={swap} onClose={() => setSwapFor(null)} />
     </FamilyShell>
   );
 }

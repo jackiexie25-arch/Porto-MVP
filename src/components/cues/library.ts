@@ -59,3 +59,41 @@ export function withPin(cue: Cue, pinned: boolean): { cue: CueInput; meanings: M
     })),
   };
 }
+
+/** The places a worker picks that a cue can be "not written for". Mealtime is a moment, not a place. */
+export const PLACE_TAGS = ['home', 'school', 'camp', 'community'] as const satisfies readonly ContextTag[];
+
+/** A meaning with no place or person named holds anywhere. */
+export function isAnywhere(m: Pick<CueMeaning, 'context_tags' | 'context_text'>): boolean {
+  return m.context_tags.length === 0 && !m.context_text.trim();
+}
+
+/**
+ * Whether a worker who chose `place` finds something the family wrote for there, or for anywhere.
+ * A plain fact, never a guess.
+ */
+export function coversPlace(cue: Pick<Cue, 'cue_meanings'>, place: ContextTag): boolean {
+  return cue.cue_meanings.some((m) => isAnywhere(m) || m.context_tags.includes(place));
+}
+
+/** The worker places this cue has nothing written for, in order. None when a meaning holds anywhere. */
+export function missingPlaces(cue: Pick<Cue, 'cue_meanings'>): ContextTag[] {
+  if (!cue.cue_meanings.length) return [];
+  return PLACE_TAGS.filter((p) => !coversPlace(cue, p));
+}
+
+/** With a place chosen: the cues with nothing written for there come first, so the gaps are the list. */
+export function splitForPlace(cues: readonly Cue[], place: ContextTag): { gaps: Cue[]; written: Cue[] } {
+  return {
+    gaps: cues.filter((c) => !coversPlace(c, place)),
+    written: cues.filter((c) => coversPlace(c, place)),
+  };
+}
+
+/**
+ * How many cues will be on the card after this cue's save: the others already there, minus one
+ * being swapped off, plus this one if ticked. Never more than the card holds.
+ */
+export function cardCountAfter(pinnedElsewhere: number, pinned: boolean, swappingOff: boolean): number {
+  return pinnedElsewhere - (swappingOff ? 1 : 0) + (pinned ? 1 : 0);
+}

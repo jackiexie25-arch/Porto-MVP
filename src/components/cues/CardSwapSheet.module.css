@@ -1,0 +1,70 @@
+/* The five cues on the card, as a typeset list: tap one to take it off. */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.list li + li {
+  border-top: 1px solid var(--blob);
+}
+
+.option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-3) 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  font-weight: 600;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+/* Whole words: at 200% zoom "Take off" drops under the name instead of squeezing it. */
+.option {
+  flex-wrap: wrap;
+  column-gap: var(--space-4);
+}
+
+.optionLabel {
+  flex: 1 1 10ch;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.optionAction {
+  margin-left: auto;
+}
+
+.optionAction {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .option:hover .optionLabel {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+
+.option:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
