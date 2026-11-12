@@ -5,8 +5,19 @@ import { AppShell } from '../layout/AppShell';
 
 const primary = { to: '/share', label: copy.familyNav.share };
 
-/** The signed-in family layout, with "Share for a shift" as the one primary action. */
-export function FamilyShell({ children, hideShare = false }: { children: ReactNode; hideShare?: boolean }) {
+/**
+ * The signed-in family layout, with "Share for a shift" always in reach in the nav. Wide pages (the
+ * cue library and editor) use two columns on desktop, lined up with the nav.
+ */
+export function FamilyShell({
+  children,
+  hideShare = false,
+  width = 'narrow',
+}: {
+  children: ReactNode;
+  hideShare?: boolean;
+  width?: 'narrow' | 'wide';
+}) {
   const { pendingNotes } = useFamilyData();
   const links = [
     { to: '/cues', label: copy.familyNav.cues },
@@ -15,7 +26,7 @@ export function FamilyShell({ children, hideShare = false }: { children: ReactNo
     { to: '/account', label: copy.familyNav.account },
   ];
   return (
-    <AppShell links={links} primary={hideShare ? undefined : primary}>
+    <AppShell links={links} primary={hideShare ? undefined : primary} width={width}>
       {children}
     </AppShell>
   );

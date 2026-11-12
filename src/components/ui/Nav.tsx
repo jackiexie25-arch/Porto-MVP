@@ -34,7 +34,10 @@ interface NavProps {
   homeTo?: string;
 }
 
-/** Logo left, links in ink-soft, one primary button right. Collapses to logo + menu on phones. */
+/**
+ * Logo left, links in ink-soft, one standing action right (outlined, so the page's own apricot
+ * button stays the one primary on screen). Collapses to logo + menu on phones.
+ */
 export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -83,7 +86,7 @@ export function Nav({ links = [], primary, homeTo = '/' }: NavProps) {
                 ))}
               </ul>
               {primary ? (
-                <ButtonLink to={primary.to} className={styles.primary}>
+                <ButtonLink to={primary.to} variant="outlined" className={styles.primary}>
                   {primary.label}
                 </ButtonLink>
               ) : null}
