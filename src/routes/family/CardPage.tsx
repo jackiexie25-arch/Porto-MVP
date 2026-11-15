@@ -27,10 +27,12 @@ export function CardPage() {
     logEvent('card_viewed_by_family');
   }, []);
 
-  // Opening a part puts the cursor in its first box; Done brings focus back to that part's control.
+  // Opening a part puts the cursor in its first box with the part's heading still in view; Done
+  // brings focus back to that part's control.
   useEffect(() => {
     if (editing) {
-      editorRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
+      editorRef.current?.querySelector<HTMLElement>('input, textarea')?.focus({ preventScroll: true });
+      editorRef.current?.closest('section')?.scrollIntoView?.({ block: 'start' });
     } else if (returnTo.current) {
       document.querySelector<HTMLElement>(`[data-change="${returnTo.current}"]`)?.focus();
       returnTo.current = null;

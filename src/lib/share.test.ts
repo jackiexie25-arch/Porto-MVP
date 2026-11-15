@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { qrPath } from '../components/share/QrCode';
-import { durationEnd, durationHours, isOpen, shareStatus, shareUrl, timeAgo, type ShareRow } from './share';
+import {
+  closesAt,
+  closesWhen,
+  durationChoices,
+  durationEnd,
+  durationHours,
+  DURATIONS,
+  isOpen,
+  shareStatus,
+  shareUrl,
+  timeAgo,
+  type ShareRow,
+} from './share';
 
 const now = new Date('2026-11-10T14:30:00');
 
@@ -60,6 +72,28 @@ describe('weekend links', () => {
         expect(durationHours('weekend', at)).toBeLessThanOrEqual(7 * 24);
       }
     }
+  });
+});
+
+describe('which choices are offered, and when each closes', () => {
+  it('offers the weekend every day except a Monday before 9 am, when it would close within hours', () => {
+    expect(durationChoices(now)).toEqual([...DURATIONS]);
+    expect(durationChoices(new Date('2026-11-15T22:00:00'))).toContain('weekend'); // Sunday night
+    expect(durationChoices(new Date('2026-11-16T03:00:00'))).not.toContain('weekend'); // Monday 3 am
+    expect(durationChoices(new Date('2026-11-16T09:30:00'))).toContain('weekend'); // Monday after 9
+  });
+
+  it('says “before midnight tonight”, never “Wednesday 12:00 am”', () => {
+    expect(closesWhen('today', now)).toBe('by midnight tonight');
+    // At 11:50 pm the shortest link is an hour, so it says when it really closes.
+    expect(closesWhen('today', new Date('2026-11-10T23:50:00'))).toMatch(/^tomorrow at 12:50/);
+  });
+
+  it('says today or tomorrow plainly, and the day further out', () => {
+    expect(closesWhen('shift', now)).toMatch(/^today at 10:30/); // 2:30 pm + 8 hours
+    expect(closesWhen('shift', new Date('2026-11-10T20:00:00'))).toMatch(/^tomorrow at 4:00/);
+    expect(closesWhen('days7', now)).toMatch(/^Tuesday/);
+    expect(closesAt(new Date('2026-11-24T14:30:00'), now)).toMatch(/24 November/);
   });
 });
 

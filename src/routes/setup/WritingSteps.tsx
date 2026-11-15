@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AboutFields } from '../../components/family/AboutFields';
 import { QuestionSheet } from '../../components/family/Question';
 import { SectionFields } from '../../components/family/SectionFields';
-import { WhoFields, whoToSave } from '../../components/family/WhoFields';
+import { WhoFields, whoSavedText, whoToSave } from '../../components/family/WhoFields';
 import { copy } from '../../copy/en-AU';
 import type { SectionDraft } from '../../data/types';
 import { aboutDraftFrom, aboutPatch, phoneLooksValid, sectionDraftFrom, whoDraftFrom } from '../../family/drafts';
@@ -87,6 +87,7 @@ export function WhoStep() {
       heading={s.who.heading}
       intro={s.who.intro(name)}
       autosave={state}
+      savedText={whoSavedText(draft)}
       busy={busy}
       onPrimary={moveOn}
       onSkip={moveOn}

@@ -10,10 +10,10 @@ import { useCardModel } from '../../family/useCardModel';
 import { friendlyError } from '../../lib/errors';
 import { reveal, useRevealOn } from '../../lib/reveal';
 import {
-  DURATIONS,
-  durationEnd,
+  closesAt,
+  closesWhen,
+  durationChoices,
   durationHours,
-  formatUntil,
   isOpen,
   shareStatus,
   shareUrl,
@@ -70,7 +70,7 @@ function LinkReady({ created, name, onDone }: { created: CreatedShare; name: str
       <h2 id="link-ready" ref={headingRef} tabIndex={-1} className={`t-h3 ${styles.focusHeading}`}>
         {c.readyHeading}
       </h2>
-      <p>{c.readyBody(formatUntil(created.expires_at))}</p>
+      <p>{c.readyBody(closesAt(new Date(created.expires_at)))}</p>
       <TextField label={c.linkLabel} value={url} readOnly onFocus={(e) => e.currentTarget.select()} />
       <div className={styles.actions}>
         <Button onClick={() => void copyLink()}>{c.copy}</Button>
@@ -104,7 +104,7 @@ function LinkReady({ created, name, onDone }: { created: CreatedShare; name: str
           setAsking(false);
           guard.stay();
         }} title={c.uncopiedTitle}>
-        <p>{c.uncopiedBody(formatUntil(created.expires_at))}</p>
+        <p>{c.uncopiedBody(closesAt(new Date(created.expires_at)))}</p>
         <div className={styles.sheetActions}>
           <div>
             <Button
@@ -188,8 +188,11 @@ export function SharePage() {
   const [notice, setNotice] = useState<string>();
   const labelRef = useRef<HTMLInputElement>(null);
   const formErrorRef = useRevealOn<HTMLDivElement>(formError);
-  // When each choice would close, worked out once when the page opens.
-  const ends = useMemo(() => new Map(DURATIONS.map((d) => [d, formatUntil(durationEnd(d).toISOString())])), []);
+  // The choices that make sense now, and when each would close, worked out once when the page opens.
+  const choices = useMemo(() => {
+    const now = new Date();
+    return durationChoices(now).map((d) => ({ value: d, label: c.durations[d], hint: c.durationUntil(closesWhen(d, now)) }));
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -310,7 +313,7 @@ export function SharePage() {
                 hint={c.durationHint}
                 name="duration"
                 value={form.duration}
-                options={DURATIONS.map((d) => ({ value: d, label: c.durations[d], hint: c.durationUntil(ends.get(d) ?? '') }))}
+                options={choices}
                 onChange={(v) => set('duration', v)}
               />
               <RadioGroup

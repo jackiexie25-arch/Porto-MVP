@@ -3,7 +3,7 @@ import { AboutFields } from '../../components/family/AboutFields';
 import { AutosaveStatus } from '../../components/family/AutosaveStatus';
 import { QuestionSheet } from '../../components/family/Question';
 import { SectionFields } from '../../components/family/SectionFields';
-import { WhoFields, whoToSave } from '../../components/family/WhoFields';
+import { WhoFields, whoSavedText, whoToSave } from '../../components/family/WhoFields';
 import { Button } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import type { CardSectionKind } from '../../data/types';
@@ -15,7 +15,17 @@ import styles from './CardPage.module.css';
 /** The editors sit under a part's own heading (the card page) or a section heading (account). */
 const look = { compact: true, level: 3 } as const;
 
-function EditorFooter({ state, onDone, doneLabel }: { state: AutosaveState; onDone?: () => void; doneLabel?: string }) {
+function EditorFooter({
+  state,
+  onDone,
+  doneLabel,
+  savedText,
+}: {
+  state: AutosaveState;
+  onDone?: () => void;
+  doneLabel?: string;
+  savedText?: string;
+}) {
   return (
     <div className={styles.editorFooter}>
       {onDone ? (
@@ -23,7 +33,7 @@ function EditorFooter({ state, onDone, doneLabel }: { state: AutosaveState; onDo
           {copy.card.done}
         </Button>
       ) : null}
-      <AutosaveStatus state={state} />
+      <AutosaveStatus state={state} saved={savedText} />
     </div>
   );
 }
@@ -76,6 +86,7 @@ export function WhoEditor({ onDone, doneLabel }: EditorProps) {
       </QuestionSheet>
       <EditorFooter
         state={state}
+        savedText={whoSavedText(draft)}
         doneLabel={doneLabel}
         onDone={
           onDone &&

@@ -60,11 +60,11 @@ describe('share page', () => {
   it('needs a name for the link and keeps the other choices', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByLabelText(c.durations.weekend, { exact: false }));
+    await user.click(screen.getByLabelText(c.durations.days7, { exact: false }));
     await user.click(screen.getByRole('button', { name: c.submit }));
     expect(screen.getByText(c.labelMissing)).toBeInTheDocument();
     expect(screen.getByLabelText(c.labelLabel)).toHaveFocus();
-    expect(screen.getByLabelText(c.durations.weekend, { exact: false })).toBeChecked();
+    expect(screen.getByLabelText(c.durations.days7, { exact: false })).toBeChecked();
     expect(createShare).not.toHaveBeenCalled();
   });
 
@@ -107,16 +107,31 @@ describe('share page', () => {
     expect(screen.queryByLabelText(c.linkLabel)).not.toBeInTheDocument();
   });
 
-  it('offers a name to tap, and a weekend link that runs to Monday morning', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByRole('button', { name: 'Camp weekend' }));
-    expect(screen.getByLabelText(c.labelLabel)).toHaveValue('Camp weekend');
-    await user.click(screen.getByLabelText(c.durations.weekend, { exact: false }));
-    await user.click(screen.getByRole('button', { name: c.submit }));
-    const { hours } = createShare.mock.calls[0]![0] as { hours: number };
-    expect(hours).toBeGreaterThanOrEqual(1);
-    expect(hours).toBeLessThanOrEqual(7 * 24);
+  it('offers a name to tap, and on a Friday evening a weekend link to Monday 9 am', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-13T18:00:00') });
+    try {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByRole('button', { name: 'Camp weekend' }));
+      expect(screen.getByLabelText(c.labelLabel)).toHaveValue('Camp weekend');
+      expect(screen.getByText(c.durationUntil(c.beforeMidnight))).toBeInTheDocument();
+      await user.click(screen.getByLabelText(c.durations.weekend, { exact: false }));
+      await user.click(screen.getByRole('button', { name: c.submit }));
+      expect(createShare).toHaveBeenCalledWith(expect.objectContaining({ hours: 63 }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('doesn’t offer a weekend link on a Monday before 9 am', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-16T03:00:00') });
+    try {
+      renderPage();
+      expect(screen.queryByLabelText(c.durations.weekend, { exact: false })).not.toBeInTheDocument();
+      expect(screen.getByLabelText(c.durations.days7, { exact: false })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('lists links with their status and closes one in one tap', async () => {

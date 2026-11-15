@@ -33,11 +33,6 @@ export function readiness(model: CardModel): Readiness {
   return 'ready';
 }
 
-/** "Ari", or "Your child" when no name is typed, so a heading never starts in lower case. */
-function headingName(model: CardModel, hasName: boolean): string {
-  return hasName ? model.name : 'Your child';
-}
-
 /** Adding someone to call, right here, so it never needs a trip back through setup. */
 function AddWho({ onAdded }: { onAdded: () => void }) {
   const { profile, saveProfile } = useFamilyData();
@@ -107,10 +102,19 @@ export function ReadyStep() {
   }, [profile.setup_completed_at, saveProfile]);
 
   const state = readiness(model);
-  const name = headingName(model, hasName);
+  const name = hasName ? model.name : null;
+  const toiletingEmpty = !partWritten(model, 'toileting');
   const { words, minutes } = cardLength(model);
   const heading = state === 'needsWho' ? r.headingNeedsWho(name) : state === 'noToileting' ? r.headingNoToileting(name) : r.heading(name);
-  const intro = state === 'needsWho' ? r.introNeedsWho : state === 'noToileting' ? r.introNoToileting : r.intro;
+  // Never "ready to share" while toileting is still empty.
+  const intro =
+    state === 'needsWho'
+      ? toiletingEmpty
+        ? r.introNeedsWhoAndToileting
+        : r.introNeedsWho
+      : state === 'noToileting'
+        ? r.introNoToileting
+        : r.intro;
 
   // A gap in the card links to the step that writes it.
   function action(part: CardPart, title: string, empty: boolean) {
@@ -136,11 +140,26 @@ export function ReadyStep() {
         {error ? <Banner tone="error">{error}</Banner> : null}
 
         {state === 'needsWho' ? (
-          <AddWho onAdded={() => document.querySelector<HTMLElement>('main h1')?.focus()} />
+          <>
+            <AddWho onAdded={() => document.querySelector<HTMLElement>('main h1')?.focus()} />
+            {toiletingEmpty ? (
+              <p className={styles.secondFact}>
+                <span>{r.noToiletingEither}</span>
+                <Link to={`/setup/${stepFor('toileting')}`} className={styles.addLink} aria-label={r.addToileting}>
+                  {c.add}
+                </Link>
+              </p>
+            ) : null}
+          </>
         ) : (
           <div className={styles.readyActions}>
             {state === 'noToileting' ? (
-              <ButtonLink to={`/setup/${stepFor('toileting')}`}>{r.addToileting}</ButtonLink>
+              <>
+                <ButtonLink to={`/setup/${stepFor('toileting')}`}>{r.addToileting}</ButtonLink>
+                <ButtonLink to="/share" variant="secondary">
+                  {r.share}
+                </ButtonLink>
+              </>
             ) : (
               <Button onClick={() => navigate('/share')}>{r.share}</Button>
             )}
@@ -149,9 +168,9 @@ export function ReadyStep() {
 
         {/* The other ways on are plain links, never a stack of buttons. */}
         <p className={styles.otherWays}>
-          {state !== 'ready' ? (
+          {state === 'needsWho' ? (
             <Link to="/share" className={styles.addLink}>
-              {state === 'needsWho' ? r.shareWithout : r.shareAnyway}
+              {r.shareWithout}
             </Link>
           ) : null}
           <Link to="/card" className={styles.addLink}>

@@ -59,9 +59,23 @@
 }
 
 /* Preview: the part being written now, marked with the ink rule used for "in context". */
+/*
+ * The rule is drawn inside the part's own padding, so it never meets a section rule above or
+ * below (no corner bracket against "Please avoid").
+ */
 .preview .marked {
-  border-left: 2px solid var(--ink);
+  position: relative;
   padding-left: var(--space-4);
+}
+
+.preview .marked::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-4);
+  bottom: var(--space-4);
+  width: 2px;
+  background: var(--ink);
 }
 
 /* An empty part is a plain list row: no list gap, and no ink rules around an empty "Please avoid". */
@@ -124,6 +138,8 @@
 /* Rhythm: 8px label to answer, 16px between pairs, 32px between sections (16 either side of the rule). */
 .block {
   padding: var(--space-4) 0;
+  /* When a part is scrolled to (opening it on the card page), a little room shows above it. */
+  scroll-margin-top: var(--space-4);
 }
 
 /* Inside "About", the opening needs no padding of its own. */

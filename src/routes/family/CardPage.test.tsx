@@ -73,4 +73,23 @@ describe('card page', () => {
     expect(screen.getByLabelText(c.who.phoneLabel)).toBeInTheDocument();
     expect(saveProfile).not.toHaveBeenCalledWith(expect.objectContaining({ who_to_call_phone: '0412' }));
   });
+
+  it('opens a part with its heading brought into view, not scrolled off the top', async () => {
+    const user = userEvent.setup();
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    renderPage();
+    await user.click(screen.getByRole('button', { name: c.changeLabel(c.sections.toileting) }));
+    expect(scrolled).toHaveBeenCalledWith({ block: 'start' });
+    const section = scrolled.mock.contexts[0] as HTMLElement;
+    expect(section.querySelector('h2')).toHaveTextContent(c.sections.toileting);
+  });
+
+  it('says nothing is written yet, rather than “1 minute · 0 words”', () => {
+    profile = makeProfile({ display_name: '', connect_note: '', communication_modes: [], languages: [] });
+    sections = [];
+    renderPage();
+    expect(screen.getByText(c.readingTime(0, 0))).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(c.headingNoName);
+  });
 });

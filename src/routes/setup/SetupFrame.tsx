@@ -22,6 +22,8 @@ const s = copy.setup;
 function StepProgress({ step, model }: { step: number; model: CardModel }) {
   return (
     <nav aria-label={s.progressLabel} className={styles.progress}>
+      {/* Phones: one calm line. From 600px: the count, then every part by name. */}
+      <p className={styles.progressShort}>{s.progressShort(STEP_INFO[step - 1]!.name, step, SETUP_STEPS, minutesLeft(step))}</p>
       <p className={styles.progressText}>{s.progress(step, SETUP_STEPS, minutesLeft(step))}</p>
       <ol className={styles.parts}>
         {STEP_INFO.map((info, i) => {
@@ -48,6 +50,8 @@ interface SetupFrameProps {
   /** Extra lines after the intro (the one-time tips on the first step). */
   aside?: ReactNode;
   autosave?: AutosaveState;
+  /** Replaces "Saved." when only part of what's shown was saved. */
+  savedText?: string;
   busy?: boolean;
   onPrimary: () => void;
   onSkip: () => void;
@@ -56,7 +60,7 @@ interface SetupFrameProps {
   children: ReactNode;
 }
 
-export function SetupFrame({ step, heading, intro, aside, autosave, busy = false, onPrimary, onSkip, model, children }: SetupFrameProps) {
+export function SetupFrame({ step, heading, intro, aside, autosave, savedText, busy = false, onPrimary, onSkip, model, children }: SetupFrameProps) {
   usePageTitle(s.title(step));
   const parts: readonly CardPart[] = STEP_INFO[step - 1]!.parts;
   const { minutes } = cardLength(model);
@@ -90,7 +94,7 @@ export function SetupFrame({ step, heading, intro, aside, autosave, busy = false
 
           <div className={styles.footer}>
             <p className={styles.soFar}>{s.soFar(minutes)}</p>
-            {autosave ? <AutosaveStatus state={autosave} /> : null}
+            {autosave ? <AutosaveStatus state={autosave} saved={savedText} /> : null}
             <div className={styles.actions}>
               <Button onClick={onPrimary} disabled={busy}>
                 {s.continue}
@@ -110,10 +114,13 @@ export function SetupFrame({ step, heading, intro, aside, autosave, busy = false
         </div>
 
         {/* It scrolls on its own, so it can take focus for keyboard scrolling. */}
-        <aside className={styles.previewAside} aria-labelledby="worker-preview" tabIndex={0}>
-          <h2 id="worker-preview" className={styles.previewLabel}>
-            {s.preview.heading}
-          </h2>
+        <aside className={styles.previewAside} aria-labelledby="worker-preview">
+          <div className={styles.previewHead}>
+            <h2 id="worker-preview" className={styles.previewLabel}>
+              {s.preview.heading}
+            </h2>
+            <p className={styles.previewNote}>{s.preview.note}</p>
+          </div>
           <SetupPreview model={model} parts={parts} follow />
         </aside>
       </div>

@@ -3,6 +3,8 @@ import { ARI_CUES, ARI_PROFILE, ARI_SECTIONS } from '../demo/ari';
 import { makeCue, makeMeaning, makeProfile, makeSection } from '../test/fixtures';
 import {
   buildCard,
+  CARD_PARTS,
+  cardLength,
   cardText,
   contextPhrase,
   countWords,
@@ -10,7 +12,9 @@ import {
   joinList,
   LONG_CARD_WORDS,
   parseLanguages,
+  partWritten,
   readingMinutes,
+  withSectionDrafts,
 } from './card';
 
 describe('buildCard', () => {
@@ -139,5 +143,35 @@ describe('helpers', () => {
 
   it('cleans up typed languages', () => {
     expect(parseLanguages(' English, Auslan , ,Mandarin')).toEqual(['English', 'Auslan', 'Mandarin']);
+  });
+});
+
+describe('parts of the card', () => {
+  const bare = makeProfile({ connect_note: '', communication_modes: [], languages: [], who_to_call_phone: '' });
+
+  it('lists every part in the order a worker reads it', () => {
+    expect(CARD_PARTS).toEqual(['about', 'toileting', 'food_drink', 'overstimulation', 'calms', 'avoid', 'cues', 'who']);
+  });
+
+  it('counts a part as written only when a worker would read something in it', () => {
+    const empty = buildCard(bare, [], [], 'your child');
+    expect(CARD_PARTS.filter((p) => partWritten(empty, p))).toEqual([]);
+    const some = buildCard(makeProfile({ who_to_call_phone: '0412 345 678' }), [makeSection('calms', {}, 'A quiet corner.')], [], 'Ari');
+    expect(CARD_PARTS.filter((p) => partWritten(some, p))).toEqual(['about', 'calms', 'who']);
+  });
+
+  it('counts who to call only once there is a number', () => {
+    expect(partWritten(buildCard(makeProfile({ who_to_call_name: 'Sam', who_to_call_phone: '' }), [], [], 'Ari'), 'who')).toBe(false);
+  });
+
+  it('swaps in what is being typed, so a preview keeps up with every key', () => {
+    const model = withSectionDrafts(buildCard(bare, [], [], 'Ari'), { toileting: { details: { signs: 'Taps the door.' }, body: '' } });
+    expect(partWritten(model, 'toileting')).toBe(true);
+    expect(model.sections.find((s) => s.key === 'toileting')!.lines[0]!.text).toBe('Taps the door.');
+  });
+
+  it('says 0 minutes for an empty card, so nothing claims “1 minute · 0 words”', () => {
+    expect(cardLength(buildCard(bare, [], [], 'your child'))).toEqual({ words: 0, minutes: 0 });
+    expect(cardLength(buildCard(makeProfile(), [], [], 'Ari')).minutes).toBe(1);
   });
 });

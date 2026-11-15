@@ -72,6 +72,11 @@ export function phoneProblem(phone: string, finished: boolean): boolean {
   return /[^\d\s()+-]/.test(phone) || phone.trim().length > 20 || (finished && !phoneLooksValid(phone));
 }
 
+/** What the save line says: never plain "Saved." while a typed number isn't saved. */
+export function whoSavedText(draft: WhoDraft): string | undefined {
+  return draft.who_to_call_phone.trim() && !phoneLooksValid(draft.who_to_call_phone) ? copy.setup.savedNameOnly : undefined;
+}
+
 /** What autosave stores: an unfinished number isn't saved, and the last good one stays until it's fixed. */
 export function whoToSave(draft: WhoDraft, savedPhone: string): WhoDraft {
   return {

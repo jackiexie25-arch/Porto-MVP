@@ -289,6 +289,9 @@ export const copy = {
       days14: '14 days',
     },
     durationUntil: (when: string) => `Closes ${when}`,
+    beforeMidnight: 'by midnight tonight',
+    todayAt: (time: string) => `today at ${time}`,
+    tomorrowAt: (time: string) => `tomorrow at ${time}`,
     scopeLegend: 'What can they see?',
     scopes: {
       card: 'The first-shift card only',
@@ -641,6 +644,9 @@ export const copy = {
     /** "Step 3 of 6 · about 11 minutes left" */
     progress: (step: number, total: number, minutes: number) =>
       `Step ${step} of ${total} · ${minutes <= 1 ? 'about a minute left' : `about ${minutes} minutes left`}`,
+    /** On phones: "Toileting · 3 of 6 · about 11 minutes left" */
+    progressShort: (name: string, step: number, total: number, minutes: number) =>
+      `${name} · ${step} of ${total} · ${minutes <= 1 ? 'about a minute left' : `about ${minutes} minutes left`}`,
     /** Each part's name in the progress line, as screen readers hear it. */
     stepState: (name: string, current: boolean, written: boolean) =>
       [name, current ? 'this step' : '', written ? 'written' : ''].filter(Boolean).join(', '),
@@ -653,6 +659,7 @@ export const copy = {
     back: 'Back',
     saving: 'Saving…',
     saved: 'Saved.',
+    savedNameOnly: 'Name saved. The number isn’t saved yet.',
     saveFailed: 'We couldn’t save that just now. Your words are still here. We’ll try again when you next type, or you can tap Save and continue.',
     yourChild: 'your child',
     /** Shown once, at the top of the first step. */
@@ -675,6 +682,8 @@ export const copy = {
       hide: 'Hide',
       showWord: 'Show',
       current: 'Nothing here yet. As you write, it shows here the way a worker reads it.',
+      note: 'The whole card, as it reads with what you’ve typed. This step’s part is marked.',
+      frameLabel: 'The card so far',
     },
     about: {
       heading: 'About your child',
@@ -747,19 +756,21 @@ export const copy = {
     },
     ready: {
       title: 'Setup, card ready',
-      heading: (name: string) => `${name}’s card is ready`,
-      headingNeedsWho: (name: string) => `${name}’s card needs someone to call`,
-      headingNoToileting: (name: string) => `${name}’s card is nearly ready`,
+      /** With no name typed, "The card…", so a heading is never long or lower case. */
+      heading: (name: string | null) => `${name ? `${name}’s card` : 'The card'} is ready`,
+      headingNeedsWho: (name: string | null) => `${name ? `${name}’s card` : 'The card'} needs someone to call`,
+      headingNoToileting: (name: string | null) => `${name ? `${name}’s card` : 'The card'} is nearly ready`,
       intro: 'This is exactly what a worker sees on their first shift. You can change any of it later.',
       introNeedsWho:
         'If something comes up during a shift, a worker needs to reach you. Add a name and number, and the card is ready to share.',
+      introNeedsWhoAndToileting: 'If something comes up during a shift, a worker needs to reach you. Add a name and number here.',
       introNoToileting: 'There’s nothing yet on toileting, which a new worker needs most. It takes about a minute.',
       noOne: 'No one to call yet',
+      noToiletingEither: 'Toileting isn’t written yet either.',
       addWho: 'Add who to call',
       addToileting: 'Add toileting',
       share: 'Share for a shift',
       shareWithout: 'Share without a number',
-      shareAnyway: 'Share it as it is',
       later: 'Finish later',
       cardLabel: 'The card',
     },

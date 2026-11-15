@@ -102,6 +102,17 @@ describe('setup steps', () => {
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
   });
 
+  it('on phones, says the step in one line: “Toileting · 3 of 6 · about 11 minutes left”', () => {
+    renderStep(TOILETING);
+    expect(screen.getByText(copy.setup.progressShort('Toileting', TOILETING, 6, minutesLeft(TOILETING)))).toBeInTheDocument();
+  });
+
+  it('says nothing is on the card yet above Save, rather than “0 words”', () => {
+    profile = makeProfile({ display_name: '', connect_note: '', communication_modes: [], languages: [], setup_completed_at: null });
+    renderStep(TOILETING);
+    expect(screen.getByText(copy.setup.soFar(0))).toBeInTheDocument();
+  });
+
   it('says what setup involves, and the tips, once on the first step only', () => {
     renderStep(1);
     expect(screen.getByText(copy.setup.start.lead)).toBeInTheDocument();
@@ -199,6 +210,24 @@ describe('setup steps', () => {
     expect(screen.getByText(copy.card.who.phoneInvalid)).toBeInTheDocument();
     expect(screen.getByTestId('path')).toHaveTextContent('/setup/2');
     expect(saveProfile).not.toHaveBeenCalledWith(expect.objectContaining({ who_to_call_phone: '0412' }));
+  });
+
+  it('says a number can’t be rung as soon as its box is left', async () => {
+    const user = userEvent.setup();
+    renderStep(WHO);
+    await user.type(screen.getByLabelText(copy.card.who.phoneLabel), '0412');
+    expect(screen.queryByText(copy.card.who.phoneInvalid)).not.toBeInTheDocument();
+    await user.tab();
+    expect(screen.getByText(copy.card.who.phoneInvalid)).toBeInTheDocument();
+  });
+
+  it('never says plain “Saved.” while the typed number isn’t saved', async () => {
+    const user = userEvent.setup();
+    renderStep(WHO);
+    await user.type(screen.getByLabelText(copy.card.who.nameLabel), 'Sam');
+    await user.type(screen.getByLabelText(copy.card.who.phoneLabel), '04');
+    await waitFor(() => expect(screen.getByText(copy.setup.savedNameOnly)).toBeInTheDocument(), { timeout: 3000 });
+    expect(screen.queryByText(copy.setup.saved)).not.toBeInTheDocument();
   });
 
   it('first cues asks what you see or hear first, with the kind under More detail', () => {
@@ -314,15 +343,45 @@ describe('card ready', () => {
     renderStep('ready');
     expect(screen.getByRole('heading', { name: r.headingNoToileting('Ari'), level: 1 })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: r.addToileting })).toHaveAttribute('href', '/setup/3');
+    // Sharing is still there, as a plain link beside the one primary.
+    expect(within(screen.getByRole('main')).getByRole('link', { name: r.share })).toHaveAttribute('href', '/share');
+    expect(screen.queryByRole('button', { name: r.share })).not.toBeInTheDocument();
     expect(screen.getByText(copy.card.gap.toileting('Ari'))).toBeInTheDocument();
     expect(screen.getByRole('link', { name: copy.card.addLabel(copy.card.sections.food_drink) })).toHaveAttribute('href', '/setup/4');
     expect(screen.getAllByText(copy.card.size(3, 1)).length).toBeGreaterThan(0);
     expect(screen.getByText(copy.layout.emergency)).toBeInTheDocument();
   });
 
-  it('never starts a heading in lower case when no name is typed', () => {
+  it('with no one to call and no toileting, says both, and never “ready to share”', () => {
+    profile = makeProfile({ setup_completed_at: '2026-11-01T00:00:00Z' });
+    renderStep('ready');
+    expect(screen.getByRole('heading', { name: r.headingNeedsWho('Ari'), level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(r.noOne)).toBeInTheDocument();
+    expect(screen.getByText(r.noToiletingEither)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: r.addToileting })).toHaveAttribute('href', '/setup/3');
+    expect(screen.queryByText(/ready to share/)).not.toBeInTheDocument();
+    // Who to call is asked above the card, not repeated inside it.
+    expect(screen.queryByText(copy.card.gap.who)).not.toBeInTheDocument();
+  });
+
+  it('with someone to call but no number typed in, asks for one before calling it ready', () => {
+    profile = makeProfile({ who_to_call_name: 'Sam', who_to_call_phone: '', setup_completed_at: '2026-11-01T00:00:00Z' });
+    sections = [toilet];
+    renderStep('ready');
+    expect(screen.getByLabelText(copy.card.who.nameLabel)).toHaveValue('Sam');
+    expect(screen.queryByText(/ready to share/)).toBeInTheDocument();
+  });
+
+  it('with no name typed, the heading is short and never lower case', () => {
     profile = makeProfile({ display_name: '', setup_completed_at: '2026-11-01T00:00:00Z' });
     renderStep('ready');
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^Your child’s card/);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('The card needs someone to call');
+  });
+
+  it('says nothing is on the card yet, rather than “0 words”', () => {
+    profile = makeProfile({ display_name: '', connect_note: '', communication_modes: [], languages: [], setup_completed_at: '2026-11-01T00:00:00Z' });
+    renderStep('ready');
+    expect(screen.getByText(copy.card.readingTime(0, 0))).toBeInTheDocument();
+    expect(screen.queryByText(/0 words/)).not.toBeInTheDocument();
   });
 });

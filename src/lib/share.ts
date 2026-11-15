@@ -47,6 +47,35 @@ export function durationEnd(key: DurationKey, now: Date = new Date()): Date {
   return new Date(now.getTime() + durationHours(key, now) * 3_600_000);
 }
 
+/**
+ * The choices that make sense right now. On a Monday before 9 am the weekend is over, and a
+ * "weekend" link would close within hours, so it isn't offered.
+ */
+export function durationChoices(now: Date = new Date()): DurationKey[] {
+  const mondayMorning = now.getDay() === 1 && now.getHours() < WEEKEND_END_HOUR;
+  return DURATIONS.filter((d) => !(d === 'weekend' && mondayMorning));
+}
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+/** "today at 4:30 pm", "tomorrow at 9:00 am", or the day (and date, when far off) and time. */
+export function closesAt(end: Date, now: Date = new Date()): string {
+  const time = new Intl.DateTimeFormat('en-AU', { hour: 'numeric', minute: '2-digit' }).format(end);
+  const days = Math.round((startOfDay(end) - startOfDay(now)) / 86_400_000);
+  if (days === 0) return copy.share.todayAt(time);
+  if (days === 1) return copy.share.tomorrowAt(time);
+  return formatUntil(end.toISOString(), now);
+}
+
+/** When a choice would close, said plainly: "by midnight tonight", "tomorrow at 9:00 am". */
+export function closesWhen(key: DurationKey, now: Date = new Date()): string {
+  const end = durationEnd(key, now);
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  if (key === 'today' && end.getTime() <= midnight.getTime()) return copy.share.beforeMidnight;
+  return closesAt(end, now);
+}
+
 export interface ShareRow {
   id: string;
   label: string;
