@@ -20,9 +20,9 @@ test.describe('family sign-up and setup', () => {
     await page.getByLabel('Gestures').check();
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
-    // Step 2: toileting
+    // Step 2: toileting, asked with the child's name
     await expect(page.getByText('Step 2 of 6')).toBeVisible();
-    await page.getByLabel('How do they show they need the toilet?').fill('Taps the bathroom door twice.');
+    await page.getByLabel('How does Ari show they need the toilet?').fill('Taps the bathroom door twice.');
     await page.getByLabel('What should a new worker do?').fill('Take him straight away.');
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
@@ -32,24 +32,29 @@ test.describe('family sign-up and setup', () => {
 
     // Step 4: calming
     await expect(page.getByText('Step 4 of 6')).toBeVisible();
-    await page.getByLabel('What helps them calm?').fill('Lower the noise. Offer his headphones.');
+    await page.getByLabel('What helps Ari calm?').fill('Lower the noise. Offer his headphones.');
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
-    // Step 5: a first cue, added by Save and continue
+    // Step 5: who to call
     await expect(page.getByText('Step 5 of 6')).toBeVisible();
-    await page.getByRole('button', { name: 'A phrase they repeat' }).click();
-    await page.getByLabel('What you’ll see or hear').fill('Cookie time');
-    await page.getByRole('button', { name: 'Home', exact: true }).click();
-    await page.getByLabel('What it usually means').fill('I’m hungry');
-    await page.getByLabel('What to do', { exact: true }).fill('Offer a snack.');
+    await page.getByLabel('Who should they ask for?').fill('Sam');
+    await page.getByLabel('What number should they ring?').fill('0491 570 156');
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
-    // Step 6: preview, then share
-    await expect(page.getByRole('heading', { name: 'Your first-shift card' })).toBeVisible();
+    // Step 6: a first cue, added by Save and continue
+    await expect(page.getByText('Step 6 of 6')).toBeVisible();
+    await page.getByLabel('What do you see or hear?').fill('Cookie time');
+    await page.getByRole('button', { name: 'Home', exact: true }).click();
+    await page.getByLabel('What does it usually mean?').fill('I’m hungry');
+    await page.getByLabel('What should a worker do?').fill('Offer a snack.');
+    await page.getByRole('button', { name: 'Save and continue' }).click();
+
+    // The card is ready: the card as a worker sees it, then share
+    await expect(page.getByRole('heading', { name: 'Ari’s card is ready' })).toBeVisible();
     await expect(page.getByText(/minutes? to read/)).toBeVisible();
     await expect(page.getByText('Taps the bathroom door twice.')).toBeVisible();
     await expect(page.getByText('Cookie time')).toBeVisible();
-    await page.getByRole('button', { name: 'Share it' }).click();
+    await page.getByRole('button', { name: 'Share for a shift' }).click();
 
     const link = await shareLink(page, 'Camp weekend');
     await expect(page.getByRole('img', { name: 'QR code for the share link' })).toBeVisible();

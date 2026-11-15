@@ -1,0 +1,189 @@
+/*
+ * The setup interview. One sheet; each question is a Fraunces heading in the family's own terms,
+ * an example to start from above the box, the box, and a quiet length line. Hairlines between.
+ */
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--blob);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-6);
+  min-width: 0;
+}
+
+/* On phones the sheet runs edge to edge, like the cue library. */
+@media (max-width: 599px) {
+  .sheet {
+    margin-inline: calc(var(--space-4) * -1);
+    border-radius: 0;
+    border-inline: 0;
+    padding-inline: var(--space-4);
+  }
+}
+
+/* Inside a card section that is already on a sheet. */
+.flat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6) 0;
+  min-width: 0;
+}
+
+.question + .question {
+  border-top: 1px solid var(--blob);
+}
+
+.compact {
+  padding: var(--space-4) 0;
+}
+
+.flat .question:first-child {
+  padding-top: 0;
+}
+
+.fieldset {
+  margin: 0;
+  border: 0;
+  border-top: 0;
+  padding-inline: 0;
+}
+
+.question + .fieldset {
+  border-top: 1px solid var(--blob);
+}
+
+.legend {
+  padding: 0;
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.legend + * {
+  clear: left;
+}
+
+.ask {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  color: var(--ink);
+  text-wrap: balance;
+  margin: 0 0 var(--space-2);
+}
+
+.ask label {
+  cursor: pointer;
+}
+
+.askCompact {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  color: var(--ink);
+  margin: 0;
+}
+
+.hint {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+/* The example: a quoted line on a soft rule, set in the family's register, that can be tapped. */
+.example {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  border: 0;
+  border-left: 2px solid var(--blob);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.example[aria-disabled='true'] {
+  cursor: default;
+}
+
+.quote {
+  color: var(--ink-soft);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-style: italic;
+}
+
+.use {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* While the family types, the offer stays in place (nothing jumps) but no longer reads as a control. */
+.useOff {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+  visibility: hidden;
+}
+
+@media (hover: hover) {
+  .example:not([aria-disabled='true']):hover .use {
+    text-decoration-thickness: 2px;
+  }
+}
+
+.exampleText {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--blob);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.exampleLabel {
+  font-style: normal;
+}
+
+.box {
+  min-height: calc(var(--control-height) * 2);
+}
+
+.compact .box {
+  min-height: calc(var(--control-height) * 1.5);
+}
+
+/* Always one line tall, so the box never moves when the line appears. */
+.length {
+  min-height: var(--text-small-lh);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+}

@@ -1,9 +1,16 @@
 import { copy } from '../copy/en-AU';
 
-export type DurationKey = 'shift' | 'today' | 'days3' | 'days7' | 'days14';
-export const DURATIONS: readonly DurationKey[] = ['shift', 'today', 'days3', 'days7', 'days14'];
+export type DurationKey = 'shift' | 'today' | 'weekend' | 'days7' | 'days14';
+export const DURATIONS: readonly DurationKey[] = ['shift', 'today', 'weekend', 'days7', 'days14'];
 
-/** Hours a link stays open. "Today" runs to the family's local midnight. Max 14 days (336 hours). */
+/** The hour a weekend link closes on Monday morning (9 am, local time). */
+export const WEEKEND_END_HOUR = 9;
+
+/**
+ * Hours a link stays open. "Today" runs to the family's local midnight. "Weekend" runs to the next
+ * Monday at 9 am after today, so a camp weekend is covered whichever day the link is made. Max 14
+ * days (336 hours), which the database also enforces.
+ */
 export function durationHours(key: DurationKey, now: Date = new Date()): number {
   switch (key) {
     case 'shift':
@@ -11,15 +18,25 @@ export function durationHours(key: DurationKey, now: Date = new Date()): number 
     case 'today': {
       const midnight = new Date(now);
       midnight.setHours(24, 0, 0, 0);
-      return Math.max(1, Math.ceil((midnight.getTime() - now.getTime()) / 3_600_000));
+      // Whole hours only, rounded down, so the link closes before the time it promises, not after.
+      return Math.max(1, Math.floor((midnight.getTime() - now.getTime()) / 3_600_000));
     }
-    case 'days3':
-      return 72;
+    case 'weekend': {
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + ((8 - now.getDay()) % 7 || 7));
+      monday.setHours(WEEKEND_END_HOUR, 0, 0, 0);
+      return Math.floor((monday.getTime() - now.getTime()) / 3_600_000);
+    }
     case 'days7':
       return 168;
     case 'days14':
       return 336;
   }
+}
+
+/** When a link made now with this choice would close. */
+export function durationEnd(key: DurationKey, now: Date = new Date()): Date {
+  return new Date(now.getTime() + durationHours(key, now) * 3_600_000);
 }
 
 export interface ShareRow {

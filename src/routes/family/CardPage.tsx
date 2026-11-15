@@ -1,142 +1,96 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FirstShiftCard } from '../../components/card/FirstShiftCard';
+import { FirstShiftCard, type CardPart } from '../../components/card/FirstShiftCard';
 import { FamilyShell } from '../../components/family/FamilyShell';
-import { Banner, Button, ButtonLink, Card, Tag } from '../../components/ui';
+import { PageHeading } from '../../components/layout/PageHeading';
 import { copy } from '../../copy/en-AU';
 import { logEvent } from '../../data/events';
-import type { CardSectionKind } from '../../data/types';
 import { useCardModel } from '../../family/useCardModel';
-import type { CardLine } from '../../lib/card';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { AboutEditor, SectionEditor, WhoEditor } from './CardEditors';
 import styles from './CardPage.module.css';
-import { PageHeading } from '../../components/layout/PageHeading';
 
 const c = copy.card;
 
-function Lines({ lines }: { lines: readonly CardLine[] }) {
-  if (!lines.length) return <p className="t-muted">{c.emptyFamily}</p>;
-  return (
-    <dl className={styles.lines}>
-      {lines.map((line, i) => (
-        <div key={line.label ?? i}>
-          {line.label ? <dt>{line.label}</dt> : null}
-          <dd>{line.text}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-/** A card section that shows what's there and opens its own editor in place. */
-function EditableSection({
-  title,
-  children,
-  editor,
-}: {
-  title: string;
-  children: ReactNode;
-  editor: (close: () => void) => ReactNode;
-}) {
-  const [editing, setEditing] = useState(false);
-  return (
-    <Card as="section" aria-label={title}>
-      <div className={styles.sectionHeader}>
-        <h2 className="t-h3">{title}</h2>
-        {!editing ? (
-          <Button variant="outlined" onClick={() => setEditing(true)} aria-label={c.editSection(title)}>
-            {c.edit}
-          </Button>
-        ) : null}
-      </div>
-      {editing ? editor(() => setEditing(false)) : children}
-    </Card>
-  );
-}
-
+/**
+ * The family's card: the same single sheet a worker reads, with every part shown (empty parts say
+ * so plainly) and a quiet "Change" or "Add" beside each heading that opens that part in place.
+ */
 export function CardPage() {
   usePageTitle(c.title);
   const { model, words, minutes, isLong, hasName } = useCardModel();
-  const [preview, setPreview] = useState(false);
+  const [editing, setEditing] = useState<CardPart | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const returnTo = useRef<CardPart | null>(null);
 
   useEffect(() => {
     logEvent('card_viewed_by_family');
   }, []);
+
+  // Opening a part puts the cursor in its first box; Done brings focus back to that part's control.
+  useEffect(() => {
+    if (editing) {
+      editorRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
+    } else if (returnTo.current) {
+      document.querySelector<HTMLElement>(`[data-part="${returnTo.current}"]`)?.focus();
+      returnTo.current = null;
+    }
+  }, [editing]);
+
   const heading = hasName ? c.heading(model.name) : c.headingNoName;
+
+  function action(part: CardPart, title: string, empty: boolean) {
+    const text = empty ? c.add : c.change;
+    const label = empty ? c.addLabel(title) : c.changeLabel(title);
+    if (part === 'cues') {
+      return (
+        <Link to="/cues" className={styles.change} aria-label={label}>
+          {text}
+        </Link>
+      );
+    }
+    return (
+      <button type="button" className={styles.change} aria-label={label} data-part={part} onClick={() => setEditing(part)}>
+        {text}
+      </button>
+    );
+  }
+
+  function editor(part: CardPart) {
+    const done = () => {
+      returnTo.current = part;
+      setEditing(null);
+    };
+    const doneLabel = c.doneLabel(part === 'about' ? c.sections.about(model.name) : c.sections[part]);
+    return (
+      <div ref={editorRef} className={styles.editor}>
+        {part === 'about' ? (
+          <AboutEditor onDone={done} doneLabel={doneLabel} />
+        ) : part === 'who' ? (
+          <WhoEditor onDone={done} doneLabel={doneLabel} />
+        ) : part === 'cues' ? null : (
+          <SectionEditor section={part} onDone={done} doneLabel={doneLabel} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <FamilyShell>
       <div className={styles.page}>
         <header className={styles.header}>
           <PageHeading className="t-h2">{heading}</PageHeading>
-          <p className={styles.readingTime}>{c.readingTime(words, minutes)}</p>
-          <div className={styles.actions}>
-            <Button variant="outlined" onClick={() => setPreview((p) => !p)} aria-pressed={preview}>
-              {preview ? c.editButton : c.previewButton}
-            </Button>
-            <ButtonLink to="/card/print" variant="secondary">
+          <p className={styles.intro}>{c.intro}</p>
+          <p className={styles.meta}>
+            <span>{c.readingTime(words, minutes)}</span>
+            <Link to="/card/print" className={styles.print}>
               {c.printLink}
-            </ButtonLink>
-          </div>
-          {isLong ? <Banner tone="info">{c.longNote}</Banner> : null}
-          <p className="t-small t-muted">{c.medical}</p>
+            </Link>
+          </p>
+          {isLong ? <p className={styles.long}>{c.longNote}</p> : null}
         </header>
 
-        {preview ? (
-          <section aria-label={c.previewHeading} className={styles.preview}>
-            <h2 className="t-h3">{c.previewHeading}</h2>
-            <FirstShiftCard model={model} variant="worker" headingLevel={3} />
-          </section>
-        ) : (
-          <div className={styles.sections}>
-            <EditableSection title={c.sections.about(model.name)} editor={(close) => <AboutEditor onDone={close} />}>
-              <Lines lines={[...model.about, model.note].filter(Boolean).map((text) => ({ text }))} />
-            </EditableSection>
-
-            {model.sections.map((section) => (
-              <EditableSection
-                key={section.key}
-                title={section.title}
-                editor={(close) => <SectionEditor section={section.key as CardSectionKind} onDone={close} />}
-              >
-                <Lines lines={section.lines} />
-              </EditableSection>
-            ))}
-
-            <Card as="section" aria-label={c.sections.cues}>
-              <h2 className="t-h3">{c.sections.cues}</h2>
-              {model.cues.length ? (
-                <ul className={styles.cueList}>
-                  {model.cues.map((cue) => (
-                    <li key={cue.id}>
-                      <strong>{cue.label}</strong>
-                      {cue.meanings.map((m, i) => (
-                        <span key={i} className={styles.cueMeaning}>
-                          {m.context ? `${m.context}: ` : ''}
-                          {m.meaning} <Tag tone="rose">{copy.labels.confidence[m.confidence]}</Tag>
-                        </span>
-                      ))}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="t-muted">{c.cuesEmpty}</p>
-              )}
-              <p>
-                <Link to="/cues">{c.addCues}</Link>
-              </p>
-            </Card>
-
-            <EditableSection title={c.sections.who} editor={(close) => <WhoEditor onDone={close} />}>
-              {model.whoToCall ? (
-                <p>{c.who.callLine(model.whoToCall.name, model.whoToCall.phone)}</p>
-              ) : (
-                <p className="t-muted">{c.emptyFamily}</p>
-              )}
-            </EditableSection>
-          </div>
-        )}
+        <FirstShiftCard model={model} variant="family" family={{ action, editing, editor }} />
       </div>
     </FamilyShell>
   );

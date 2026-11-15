@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 import { CuesStep } from './CuesStep';
-import { PreviewStep } from './PreviewStep';
+import { ReadyStep } from './ReadyStep';
 import { SETUP_STEPS } from './SetupFrame';
-import { AboutStep, CalmingStep, SectionStep } from './WritingSteps';
+import { AboutStep, CalmingStep, SectionStep, WhoStep } from './WritingSteps';
 
 /** Where /setup should resume: step 1 once setup is done (to revisit answers), else where they left off. */
 export function resumeStep(setupStep: number, completed: boolean): number {
@@ -17,7 +17,7 @@ export function SetupResume() {
   return <Navigate to={`/setup/${resumeStep(profile.setup_step, Boolean(profile.setup_completed_at))}`} replace />;
 }
 
-/** Guided setup. Every step is skippable and saves as the family types. */
+/** Guided setup. Every step is skippable and saves as the family types. Then /setup/ready. */
 export function Setup() {
   const { step: param } = useParams();
   const { profile, saveProfile } = useFamilyData();
@@ -32,6 +32,7 @@ export function Setup() {
     }
   }, [profile.setup_started_at, saveProfile]);
 
+  if (param === 'ready') return <ReadyStep />;
   if (!Number.isInteger(step) || step < 1 || step > SETUP_STEPS) return <SetupResume />;
 
   // Keyed by step so each step mounts fresh and flushes its autosave when left.
@@ -45,8 +46,8 @@ export function Setup() {
     case 4:
       return <CalmingStep key="4" />;
     case 5:
-      return <CuesStep key="5" />;
+      return <WhoStep key="5" />;
     default:
-      return <PreviewStep key="6" />;
+      return <CuesStep key="6" />;
   }
 }

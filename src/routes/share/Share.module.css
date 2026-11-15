@@ -10,9 +10,37 @@
   gap: var(--space-3);
 }
 
-.form,
-.ready {
+.intro {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  color: var(--ink-soft);
+}
+
+/* One surface sheet for the form, or for the link once it's made. */
+.sheet {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--blob);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .sheet {
+    margin-inline: calc(var(--space-4) * -1);
+    border-radius: 0;
+    border-inline: 0;
+    padding-inline: var(--space-4);
+  }
+}
+
+.labelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .focusHeading:focus {
@@ -23,26 +51,108 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--space-4);
+}
+
+.qr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--blob);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.quiet {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.sheetActions {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
+
+/* ---------- Your links: a ruled list, not a stack of cards ---------- */
 
 .links {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.count {
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.tags {
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 var(--space-2);
+  border-bottom: 1px solid var(--blob);
+}
+
+.rowTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.status {
+  color: var(--ink-soft);
+}
+
+.rowActions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 0 var(--space-6);
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }

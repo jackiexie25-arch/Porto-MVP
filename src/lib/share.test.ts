@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { qrPath } from '../components/share/QrCode';
-import { durationHours, isOpen, shareStatus, shareUrl, timeAgo, type ShareRow } from './share';
+import { durationEnd, durationHours, isOpen, shareStatus, shareUrl, timeAgo, type ShareRow } from './share';
 
 const now = new Date('2026-11-10T14:30:00');
 
@@ -22,14 +22,34 @@ function share(overrides: Partial<ShareRow> = {}): ShareRow {
 describe('durationHours', () => {
   it('maps each choice to hours, never more than 14 days', () => {
     expect(durationHours('shift', now)).toBe(8);
-    expect(durationHours('days3', now)).toBe(72);
     expect(durationHours('days7', now)).toBe(168);
     expect(durationHours('days14', now)).toBe(336);
   });
 
   it('runs "today" to local midnight, and at least an hour', () => {
-    expect(durationHours('today', now)).toBe(10); // 2:30 pm → midnight, rounded up
+    expect(durationHours('today', now)).toBe(9); // 2:30 pm → 11:30 pm, never past midnight
     expect(durationHours('today', new Date('2026-11-10T23:50:00'))).toBe(1);
+  });
+});
+
+describe('weekend links', () => {
+  it('run to the next Monday morning, whichever day they are made', () => {
+    // Friday 6 pm → Monday 9 am.
+    expect(durationHours('weekend', new Date('2026-11-13T18:00:00'))).toBe(63);
+    // Tuesday 2:30 pm → Monday 16 November, rounded down to the hour (8:30 am).
+    expect(durationEnd('weekend', now).getDate()).toBe(16);
+    // Sunday → the next day.
+    expect(durationEnd('weekend', new Date('2026-11-15T10:00:00')).getDate()).toBe(16);
+    // Monday morning → the Monday after, never a link that closes within the hour.
+    expect(durationEnd('weekend', new Date('2026-11-16T08:30:00')).getDate()).toBe(23);
+  });
+
+  it('never runs past the 14-day limit', () => {
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(2026, 10, 9 + d, 23, 59);
+      expect(durationHours('weekend', day)).toBeLessThanOrEqual(336);
+      expect(durationHours('weekend', day)).toBeGreaterThanOrEqual(1);
+    }
   });
 });
 

@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
-import { CueQuickForm } from '../../components/cues/CueQuickForm';
+import { CueQuickForm, isQuickDraftDirty, type QuickDraft } from '../../components/cues/CueQuickForm';
 import { MeaningView } from '../../components/cues/MeaningView';
-import { Banner, Button, Card, ChipGroup, ChoiceChip } from '../../components/ui';
+import { QuestionSheet } from '../../components/family/Question';
+import { Banner, Button, Sheet } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
-import type { CueType, NewCue, NewMeaning } from '../../data/types';
+import type { NewCue, NewMeaning } from '../../data/types';
 import { useFamilyData } from '../../family/FamilyDataProvider';
-import { useRevealOn } from '../../lib/reveal';
 import { cardMeaning } from '../../lib/card';
+import { useRevealOn } from '../../lib/reveal';
+import { useLeaveGuard } from '../../lib/useLeaveGuard';
 import { SetupFrame } from './SetupFrame';
 import styles from './Setup.module.css';
 import { useStepNav } from './useStepNav';
@@ -15,118 +17,136 @@ const s = copy.setup.cues;
 const STARTER_COUNT = 3;
 
 export function CuesStep() {
-  const { cues, addCue } = useFamilyData();
-  const { busy, goNext } = useStepNav(5);
-  const [formType, setFormType] = useState<CueType | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
+  const { profile, cues, addCue } = useFamilyData();
+  const name = profile.display_name.trim() || copy.setup.yourChild;
+  const { busy, goNext } = useStepNav(6);
+  const [formOpen, setFormOpen] = useState(cues.length < STARTER_COUNT);
+  const [draft, setDraft] = useState<QuickDraft | null>(null);
+  const [justAdded, setJustAdded] = useState(0);
+  const [asking, setAsking] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const continueAfterAdd = useRef(false);
-  // After "Add to profile" the form closes; focus moves to "Added to the profile." so it isn't lost.
-  const [addedCount, setAddedCount] = useState(0);
-  const addedRef = useRevealOn<HTMLDivElement>(justAdded && !formType ? addedCount : 0);
+  // After "Add this cue" the form closes; focus moves to "Added to the profile." so it isn't lost.
+  const addedRef = useRevealOn<HTMLDivElement>(justAdded && !formOpen ? justAdded : 0);
 
-  const onDirtyChange = useCallback((value: boolean) => setDirty(value), []);
+  const dirty = formOpen && draft !== null && isQuickDraftDirty(draft);
+  // A typed cue is never lost by leaving through the menu either.
+  const guard = useLeaveGuard(dirty && !busy);
+  const onDraftChange = useCallback((d: QuickDraft) => setDraft(d), []);
 
   async function onAdd(cue: NewCue, meaning: NewMeaning) {
     await addCue(cue, meaning);
-    setFormType(null);
-    setJustAdded(true);
-    setAddedCount((n) => n + 1);
+    setFormOpen(false);
+    setDraft(null);
+    setJustAdded((n) => n + 1);
     if (continueAfterAdd.current) {
       continueAfterAdd.current = false;
       void goNext();
     }
   }
 
+  function addThenContinue() {
+    setAsking(false);
+    continueAfterAdd.current = true;
+    formRef.current?.requestSubmit();
+  }
+
   // "Save and continue" adds a half-written cue rather than dropping it. If it isn't complete,
   // the form shows what's missing and the family stays here.
   function onPrimary() {
-    if (formType && dirty) {
-      continueAfterAdd.current = true;
-      formRef.current?.requestSubmit();
-      return;
-    }
+    if (dirty) return addThenContinue();
+    void goNext();
+  }
+
+  // "Skip" with a cue started asks first, so tapping it can never throw typing away.
+  function onSkip() {
+    if (dirty) return setAsking(true);
     void goNext();
   }
 
   return (
-    <SetupFrame
-      step={5}
-      heading={s.heading}
-      intro={s.intro}
-      writingTips
-      busy={busy}
-      onPrimary={onPrimary}
-      onSkip={() => void goNext()}
-    >
+    <SetupFrame step={6} heading={s.heading} intro={s.intro(name)} busy={busy} onPrimary={onPrimary} onSkip={onSkip}>
       {cues.length ? (
-        <Card>
-          <h2 className="t-h3">{s.addedHeading}</h2>
+        <section aria-labelledby="added-so-far">
+          <h2 id="added-so-far" className={styles.addedHead}>
+            <span>{s.addedHeading}</span>
+            <span className={styles.addedCount}>{s.addedCount(cues.length)}</span>
+          </h2>
           <ul className={styles.added}>
             {cues.map((cue) => {
               const first = cue.cue_meanings[0];
               return (
                 <li key={cue.id} className={styles.addedItem}>
-                  <strong>{cue.label}</strong>
-                  {first ? (
-                    <MeaningView meaning={cardMeaning(first)} density="compact" show={{ whatToDo: false, avoid: false }} />
-                  ) : null}
+                  <p className={styles.addedLabel}>{cue.label}</p>
+                  {first ? <MeaningView meaning={cardMeaning(first)} density="compact" show={{ avoid: false }} /> : null}
                 </li>
               );
             })}
           </ul>
-        </Card>
+        </section>
       ) : null}
 
-      {justAdded && !formType ? (
+      {justAdded && !formOpen ? (
         <Banner tone="success" ref={addedRef}>
           {copy.cueForm.added}
         </Banner>
       ) : null}
-      {cues.length >= STARTER_COUNT && !formType ? <p>{s.enough}</p> : null}
 
-      {formType ? (
-        <Card>
+      {formOpen ? (
+        <QuestionSheet>
           <CueQuickForm
-            initialType={formType}
             onAdd={onAdd}
             formRef={formRef}
-            onDirtyChange={onDirtyChange}
+            onDraftChange={onDraftChange}
             onInvalid={() => {
               continueAfterAdd.current = false;
             }}
           />
-        </Card>
+        </QuestionSheet>
       ) : (
-        <div className={styles.examples}>
-          <p className="t-small" id="cue-examples">
-            <strong>{cues.length ? s.addAnother : s.examplesLabel}</strong>
-          </p>
-          <ChipGroup aria-labelledby="cue-examples">
-            {s.examples.map((example) => (
-              <ChoiceChip
-                key={example.type}
-                selected={false}
-                onClick={() => {
-                  setJustAdded(false);
-                  setFormType(example.type as CueType);
-                }}
-              >
-                {example.label}
-              </ChoiceChip>
-            ))}
-          </ChipGroup>
+        <div className={styles.sheetActions}>
+          {cues.length >= STARTER_COUNT ? <p>{s.enough}</p> : null}
+          <div>
+            <Button variant="outlined" onClick={() => setFormOpen(true)}>
+              {s.addAnother}
+            </Button>
+          </div>
         </div>
       )}
 
-      {formType ? (
-        <div>
-          <Button variant="secondary" onClick={() => setFormType(null)}>
-            {copy.common.cancel}
-          </Button>
+      <Sheet open={asking} onClose={() => setAsking(false)} title={s.keepTitle}>
+        <p>{s.keepBody(draft?.label.trim() ?? '')}</p>
+        <div className={styles.sheetActions}>
+          <div>
+            <Button onClick={addThenContinue}>{s.keepAdd}</Button>
+          </div>
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAsking(false);
+                void goNext();
+              }}
+            >
+              {s.keepDrop}
+            </Button>
+          </div>
         </div>
-      ) : null}
+      </Sheet>
+
+      <Sheet open={guard.pending !== null} onClose={guard.stay} title={copy.cueEditor.leaveTitle}>
+        <p>{s.keepBody(draft?.label.trim() ?? '')}</p>
+        <div className={styles.sheetActions}>
+          <div>
+            <Button onClick={guard.stay}>{copy.cueEditor.leaveStay}</Button>
+          </div>
+          <div>
+            <Button variant="secondary" onClick={guard.leave}>
+              {copy.cueEditor.leaveGo}
+            </Button>
+          </div>
+        </div>
+      </Sheet>
     </SetupFrame>
   );
 }

@@ -55,9 +55,13 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
       await expect(page.getByText(`Step ${step} of 6`, { exact: true })).toBeVisible();
       problems.push(...(await scan(page, `/setup/${step}`)));
     }
-    await page.goto('/setup/5');
-    await page.getByRole('button', { name: 'A phrase they repeat' }).click();
-    problems.push(...(await scan(page, '/setup/5 with the cue form open')));
+    await page.goto('/setup/6');
+    await page.getByLabel('What do you see or hear?').fill('Cookie time');
+    await page.getByRole('button', { name: 'Skip this step' }).click();
+    problems.push(...(await scan(page, '/setup/6 asking before a typed cue is skipped')));
+    await page.getByRole('button', { name: 'Leave it out and continue' }).click();
+    await expect(page.getByRole('heading', { name: /card is nearly ready/ })).toBeVisible();
+    problems.push(...(await scan(page, '/setup/ready')));
 
     await seedProfile(email);
     const link = await shareLink(page);
@@ -76,11 +80,8 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
       problems.push(...(await scan(page, path)));
     }
     await page.goto('/card');
-    await page.getByRole('button', { name: 'Preview as a worker' }).click();
-    problems.push(...(await scan(page, '/card preview')));
-    await page.getByRole('button', { name: 'Back to editing' }).click();
-    await page.getByRole('button', { name: 'Edit Toileting' }).click();
-    problems.push(...(await scan(page, '/card editing a section')));
+    await page.getByRole('button', { name: 'Change Toileting' }).click();
+    problems.push(...(await scan(page, '/card changing a section')));
 
     await page.goto('/cues');
     await page.getByRole('link', { name: 'Cookie time, edit' }).click();

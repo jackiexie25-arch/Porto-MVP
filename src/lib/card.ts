@@ -104,7 +104,8 @@ function aboutLines(profile: Profile): string[] {
   return lines;
 }
 
-function sectionLines(kind: CardSectionKind, section: CardSection | undefined): CardLine[] {
+/** A section's lines as a worker reads them, from what is saved or from a draft still being typed. */
+export function sectionLines(kind: CardSectionKind, section: Pick<CardSection, 'body' | 'details'> | undefined): CardLine[] {
   if (!section) return [];
   if (kind === 'calms' || kind === 'avoid') {
     return section.body.trim() ? [{ text: section.body.trim() }] : [];

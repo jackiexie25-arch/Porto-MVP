@@ -60,18 +60,18 @@ describe('share page', () => {
   it('needs a name for the link and keeps the other choices', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByLabelText(c.durations.days3));
+    await user.click(screen.getByLabelText(c.durations.weekend, { exact: false }));
     await user.click(screen.getByRole('button', { name: c.submit }));
     expect(screen.getByText(c.labelMissing)).toBeInTheDocument();
     expect(screen.getByLabelText(c.labelLabel)).toHaveFocus();
-    expect(screen.getByLabelText(c.durations.days3)).toBeChecked();
+    expect(screen.getByLabelText(c.durations.weekend, { exact: false })).toBeChecked();
     expect(createShare).not.toHaveBeenCalled();
   });
 
   it('defaults to this shift with card, search and notes, then shows the link and QR code once', async () => {
     const user = userEvent.setup();
     renderPage();
-    expect(screen.getByLabelText(c.durations.shift)).toBeChecked();
+    expect(screen.getByLabelText(c.durations.shift, { exact: false })).toBeChecked();
     expect(screen.getByLabelText(c.scopes.card_search_log)).toBeChecked();
 
     await user.type(screen.getByLabelText(c.labelLabel), 'Camp weekend');
@@ -83,7 +83,10 @@ describe('share page', () => {
     expect(screen.getByLabelText(c.linkLabel)).toHaveValue(`${window.location.origin}/s/${TOKEN}`);
     expect(screen.getByText(c.once)).toBeInTheDocument();
 
+    // Done before copying asks first, because the link can't be shown again.
     await user.click(screen.getByRole('button', { name: c.done }));
+    expect(screen.getByText(c.uncopiedBody)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: c.uncopiedLeave }));
     expect(screen.queryByText(TOKEN, { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue(new RegExp(TOKEN))).not.toBeInTheDocument();
   });
@@ -97,6 +100,22 @@ describe('share page', () => {
     await user.click(await screen.findByRole('button', { name: c.copy }));
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/s/${TOKEN}`);
     expect(await screen.findByText(c.copied)).toBeInTheDocument();
+    // Once copied, Done just finishes.
+    await user.click(screen.getByRole('button', { name: c.done }));
+    expect(screen.queryByText(c.uncopiedBody)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(c.linkLabel)).not.toBeInTheDocument();
+  });
+
+  it('offers a name to tap, and a weekend link that runs to Monday morning', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Camp weekend' }));
+    expect(screen.getByLabelText(c.labelLabel)).toHaveValue('Camp weekend');
+    await user.click(screen.getByLabelText(c.durations.weekend, { exact: false }));
+    await user.click(screen.getByRole('button', { name: c.submit }));
+    const { hours } = createShare.mock.calls[0]![0] as { hours: number };
+    expect(hours).toBeGreaterThanOrEqual(1);
+    expect(hours).toBeLessThanOrEqual(7 * 24);
   });
 
   it('lists links with their status and closes one in one tap', async () => {
@@ -108,7 +127,7 @@ describe('share page', () => {
 
     const open = (await screen.findByRole('heading', { name: 'Camp weekend' })).closest('li')!;
     expect(within(open).getByText(/^Not opened yet · Open until/)).toBeInTheDocument();
-    expect(within(open).getByText(c.forWorker('Jo'))).toBeInTheDocument();
+    expect(within(open).getByText(`${c.forWorker('Jo')} · ${c.scopesShort.card_search_log}`)).toBeInTheDocument();
     const old = screen.getByRole('heading', { name: 'Old link' }).closest('li')!;
     expect(within(old).getByText(c.status.closed)).toBeInTheDocument();
     expect(within(old).queryByRole('button', { name: c.closeLabel('Old link') })).not.toBeInTheDocument();

@@ -1,8 +1,62 @@
 .frame {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
+  min-width: 0;
 }
+
+/* ---------- Step meter ---------- */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.meterText {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-4);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+  max-width: none;
+}
+
+.meterStep {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Six marks: visited in ink, this step in apricot and taller, the rest a soft line. */
+.marks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mark {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--blob);
+}
+
+.done {
+  background: var(--ink);
+}
+
+.current {
+  height: 10px;
+  background: var(--apricot);
+  border: 1.5px solid var(--ink);
+}
+
+/* ---------- Heading ---------- */
 
 .header {
   display: flex;
@@ -10,16 +64,39 @@
   gap: var(--space-3);
 }
 
-.art {
-  align-self: center;
-  width: 100%;
-  max-width: 220px;
+.intro {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  color: var(--ink-soft);
+}
+
+/* The two tips, said once on the first step: small, on a soft rule, out of the way. */
+.tips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0 0 0 var(--space-4);
+  border-left: 2px solid var(--blob);
+  list-style: none;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
 }
 
 .content {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  min-width: 0;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .actions {
@@ -29,10 +106,122 @@
   gap: var(--space-4);
 }
 
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-weight: 600;
+}
+
+/* ---------- What a worker will see ---------- */
+
+.previewFold {
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--blob);
+}
+
+.previewSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--control-height);
+  padding: var(--space-2) 0;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.previewSummary::-webkit-details-marker {
+  display: none;
+}
+
+.fold {
+  flex: none;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.whenOpen,
+.previewFold[open] .whenClosed {
+  display: none;
+}
+
+.previewFold[open] .whenOpen {
+  display: inline;
+}
+
+.previewBody {
+  padding-bottom: var(--space-4);
+}
+
+.previewAside {
+  display: none;
+}
+
+.previewLabel {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ink);
+}
+
+.previewEmpty {
+  color: var(--muted);
+  padding: var(--space-4) 0;
+}
+
+@media (min-width: 1024px) {
+  .withPreview {
+    display: grid;
+    grid-template-columns: minmax(0, 640px) minmax(0, 400px);
+    column-gap: var(--space-12);
+    align-items: start;
+  }
+
+  .previewFold {
+    display: none;
+  }
+
+  .previewAside {
+    position: sticky;
+    top: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+}
+
+/* ---------- First cues ---------- */
+
+.addedHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.addedCount {
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .added {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -42,20 +231,92 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  padding: var(--space-4) 0;
 }
 
 .addedItem + .addedItem {
   border-top: 1px solid var(--blob);
-  padding-top: var(--space-3);
 }
 
-.examples {
+.addedLabel {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cueActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--blob);
+}
+
+.sheetActions {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+/* ---------- Card ready ---------- */
+
+.readyHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.readyArt {
+  width: 104px;
+}
+
+.missing {
+  display: flex;
+  flex-direction: column;
+}
+
+.missingList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.missingItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-4);
+  min-height: var(--control-height);
+  border-bottom: 1px solid var(--blob);
+  color: var(--ink-soft);
+}
+
+.addLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+}
+
+.readyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .readingTime {
-  font-weight: 600;
-  color: var(--ink);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.cardBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }

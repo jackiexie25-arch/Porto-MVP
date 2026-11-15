@@ -169,9 +169,11 @@ export function Checkbox({ label, className, ...rest }: CheckboxProps) {
 export interface RadioOption<V extends string> {
   value: V;
   label: string;
+  /** A quiet second line, such as when a choice would end ("Closes Monday 9:00 am"). */
+  hint?: string;
 }
 
-/** One choice from a short list, as native radios in 48px rows. */
+/** One choice from a short list, as native radios in 48px rows. A hint makes each choice its own row. */
 export function RadioGroup<V extends string>({
   legend,
   hint,
@@ -191,7 +193,7 @@ export function RadioGroup<V extends string>({
   return (
     <FieldSet legend={legend} hint={hint}>
       {options.map((o) => (
-        <div key={o.value} className={styles.checkRow}>
+        <div key={o.value} className={[styles.checkRow, o.hint ? styles.optionRow : ''].join(' ')}>
           <input
             id={`${id}-${o.value}`}
             type="radio"
@@ -202,6 +204,7 @@ export function RadioGroup<V extends string>({
           />
           <label htmlFor={`${id}-${o.value}`} className={styles.checkLabel}>
             {o.label}
+            {o.hint ? <span className={styles.optionHint}>{o.hint}</span> : null}
           </label>
         </div>
       ))}

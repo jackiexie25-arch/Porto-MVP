@@ -10,95 +10,72 @@
   gap: var(--space-3);
 }
 
-.readingTime {
+.intro {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg-lh);
+  color: var(--ink-soft);
+}
+
+/* Reading time and the print view on one quiet line. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-4);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.print {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
   font-weight: 600;
-  color: var(--ink);
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
+.long {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--ink-soft);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--ink);
+}
+
+/* "Change" / "Add": the one tertiary style, small, at the right of each part's heading. */
+.change {
+  flex: none;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-4);
-}
-
-.sections {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.sectionHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-}
-
-/* Long single words stay whole; Edit only drops to its own line when the screen is very narrow. */
-.sectionHeader h2 {
-  max-width: 100%;
-  overflow-wrap: break-word;
-}
-
-/* Below 400px a slightly smaller heading keeps "Overstimulation" and Edit on one row, like every section. */
-@media (max-width: 399px) {
-  .sectionHeader h2 {
-    font-size: 20px;
-    line-height: 26px;
-  }
-}
-
-.lines {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-}
-
-.lines dt {
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  background: none;
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
   font-weight: 600;
   color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.lines dd {
-  margin: 0;
-  max-width: var(--measure);
+@media (hover: hover) {
+  .change:hover {
+    text-decoration-thickness: 2px;
+  }
 }
 
-.cueList {
+.editor {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.cueList li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.cueMeaning {
-  display: block;
+  min-width: 0;
 }
 
 .editorFooter {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-
-.preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  padding-top: var(--space-4);
 }

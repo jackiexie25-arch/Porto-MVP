@@ -115,6 +115,23 @@
   cursor: pointer;
 }
 
+/* A choice with a second line takes the whole row, and its radio lines up with the first line. */
+.optionRow {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.optionRow .checkbox {
+  margin-top: var(--space-3);
+}
+
+.optionHint {
+  display: block;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
 .fieldset {
   margin: 0;
   padding: 0;

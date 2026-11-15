@@ -1,7 +1,16 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* The questions inside the form follow the same hairline rhythm as the rest of the sheet. */
+.form > * + * {
+  border-top: 1px solid var(--blob);
+}
+
+.submit {
+  padding: var(--space-6) 0;
 }
 
 .group {

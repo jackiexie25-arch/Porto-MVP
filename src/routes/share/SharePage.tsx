@@ -1,15 +1,26 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { FamilyShell } from '../../components/family/FamilyShell';
 import { PageHeading } from '../../components/layout/PageHeading';
 import { QrCode } from '../../components/share/QrCode';
-import { Banner, Button, Card, FieldStack, RadioGroup, Tag, TextField } from '../../components/ui';
+import { Banner, Button, ChipGroup, ChoiceChip, FieldStack, RadioGroup, Sheet, TextField } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import { createShare, listShares, revokeShare, type CreatedShare } from '../../data/shares';
 import { LIMITS } from '../../data/types';
 import { useCardModel } from '../../family/useCardModel';
 import { friendlyError } from '../../lib/errors';
 import { reveal, useRevealOn } from '../../lib/reveal';
-import { DURATIONS, durationHours, formatUntil, isOpen, shareStatus, shareUrl, type DurationKey, type ShareRow } from '../../lib/share';
+import {
+  DURATIONS,
+  durationEnd,
+  durationHours,
+  formatUntil,
+  isOpen,
+  shareStatus,
+  shareUrl,
+  type DurationKey,
+  type ShareRow,
+} from '../../lib/share';
+import { useLeaveGuard } from '../../lib/useLeaveGuard';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Share.module.css';
 
@@ -25,54 +36,105 @@ interface FormState {
 
 const emptyForm: FormState = { label: '', workerName: '', duration: 'shift', scope: 'card_search_log' };
 
+/**
+ * The new link, shown once. Copying it is the one main action. Leaving before it's copied or sent
+ * (Done, or a link in the menu) asks first, because the link can't be shown again.
+ */
 function LinkReady({ created, name, onDone }: { created: CreatedShare; name: string; onDone: () => void }) {
   const url = shareUrl(created.token);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string }>();
+  const [kept, setKept] = useState(false);
+  const [asking, setAsking] = useState(false);
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const guard = useLeaveGuard(!kept);
 
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
 
-  async function copyLink() {
+  async function copyLink(): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(url);
       setNotice({ tone: 'success', text: c.copied });
+      setKept(true);
+      return true;
     } catch {
       setNotice({ tone: 'error', text: c.copyFailed });
+      return false;
     }
   }
 
   return (
-    <Card as="section" aria-labelledby="link-ready" className={styles.ready}>
+    <section aria-labelledby="link-ready" className={styles.sheet}>
       <h2 id="link-ready" ref={headingRef} tabIndex={-1} className={`t-h3 ${styles.focusHeading}`}>
         {c.readyHeading}
       </h2>
       <p>{c.readyBody(formatUntil(created.expires_at))}</p>
-      <QrCode value={url} label={c.qrLabel} />
       <TextField label={c.linkLabel} value={url} readOnly onFocus={(e) => e.currentTarget.select()} />
       <div className={styles.actions}>
-        <Button variant="outlined" onClick={() => void copyLink()}>
-          {c.copy}
-        </Button>
+        <Button onClick={() => void copyLink()}>{c.copy}</Button>
         {canShare ? (
           <Button
             variant="outlined"
-            onClick={() => void navigator.share({ title: copy.meta.appName, text: c.nativeShareText(name), url }).catch(() => undefined)}
+            onClick={() =>
+              void navigator
+                .share({ title: copy.meta.appName, text: c.nativeShareText(name), url })
+                .then(() => setKept(true))
+                .catch(() => undefined)
+            }
           >
             {c.nativeShare}
           </Button>
         ) : null}
       </div>
       {notice ? <Banner tone={notice.tone}>{notice.text}</Banner> : null}
-      <p className="t-small t-muted">{c.once}</p>
+      <div className={styles.qr}>
+        <h3 className={styles.label}>{c.qrHeading}</h3>
+        <QrCode value={url} label={c.qrLabel} />
+      </div>
+      <p className={styles.quiet}>{c.once}</p>
       <div>
-        <Button variant="secondary" onClick={onDone}>
+        <Button variant="secondary" onClick={() => (kept ? onDone() : setAsking(true))}>
           {c.done}
         </Button>
       </div>
-    </Card>
+
+      <Sheet open={asking || guard.pending !== null} onClose={() => {
+          setAsking(false);
+          guard.stay();
+        }} title={c.uncopiedTitle}>
+        <p>{c.uncopiedBody}</p>
+        <div className={styles.sheetActions}>
+          <div>
+            <Button
+              onClick={() =>
+                void copyLink().then((ok) => {
+                  if (!ok) return;
+                  setAsking(false);
+                  if (guard.pending !== null) guard.leave();
+                  else onDone();
+                })
+              }
+            >
+              {c.uncopiedCopy}
+            </Button>
+          </div>
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAsking(false);
+                if (guard.pending !== null) guard.leave();
+                else onDone();
+              }}
+            >
+              {c.uncopiedLeave}
+            </Button>
+          </div>
+        </div>
+      </Sheet>
+    </section>
   );
 }
 
@@ -85,32 +147,28 @@ function ShareList({
   onClose: (share: ShareRow) => void;
   onAgain: (share: ShareRow) => void;
 }) {
-  if (!shares.length) return <p className="t-muted">{c.linksEmpty}</p>;
+  if (!shares.length) return <p className={styles.quiet}>{c.linksEmpty}</p>;
   return (
     <ul className={styles.list}>
       {shares.map((share) => {
         const open = isOpen(share);
+        const facts = [share.worker_name ? c.forWorker(share.worker_name) : '', c.scopesShort[share.scope]].filter(Boolean).join(' · ');
         return (
-          <Card as="li" key={share.id}>
-            <h3 className="t-body-lg">
-              <strong>{share.label}</strong>
-            </h3>
-            <div className={styles.tags}>
-              {share.worker_name ? <Tag>{c.forWorker(share.worker_name)}</Tag> : null}
-              <Tag>{c.scopes[share.scope]}</Tag>
-            </div>
-            <p className={open ? undefined : 't-muted'}>{shareStatus(share)}</p>
-            <div className={styles.actions}>
+          <li key={share.id} className={styles.row}>
+            <h3 className={styles.rowTitle}>{share.label}</h3>
+            <p className={styles.quiet}>{facts}</p>
+            <p className={open ? styles.status : styles.quiet}>{shareStatus(share)}</p>
+            <div className={styles.rowActions}>
               {open ? (
-                <Button variant="outlined" onClick={() => onClose(share)} aria-label={c.closeLabel(share.label)}>
+                <button type="button" className={styles.textButton} onClick={() => onClose(share)} aria-label={c.closeLabel(share.label)}>
                   {c.close}
-                </Button>
+                </button>
               ) : null}
-              <Button variant="secondary" onClick={() => onAgain(share)} aria-label={c.againLabel(share.label)}>
+              <button type="button" className={styles.textButton} onClick={() => onAgain(share)} aria-label={c.againLabel(share.label)}>
                 {c.again}
-              </Button>
+              </button>
             </div>
-          </Card>
+          </li>
         );
       })}
     </ul>
@@ -130,6 +188,8 @@ export function SharePage() {
   const [notice, setNotice] = useState<string>();
   const labelRef = useRef<HTMLInputElement>(null);
   const formErrorRef = useRevealOn<HTMLDivElement>(formError);
+  // When each choice would close, worked out once when the page opens.
+  const ends = useMemo(() => new Map(DURATIONS.map((d) => [d, formatUntil(durationEnd(d).toISOString())])), []);
 
   const load = useCallback(async () => {
     try {
@@ -197,29 +257,45 @@ export function SharePage() {
       <div className={styles.page}>
         <header className={styles.header}>
           <PageHeading className="t-h2">{c.heading}</PageHeading>
-          <p>{c.intro}</p>
+          <p className={styles.intro}>{c.intro(model.name)}</p>
         </header>
 
         {created ? (
           <LinkReady created={created} name={model.name} onDone={() => setCreated(null)} />
         ) : (
-          <Card as="form" noValidate onSubmit={onSubmit} className={styles.form}>
+          <form noValidate onSubmit={onSubmit} className={styles.sheet}>
             {formError ? (
               <Banner tone="error" ref={formErrorRef}>
                 {formError}
               </Banner>
             ) : null}
             <FieldStack>
-              <TextField
-                ref={labelRef}
-                label={c.labelLabel}
-                hint={c.labelHint}
-                maxLength={80}
-                autoComplete="off"
-                value={form.label}
-                onChange={(e) => set('label', e.target.value)}
-                error={labelError}
-              />
+              <div className={styles.labelGroup}>
+                <TextField
+                  ref={labelRef}
+                  label={c.labelLabel}
+                  hint={c.labelHint}
+                  maxLength={80}
+                  autoComplete="off"
+                  value={form.label}
+                  onChange={(e) => set('label', e.target.value)}
+                  error={labelError}
+                />
+                <ChipGroup aria-label={c.labelSuggestionsLabel}>
+                  {c.labelSuggestions.map((suggestion) => (
+                    <ChoiceChip
+                      key={suggestion}
+                      selected={form.label === suggestion}
+                      onClick={() => {
+                        set('label', suggestion);
+                        setLabelError(undefined);
+                      }}
+                    >
+                      {suggestion}
+                    </ChoiceChip>
+                  ))}
+                </ChipGroup>
+              </div>
               <TextField
                 label={c.workerLabel}
                 hint={c.workerHint}
@@ -233,7 +309,7 @@ export function SharePage() {
                 legend={c.durationLegend}
                 name="duration"
                 value={form.duration}
-                options={DURATIONS.map((d) => ({ value: d, label: c.durations[d] }))}
+                options={DURATIONS.map((d) => ({ value: d, label: c.durations[d], hint: c.durationUntil(ends.get(d) ?? '') }))}
                 onChange={(v) => set('duration', v)}
               />
               <RadioGroup
@@ -249,12 +325,13 @@ export function SharePage() {
                 {creating ? c.creating : c.submit}
               </Button>
             </div>
-          </Card>
+          </form>
         )}
 
         <section aria-labelledby="your-links" className={styles.links}>
-          <h2 id="your-links" className="t-h3">
-            {c.linksHeading}
+          <h2 id="your-links" className={styles.sectionHead}>
+            <span>{c.linksHeading}</span>
+            {shares ? <span className={styles.count}>{shares.length}</span> : null}
           </h2>
           {notice ? <Banner tone="success">{notice}</Banner> : null}
           {listError ? <Banner tone="error">{listError}</Banner> : null}
