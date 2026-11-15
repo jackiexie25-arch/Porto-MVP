@@ -20,25 +20,25 @@ test.describe('family sign-up and setup', () => {
     await page.getByLabel('Gestures').check();
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
-    // Step 2: toileting, asked with the child's name
+    // Step 2: who to call
     await expect(page.getByText('Step 2 of 6')).toBeVisible();
+    await page.getByLabel('Who should they ask for?').fill('Sam');
+    await page.getByLabel('What number should they ring?').fill('0491 570 156');
+    await page.getByRole('button', { name: 'Save and continue' }).click();
+
+    // Step 3: toileting, asked with the child's name
+    await expect(page.getByText('Step 3 of 6')).toBeVisible();
     await page.getByLabel('How does Ari show they need the toilet?').fill('Taps the bathroom door twice.');
     await page.getByLabel('What should a new worker do?').fill('Take him straight away.');
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
-    // Step 3: skipped
-    await expect(page.getByText('Step 3 of 6')).toBeVisible();
+    // Step 4: skipped
+    await expect(page.getByText('Step 4 of 6')).toBeVisible();
     await page.getByRole('button', { name: 'Skip this step' }).click();
 
-    // Step 4: calming
-    await expect(page.getByText('Step 4 of 6')).toBeVisible();
-    await page.getByLabel('What helps Ari calm?').fill('Lower the noise. Offer his headphones.');
-    await page.getByRole('button', { name: 'Save and continue' }).click();
-
-    // Step 5: who to call
+    // Step 5: calming
     await expect(page.getByText('Step 5 of 6')).toBeVisible();
-    await page.getByLabel('Who should they ask for?').fill('Sam');
-    await page.getByLabel('What number should they ring?').fill('0491 570 156');
+    await page.getByLabel('What helps Ari calm?').fill('Lower the noise. Offer his headphones.');
     await page.getByRole('button', { name: 'Save and continue' }).click();
 
     // Step 6: a first cue, added by Save and continue

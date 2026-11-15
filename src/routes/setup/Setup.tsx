@@ -3,7 +3,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 import { CuesStep } from './CuesStep';
 import { ReadyStep } from './ReadyStep';
-import { SETUP_STEPS } from './SetupFrame';
+import { SETUP_STEPS } from './steps';
 import { AboutStep, CalmingStep, SectionStep, WhoStep } from './WritingSteps';
 
 /** Where /setup should resume: step 1 once setup is done (to revisit answers), else where they left off. */
@@ -40,13 +40,13 @@ export function Setup() {
     case 1:
       return <AboutStep key="1" />;
     case 2:
-      return <SectionStep key="2" step={2} section="toileting" />;
+      return <WhoStep key="2" />;
     case 3:
-      return <SectionStep key="3" step={3} section="food_drink" />;
+      return <SectionStep key="3" step={3} section="toileting" />;
     case 4:
-      return <CalmingStep key="4" />;
+      return <SectionStep key="4" step={4} section="food_drink" />;
     case 5:
-      return <WhoStep key="5" />;
+      return <CalmingStep key="5" />;
     default:
       return <CuesStep key="6" />;
   }

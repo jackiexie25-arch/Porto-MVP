@@ -1,59 +1,63 @@
 .frame {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
   min-width: 0;
 }
 
-/* ---------- Step meter ---------- */
-
-.meter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+@media (min-width: 600px) {
+  .frame {
+    gap: var(--space-8);
+  }
 }
 
-.meterText {
+/* ---------- Progress: the six parts by name ---------- */
+
+.progress {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0 var(--space-4);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--ink);
+}
+
+.progressText {
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--ink);
   max-width: none;
 }
 
-.meterStep {
+/* Names spaced apart rather than dotted, so a wrapped line never starts on a stray dot. */
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.part,
+.partCurrent {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.partCurrent {
   font-weight: 600;
   color: var(--ink);
 }
 
-/* Six marks: visited in ink, this step in apricot and taller, the rest a soft line. */
-.marks {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.mark {
-  flex: 1;
-  height: 4px;
-  border-radius: var(--radius-pill);
-  background: var(--blob);
-}
-
-.done {
-  background: var(--ink);
-}
-
-.current {
-  height: 10px;
-  background: var(--apricot);
-  border: 1.5px solid var(--ink);
+.tick {
+  flex: none;
+  color: var(--ink);
 }
 
 /* ---------- Heading ---------- */
@@ -162,7 +166,12 @@
   display: none;
 }
 
+/* Stays at the top of its column while the card scrolls under it. */
 .previewLabel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ground);
   font-family: var(--font-sans);
   font-size: var(--text-small);
   line-height: var(--text-small-lh);
@@ -172,9 +181,15 @@
   border-bottom: 1px solid var(--ink);
 }
 
-.previewEmpty {
+.previewCard {
+  min-width: 0;
+}
+
+/* "So far the card takes about 2 minutes to read." */
+.soFar {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--muted);
-  padding: var(--space-4) 0;
 }
 
 @media (min-width: 1024px) {
@@ -189,12 +204,17 @@
     display: none;
   }
 
+  /* The whole card, in a column that scrolls on its own and follows the part being written. */
   .previewAside {
     position: sticky;
     top: var(--space-8);
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
+    max-height: calc(100vh - var(--space-16));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: var(--space-4);
   }
 }
 
@@ -271,26 +291,19 @@
   width: 104px;
 }
 
-.missing {
+/* "No one to call yet" and its two questions: the one ruled fact above the card. */
+.addWho {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
 }
 
-.missingList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.missingItem {
+/* "Share without a number" · "Finish later": plain links, never a stack of buttons. */
+.otherWays {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0 var(--space-4);
-  min-height: var(--control-height);
-  border-bottom: 1px solid var(--blob);
-  color: var(--ink-soft);
+  gap: 0 var(--space-6);
+  margin-top: calc(var(--space-4) * -1);
 }
 
 .addLink {

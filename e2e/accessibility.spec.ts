@@ -52,7 +52,7 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
 
     for (const step of [1, 2, 3, 4, 5, 6]) {
       await page.goto(`/setup/${step}`);
-      await expect(page.getByText(`Step ${step} of 6`, { exact: true })).toBeVisible();
+      await expect(page.getByText(new RegExp(`^Step ${step} of 6 · `))).toBeVisible();
       problems.push(...(await scan(page, `/setup/${step}`)));
     }
     await page.goto('/setup/6');
@@ -60,7 +60,7 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
     await page.getByRole('button', { name: 'Skip this step' }).click();
     problems.push(...(await scan(page, '/setup/6 asking before a typed cue is skipped')));
     await page.getByRole('button', { name: 'Leave it out and continue' }).click();
-    await expect(page.getByRole('heading', { name: /card is nearly ready/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /card needs someone to call/ })).toBeVisible();
     problems.push(...(await scan(page, '/setup/ready')));
 
     await seedProfile(email);

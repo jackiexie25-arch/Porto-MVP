@@ -1,24 +1,24 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { copy } from '../../copy/en-AU';
-import type { Cue, Profile } from '../../data/types';
+import type { CardSection, Cue, Profile } from '../../data/types';
 import { buildCard } from '../../lib/card';
-import { makeCue, makeProfile } from '../../test/fixtures';
-import { missingParts } from './ReadyStep';
+import { makeCue, makeProfile, makeSection } from '../../test/fixtures';
+import { readiness } from './ReadyStep';
 import { resumeStep, Setup } from './Setup';
-import { minutesLeft, SETUP_STEPS } from './SetupFrame';
-import { nextPath } from './useStepNav';
+import { minutesLeft, nextPath, SETUP_STEPS, stepFor, stepWritten } from './steps';
 
 const saveProfile = vi.fn();
 const saveSection = vi.fn();
 const addCue = vi.fn();
 let profile: Profile;
+let sections: CardSection[];
 let cues: Cue[];
 
 vi.mock('../../family/FamilyDataProvider', () => ({
-  useFamilyData: () => ({ profile, sections: [], cues, saveProfile, saveSection, addCue }),
+  useFamilyData: () => ({ profile, sections, cues, saveProfile, saveSection, addCue, pendingNotes: 0 }),
 }));
 
 function Where() {
@@ -47,9 +47,13 @@ function renderStep(step: number | 'ready') {
 
 const q = copy.setup.cues;
 const toiletAsk = copy.sectionFields.toileting.signs.ask(copy.setup.yourChild);
+const TOILETING = 3;
+const WHO = 2;
+const CUES = 6;
 
 beforeEach(() => {
   profile = makeProfile({ display_name: '', setup_started_at: '2026-11-01T00:00:00Z', setup_completed_at: null });
+  sections = [];
   cues = [];
   saveProfile.mockReset().mockResolvedValue(undefined);
   saveSection.mockReset().mockResolvedValue(undefined);
@@ -63,9 +67,12 @@ describe('setup flow', () => {
     expect(resumeStep(4, true)).toBe(1);
   });
 
-  it('has six steps, then the card-ready page', () => {
+  it('asks who to call second, then toileting, and ends on the card-ready page', () => {
     expect(SETUP_STEPS).toBe(6);
-    expect(copy.setup.stepNames).toHaveLength(SETUP_STEPS);
+    expect(copy.setup.stepNames).toEqual(['About', 'Who to call', 'Toileting', 'Food and drink', 'Calming', 'First cues']);
+    expect(stepFor('who')).toBe(WHO);
+    expect(stepFor('toileting')).toBe(TOILETING);
+    expect(stepFor('avoid')).toBe(5);
     expect(nextPath(5)).toBe('/setup/6');
     expect(nextPath(6)).toBe('/setup/ready');
   });
@@ -75,14 +82,23 @@ describe('setup flow', () => {
     expect(minutesLeft(6)).toBeGreaterThan(0);
     expect(minutesLeft(6)).toBeLessThan(minutesLeft(5));
   });
+
+  it('ticks a step only when the card has words from it', () => {
+    const empty = buildCard(makeProfile({ connect_note: '', communication_modes: [], languages: [] }), [], [], 'your child');
+    expect(stepWritten(empty, 1)).toBe(false);
+    expect(stepWritten(empty, TOILETING)).toBe(false);
+    const written = buildCard(makeProfile(), [makeSection('calms', {}, 'A quiet corner.')], [], 'Ari');
+    expect(stepWritten(written, 1)).toBe(true);
+    expect(stepWritten(written, 5)).toBe(true);
+  });
 });
 
 describe('setup steps', () => {
-  it('shows progress as named steps and time left, never as a percentage', () => {
-    renderStep(2);
-    expect(screen.getByText('Step 2 of 6')).toBeInTheDocument();
-    expect(screen.getByText(copy.setup.minutesLeft(minutesLeft(2)))).toBeInTheDocument();
-    expect(screen.getByText(/Toileting, this step/)).toBeInTheDocument();
+  it('shows progress as the six named parts and time left, never as a percentage', () => {
+    renderStep(TOILETING);
+    expect(screen.getByText(copy.setup.progress(TOILETING, 6, minutesLeft(TOILETING)))).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: copy.setup.progressLabel });
+    expect(within(nav).getByText('Toileting, this step')).toBeInTheDocument();
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
   });
 
@@ -92,8 +108,10 @@ describe('setup steps', () => {
     expect(screen.getByText(copy.setup.start.tips[0])).toBeInTheDocument();
   });
 
-  it('keeps the tips off the writing steps', () => {
-    renderStep(2);
+  it('keeps the tips off the other steps', () => {
+    renderStep(TOILETING);
+    expect(screen.queryByText(copy.setup.start.tips[0])).not.toBeInTheDocument();
+    renderStep(CUES);
     expect(screen.queryByText(copy.setup.start.tips[0])).not.toBeInTheDocument();
   });
 
@@ -101,9 +119,10 @@ describe('setup steps', () => {
     const user = userEvent.setup();
     renderStep(1);
     await user.type(screen.getByLabelText(copy.setup.about.nameLabel), 'Ari');
-    expect(screen.getByText(copy.setup.about.styleIdentity('Ari'))).toBeInTheDocument();
     // Every later question uses the name.
     expect(screen.getByText(copy.setup.about.connectLabel('Ari'))).toBeInTheDocument();
+    // Languages and wording wait under "More about Ari".
+    expect(screen.getByText(copy.setup.about.more('Ari'))).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: copy.setup.continue }));
 
     await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/2'));
@@ -113,18 +132,18 @@ describe('setup steps', () => {
 
   it('every step can be skipped', async () => {
     const user = userEvent.setup();
-    renderStep(3);
+    renderStep(4);
     await user.click(screen.getByRole('button', { name: copy.setup.skip }));
-    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/4'));
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/5'));
     expect(saveSection).not.toHaveBeenCalled();
   });
 
-  it('step 2 saves each toileting answer separately', async () => {
+  it('the toileting step saves each answer separately', async () => {
     const user = userEvent.setup();
-    renderStep(2);
+    renderStep(TOILETING);
     await user.type(screen.getByLabelText(toiletAsk), 'Taps the door twice');
     await user.click(screen.getByRole('button', { name: copy.setup.continue }));
-    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/3'));
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/4'));
     expect(saveSection).toHaveBeenCalledWith('toileting', {
       details: { signs: 'Taps the door twice' },
       body: '',
@@ -133,7 +152,7 @@ describe('setup steps', () => {
 
   it('an example can be tapped to start from, then made the family’s own', async () => {
     const user = userEvent.setup();
-    renderStep(2);
+    renderStep(TOILETING);
     const example = copy.sectionFields.toileting.signs.example;
     await user.click(screen.getByRole('button', { name: new RegExp(example.slice(0, 20)) }));
     const box = screen.getByLabelText(toiletAsk);
@@ -142,47 +161,61 @@ describe('setup steps', () => {
     expect(screen.getByText(copy.setup.length.good)).toBeInTheDocument();
   });
 
-  it('says plainly when an answer is getting long, while it’s written', async () => {
+  it('counts the words when an answer is getting long, while it’s written', async () => {
     const user = userEvent.setup();
-    renderStep(2);
+    renderStep(TOILETING);
     await user.type(screen.getByLabelText(toiletAsk), 'word '.repeat(35));
-    expect(screen.getByText(copy.setup.length.long)).toBeInTheDocument();
+    expect(screen.getByText(copy.setup.length.long(35))).toBeInTheDocument();
   });
 
-  it('shows the section as a worker will read it, as it is typed', async () => {
+  it('shows the whole card as a worker will read it, as it is typed, and its reading time', async () => {
     const user = userEvent.setup();
-    renderStep(2);
-    expect(screen.getAllByText(copy.setup.preview.empty).length).toBeGreaterThan(0);
+    renderStep(TOILETING);
+    // The part being written shows even while empty.
+    expect(screen.getAllByText(copy.setup.preview.current).length).toBeGreaterThan(0);
     await user.type(screen.getByLabelText(toiletAsk), 'Taps the door twice');
     expect(screen.getAllByText('Taps the door twice').length).toBeGreaterThan(0);
+    expect(screen.getByText(copy.setup.soFar(1))).toBeInTheDocument();
+    // No fold links inside a preview.
+    const aside = screen.getByRole('complementary', { name: copy.setup.preview.heading });
+    expect(within(aside).queryByText(copy.card.hide)).not.toBeInTheDocument();
   });
 
-  it('step 5 asks who to call and saves a whole number', async () => {
+  it('who to call saves a whole number', async () => {
     const user = userEvent.setup();
-    renderStep(5);
+    renderStep(WHO);
     await user.type(screen.getByLabelText(copy.card.who.nameLabel), 'Sam');
     await user.type(screen.getByLabelText(copy.card.who.phoneLabel), '0412 345 678');
     await user.click(screen.getByRole('button', { name: copy.setup.continue }));
-    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/6'));
+    await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/3'));
     expect(saveProfile).toHaveBeenCalledWith({ who_to_call_name: 'Sam', who_to_call_phone: '0412 345 678' });
   });
 
-  it('step 5 stays put and says so when the number is half typed', async () => {
+  it('who to call never drops a half-typed number: it says so, on continue or skip', async () => {
     const user = userEvent.setup();
-    renderStep(5);
+    renderStep(WHO);
     await user.type(screen.getByLabelText(copy.card.who.phoneLabel), '0412');
-    await user.click(screen.getByRole('button', { name: copy.setup.continue }));
+    await user.click(screen.getByRole('button', { name: copy.setup.skip }));
     expect(screen.getByText(copy.card.who.phoneInvalid)).toBeInTheDocument();
-    expect(screen.getByTestId('path')).toHaveTextContent('/setup/5');
+    expect(screen.getByTestId('path')).toHaveTextContent('/setup/2');
+    expect(saveProfile).not.toHaveBeenCalledWith(expect.objectContaining({ who_to_call_phone: '0412' }));
   });
 
-  it('step 6 adds a half-written cue on continue only once it is complete', async () => {
+  it('first cues asks what you see or hear first, with the kind under More detail', () => {
+    renderStep(CUES);
+    const questions = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+    expect(questions.indexOf(q.seeLabel)).toBeLessThan(questions.indexOf(q.meaningLabel));
+    expect(screen.getByText(q.moreDetail)).toBeInTheDocument();
+  });
+
+  it('first cues adds a half-written cue on continue only once it is complete', async () => {
     const user = userEvent.setup();
-    renderStep(6);
+    renderStep(CUES);
     await user.type(screen.getByLabelText(q.seeLabel), 'Cookie time');
     await user.click(screen.getByRole('button', { name: copy.setup.continue }));
 
     expect(await screen.findByText(copy.cueForm.meaningMissing)).toBeInTheDocument();
+    expect(screen.getByLabelText(q.meaningLabel)).toHaveFocus();
     expect(screen.getByTestId('path')).toHaveTextContent('/setup/6');
     expect(addCue).not.toHaveBeenCalled();
 
@@ -195,9 +228,9 @@ describe('setup steps', () => {
     );
   });
 
-  it('step 6 never loses a typed cue to Skip: it asks first', async () => {
+  it('first cues never loses a typed cue to Skip: it asks first', async () => {
     const user = userEvent.setup();
-    renderStep(6);
+    renderStep(CUES);
     await user.type(screen.getByLabelText(q.seeLabel), 'Cookie time');
     await user.type(screen.getByLabelText(q.meaningLabel), 'I’m hungry');
     await user.click(screen.getByRole('button', { name: copy.setup.skip }));
@@ -208,16 +241,27 @@ describe('setup steps', () => {
     expect(addCue).toHaveBeenCalled();
   });
 
-  it('step 6 skips straight on when nothing was typed', async () => {
+  it('when “Add it” can’t add the cue yet, focus goes to what is missing', async () => {
     const user = userEvent.setup();
-    renderStep(6);
+    renderStep(CUES);
+    await user.type(screen.getByLabelText(q.seeLabel), 'Spins in a circle');
+    await user.click(screen.getByRole('button', { name: copy.setup.skip }));
+    await user.click(screen.getByRole('button', { name: q.keepAdd }));
+    expect(await screen.findByText(copy.cueForm.meaningMissing)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(q.meaningLabel)).toHaveFocus());
+    expect(screen.getByTestId('path')).toHaveTextContent('/setup/6');
+  });
+
+  it('first cues skips straight on when nothing was typed', async () => {
+    const user = userEvent.setup();
+    renderStep(CUES);
     await user.click(screen.getByRole('button', { name: copy.setup.skip }));
     await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/setup/ready'));
   });
 
-  it('step 6 moves focus to “Added to the profile.” after adding a cue, so it isn’t lost', async () => {
+  it('moves focus to “Added to the profile.” after adding a cue, so it isn’t lost', async () => {
     const user = userEvent.setup();
-    renderStep(6);
+    renderStep(CUES);
     await user.type(screen.getByLabelText(q.seeLabel), 'Cookie time');
     await user.type(screen.getByLabelText(q.meaningLabel), 'I’m hungry');
     await user.click(screen.getByRole('button', { name: q.add }));
@@ -226,33 +270,59 @@ describe('setup steps', () => {
 });
 
 describe('card ready', () => {
-  it('finishes setup on arrival and can go straight to sharing', async () => {
+  const r = copy.setup.ready;
+  const withWho = { who_to_call_name: 'Sam', who_to_call_phone: '0412 345 678' };
+  const toilet = makeSection('toileting', { signs: 'Taps the door twice.' });
+
+  it('is never ready without someone to call, then toileting', () => {
+    expect(readiness(buildCard(makeProfile(), [toilet], [], 'Ari'))).toBe('needsWho');
+    expect(readiness(buildCard(makeProfile(withWho), [], [], 'Ari'))).toBe('noToileting');
+    expect(readiness(buildCard(makeProfile(withWho), [toilet], [], 'Ari'))).toBe('ready');
+  });
+
+  it('finishes setup on arrival and, when ready, goes straight to sharing', async () => {
     const user = userEvent.setup();
-    profile = makeProfile({ setup_step: 6, setup_completed_at: null });
+    profile = makeProfile({ ...withWho, setup_step: 6, setup_completed_at: null });
+    sections = [toilet];
     renderStep('ready');
+    expect(screen.getByRole('heading', { name: r.heading('Ari'), level: 1 })).toBeInTheDocument();
     await waitFor(() => expect(saveProfile).toHaveBeenCalledWith(expect.objectContaining({ setup_completed_at: expect.any(String) })));
-    await user.click(screen.getByRole('button', { name: copy.setup.ready.share }));
+    await user.click(screen.getByRole('button', { name: r.share }));
     await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/share'));
   });
 
-  it('shows the card with a reading time, and only says ready when someone can be called', () => {
-    profile = makeProfile({ display_name: 'Ari', who_to_call_phone: '', setup_completed_at: '2026-11-01T00:00:00Z' });
+  it('with no one to call, asks for a number right there, with sharing anyway as a plain link', async () => {
+    const user = userEvent.setup();
+    profile = makeProfile({ setup_completed_at: '2026-11-01T00:00:00Z' });
+    sections = [toilet];
     cues = [makeCue()];
     renderStep('ready');
-    expect(screen.getByRole('heading', { name: copy.setup.ready.headingNearly('Ari') })).toBeInTheDocument();
-    expect(screen.getByText(copy.setup.ready.missing.who)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: copy.setup.ready.addLabel(copy.setup.ready.missing.who) })).toHaveAttribute('href', '/setup/5');
-    expect(screen.getByText(/minute to read/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: r.headingNeedsWho('Ari'), level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: r.shareWithout })).toHaveAttribute('href', '/share');
+    expect(screen.getByRole('link', { name: r.later })).toHaveAttribute('href', '/card');
+    // An empty or half-typed number isn't added.
+    await user.click(screen.getByRole('button', { name: r.addWho }));
+    expect(screen.getByText(copy.card.who.phoneMissing)).toBeInTheDocument();
+    expect(screen.getByLabelText(copy.card.who.phoneLabel)).toHaveFocus();
+    await user.type(screen.getByLabelText(copy.card.who.phoneLabel), '0412 345 678');
+    await user.click(screen.getByRole('button', { name: r.addWho }));
+    expect(saveProfile).toHaveBeenCalledWith({ who_to_call_name: '', who_to_call_phone: '0412 345 678' });
+  });
+
+  it('says plainly when toileting is empty, and states gaps in the card with their size', () => {
+    profile = makeProfile({ ...withWho, setup_completed_at: '2026-11-01T00:00:00Z' });
+    renderStep('ready');
+    expect(screen.getByRole('heading', { name: r.headingNoToileting('Ari'), level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: r.addToileting })).toHaveAttribute('href', '/setup/3');
+    expect(screen.getByText(copy.card.gap.toileting('Ari'))).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: copy.card.addLabel(copy.card.sections.food_drink) })).toHaveAttribute('href', '/setup/4');
+    expect(screen.getAllByText(copy.card.size(3, 1)).length).toBeGreaterThan(0);
     expect(screen.getByText(copy.layout.emergency)).toBeInTheDocument();
   });
 
-  it('lists what is missing as plain facts, who to call first', () => {
-    const empty = buildCard(makeProfile({ connect_note: '', communication_modes: [], languages: [], who_to_call_phone: '' }), [], [], 'your child');
-    const missing = missingParts(empty, false).map((m) => m.part);
-    expect(missing[0]).toBe('who');
-    expect(missing).toContain('toileting');
-    expect(missing).toContain('cues');
-    // Cues written but none on the card are chosen in the library.
-    expect(missingParts(empty, true).find((m) => m.part === 'cues')?.to).toBe('/cues');
+  it('never starts a heading in lower case when no name is typed', () => {
+    profile = makeProfile({ display_name: '', setup_completed_at: '2026-11-01T00:00:00Z' });
+    renderStep('ready');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^Your child’s card/);
   });
 });

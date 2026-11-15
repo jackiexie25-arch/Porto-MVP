@@ -85,7 +85,8 @@ describe('share page', () => {
 
     // Done before copying asks first, because the link can't be shown again.
     await user.click(screen.getByRole('button', { name: c.done }));
-    expect(screen.getByText(c.uncopiedBody)).toBeInTheDocument();
+    expect(screen.getByText(/stays open until .*, even after you leave/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: c.uncopiedCopy })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: c.uncopiedLeave }));
     expect(screen.queryByText(TOKEN, { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue(new RegExp(TOKEN))).not.toBeInTheDocument();
@@ -102,7 +103,7 @@ describe('share page', () => {
     expect(await screen.findByText(c.copied)).toBeInTheDocument();
     // Once copied, Done just finishes.
     await user.click(screen.getByRole('button', { name: c.done }));
-    expect(screen.queryByText(c.uncopiedBody)).not.toBeInTheDocument();
+    expect(screen.queryByText(c.uncopiedTitle)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(c.linkLabel)).not.toBeInTheDocument();
   });
 

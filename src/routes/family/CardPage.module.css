@@ -72,6 +72,14 @@
   min-width: 0;
 }
 
+/* "On Ari's card · 3 questions · about a minute", over the questions of the part being changed. */
+.kicker {
+  padding-bottom: var(--space-2);
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
 .editorFooter {
   display: flex;
   flex-wrap: wrap;

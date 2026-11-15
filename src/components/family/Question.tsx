@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
+import { flushSync } from 'react-dom';
 import { copy } from '../../copy/en-AU';
 import { answerLength } from '../../lib/length';
 import { AlertIcon } from '../ui';
@@ -39,6 +40,7 @@ export interface WritingQuestionProps extends QuestionLook {
   inputRef?: Ref<HTMLTextAreaElement | HTMLInputElement>;
   type?: 'text' | 'tel';
   inputMode?: 'text' | 'tel';
+  onBlur?: () => void;
 }
 
 /**
@@ -58,6 +60,7 @@ export function WritingQuestion({
   inputRef,
   type = 'text',
   inputMode,
+  onBlur,
   level = 2,
   compact,
 }: WritingQuestionProps) {
@@ -72,7 +75,7 @@ export function WritingQuestion({
   // is offered again only once they leave the box empty.
   const [offer, setOffer] = useState(empty);
   const Heading = level === 3 ? 'h3' : 'h2';
-  const length = lengthGuide ? answerLength(value) : 'empty';
+  const length = lengthGuide ? answerLength(value) : { kind: 'empty' as const, words: 0 };
 
   useEffect(() => {
     const el = inner.current;
@@ -83,12 +86,14 @@ export function WritingQuestion({
 
   function startFrom(text: string) {
     if (!empty) return;
-    onChange(text);
-    setOffer(false);
-    // Focus at once, so nothing typed straight after the tap goes astray; the cursor goes to the end
-    // once the new words are in the box.
+    // The words are in the box before focus arrives, so anything typed straight after the tap
+    // lands after them.
+    flushSync(() => {
+      onChange(text);
+      setOffer(false);
+    });
     inner.current?.focus();
-    requestAnimationFrame(() => inner.current?.setSelectionRange(text.length, text.length));
+    inner.current?.setSelectionRange(text.length, text.length);
   }
 
   const describedBy = [hint ? hintId : '', lengthGuide ? lengthId : '', error ? errorId : ''].filter(Boolean).join(' ') || undefined;
@@ -98,7 +103,10 @@ export function WritingQuestion({
     maxLength,
     'aria-describedby': describedBy,
     'aria-invalid': error ? true : undefined,
-    onBlur: () => setOffer(value.trim() === ''),
+    onBlur: () => {
+      setOffer(value.trim() === '');
+      onBlur?.();
+    },
   };
 
   return (
@@ -131,7 +139,7 @@ export function WritingQuestion({
       {multiline ? (
         <textarea
           ref={(el) => setRefs(el, inner, inputRef as Ref<HTMLTextAreaElement> | undefined)}
-          rows={compact ? 2 : 3}
+          rows={2}
           className={[fieldStyles.control, fieldStyles.textarea, styles.box].join(' ')}
           onChange={(e) => onChange(e.target.value)}
           {...common}
@@ -156,7 +164,7 @@ export function WritingQuestion({
       ) : null}
       {lengthGuide ? (
         <p id={lengthId} className={styles.length}>
-          {length === 'empty' ? '' : copy.setup.length[length]}
+          {length.kind === 'empty' ? '' : length.kind === 'good' ? copy.setup.length.good : copy.setup.length.long(length.words)}
         </p>
       ) : null}
     </div>
@@ -185,6 +193,37 @@ export function ChoiceQuestion({
       ) : null}
       <div className={styles.choices}>{children}</div>
     </fieldset>
+  );
+}
+
+/** Questions most families answer once, folded under one quiet line ("More about Ari"). */
+export function MoreQuestions({
+  title,
+  hint,
+  startOpen = false,
+  children,
+}: {
+  title: string;
+  hint: string;
+  /** Open when something in it is already answered, so nothing written is hidden. */
+  startOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open] = useState(startOpen);
+  return (
+    <details className={styles.more} open={open}>
+      <summary className={styles.moreSummary}>
+        <span className={styles.moreText}>
+          <span className={styles.moreTitle}>{title}</span>
+          <span className={styles.moreHint}>{hint}</span>
+        </span>
+        <span className={styles.moreFold} aria-hidden="true">
+          <span className={styles.whenClosed}>{copy.cueEditor.show}</span>
+          <span className={styles.whenOpen}>{copy.cueEditor.hide}</span>
+        </span>
+      </summary>
+      <div>{children}</div>
+    </details>
   );
 }
 

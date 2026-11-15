@@ -3,50 +3,94 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChecklistSun } from '../../assets/illustrations';
 import { FirstShiftCard, type CardPart } from '../../components/card/FirstShiftCard';
 import { FamilyShell } from '../../components/family/FamilyShell';
+import { QuestionSheet } from '../../components/family/Question';
+import { WhoFields } from '../../components/family/WhoFields';
 import { PageHeading } from '../../components/layout/PageHeading';
 import { Banner, Button, ButtonLink } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import { logEvent } from '../../data/events';
+import { phoneLooksValid, whoDraftFrom } from '../../family/drafts';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 import { useCardModel } from '../../family/useCardModel';
-import type { CardModel } from '../../lib/card';
+import { cardLength, partWritten, type CardModel } from '../../lib/card';
 import { friendlyError } from '../../lib/errors';
 import { usePageTitle } from '../../lib/usePageTitle';
 import styles from './Setup.module.css';
+import { stepFor } from './steps';
 
 const r = copy.setup.ready;
+const c = copy.card;
 
-/** Where each missing part is written. */
-const WRITTEN_AT: Record<CardPart, string> = {
-  about: '/setup/1',
-  toileting: '/setup/2',
-  food_drink: '/setup/3',
-  overstimulation: '/setup/4',
-  calms: '/setup/4',
-  avoid: '/setup/4',
-  who: '/setup/5',
-  cues: '/setup/6',
-};
+export type Readiness = 'needsWho' | 'noToileting' | 'ready';
 
-/** What a worker won't find on the card, as plain facts. Who to call comes first: it matters most. */
-export function missingParts(model: CardModel, hasCues: boolean): { part: CardPart; to: string }[] {
-  const missing: CardPart[] = [];
-  if (!model.whoToCall) missing.push('who');
-  if (!model.note && !model.about.length) missing.push('about');
-  for (const section of model.sections) if (!section.lines.length) missing.push(section.key);
-  if (!model.cues.length) missing.push('cues');
-  // Cues written but none on the card are chosen in the library, not added again.
-  return missing.map((part) => ({ part, to: part === 'cues' && hasCues ? '/cues' : WRITTEN_AT[part] }));
+/**
+ * Honest about what a worker can't do without: never "ready" without someone to call, or without
+ * toileting. Someone to call comes first.
+ */
+export function readiness(model: CardModel): Readiness {
+  if (!model.whoToCall) return 'needsWho';
+  if (!partWritten(model, 'toileting')) return 'noToileting';
+  return 'ready';
+}
+
+/** "Ari", or "Your child" when no name is typed, so a heading never starts in lower case. */
+function headingName(model: CardModel, hasName: boolean): string {
+  return hasName ? model.name : 'Your child';
+}
+
+/** Adding someone to call, right here, so it never needs a trip back through setup. */
+function AddWho({ onAdded }: { onAdded: () => void }) {
+  const { profile, saveProfile } = useFamilyData();
+  const [draft, setDraft] = useState(() => whoDraftFrom(profile));
+  const [strict, setStrict] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  async function add() {
+    setStrict(true);
+    // An empty or unfinished number can't be added; the field says so, and focus goes to it.
+    if (!draft.who_to_call_phone.trim() || !phoneLooksValid(draft.who_to_call_phone)) {
+      sectionRef.current?.querySelector<HTMLInputElement>('input[type="tel"]')?.focus();
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveProfile({ who_to_call_name: draft.who_to_call_name.trim(), who_to_call_phone: draft.who_to_call_phone.trim() });
+      onAdded();
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section ref={sectionRef} aria-labelledby="no-one" className={styles.addWho}>
+      <h2 id="no-one" className={styles.addedHead}>
+        <span>{r.noOne}</span>
+      </h2>
+      {error ? <Banner tone="error">{error}</Banner> : null}
+      <QuestionSheet flat>
+        <WhoFields draft={draft} onChange={setDraft} strict={strict} requirePhone compact level={3} />
+      </QuestionSheet>
+      <div className={styles.readyActions}>
+        <Button onClick={() => void add()} disabled={saving}>
+          {r.addWho}
+        </Button>
+      </div>
+    </section>
+  );
 }
 
 /**
- * The end of setup: the card exactly as a worker sees it, what's still missing, and one next step.
- * Arriving here finishes setup, so the family's home is the card from now on.
+ * The end of setup: the card exactly as a worker sees it, with any gaps stated in place, and one
+ * next step. Arriving here finishes setup, so the family's home is the card from now on.
  */
 export function ReadyStep() {
   usePageTitle(r.title);
-  const { profile, cues, saveProfile } = useFamilyData();
-  const { model, words, minutes, hasName } = useCardModel();
+  const { profile, saveProfile } = useFamilyData();
+  const { model, hasName } = useCardModel();
   const navigate = useNavigate();
   const [error, setError] = useState<string>();
   const marked = useRef(false);
@@ -62,10 +106,21 @@ export function ReadyStep() {
       .catch((err: unknown) => setError(friendlyError(err)));
   }, [profile.setup_completed_at, saveProfile]);
 
-  const missing = missingParts(model, cues.length > 0);
-  const name = hasName ? model.name : copy.setup.yourChild;
-  const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  const heading = model.whoToCall ? r.heading(title(name)) : r.headingNearly(title(name));
+  const state = readiness(model);
+  const name = headingName(model, hasName);
+  const { words, minutes } = cardLength(model);
+  const heading = state === 'needsWho' ? r.headingNeedsWho(name) : state === 'noToileting' ? r.headingNoToileting(name) : r.heading(name);
+  const intro = state === 'needsWho' ? r.introNeedsWho : state === 'noToileting' ? r.introNoToileting : r.intro;
+
+  // A gap in the card links to the step that writes it.
+  function action(part: CardPart, title: string, empty: boolean) {
+    if (!empty) return null;
+    return (
+      <Link to={`/setup/${stepFor(part)}`} className={styles.addLink} aria-label={c.addLabel(title)}>
+        {c.add}
+      </Link>
+    );
+  }
 
   return (
     <FamilyShell>
@@ -73,43 +128,45 @@ export function ReadyStep() {
         <header className={styles.header}>
           <div className={styles.readyHeader}>
             <PageHeading className="t-h2">{heading}</PageHeading>
-            <ChecklistSun className={styles.readyArt} />
+            {state === 'ready' ? <ChecklistSun className={styles.readyArt} /> : null}
           </div>
-          <p className={styles.intro}>{r.intro}</p>
+          <p className={styles.intro}>{intro}</p>
         </header>
 
         {error ? <Banner tone="error">{error}</Banner> : null}
 
-        {/* The next step sits in the first screen, however much is still missing. */}
-        <div className={styles.readyActions}>
-          <Button onClick={() => navigate('/share')}>{r.share}</Button>
-          <ButtonLink to="/card" variant="secondary">
-            {r.later}
-          </ButtonLink>
-        </div>
+        {state === 'needsWho' ? (
+          <AddWho onAdded={() => document.querySelector<HTMLElement>('main h1')?.focus()} />
+        ) : (
+          <div className={styles.readyActions}>
+            {state === 'noToileting' ? (
+              <ButtonLink to={`/setup/${stepFor('toileting')}`}>{r.addToileting}</ButtonLink>
+            ) : (
+              <Button onClick={() => navigate('/share')}>{r.share}</Button>
+            )}
+          </div>
+        )}
 
-        {missing.length ? (
-          <section aria-labelledby="missing" className={styles.missing}>
-            <h2 id="missing" className={styles.addedHead}>
-              <span>{r.missingHeading}</span>
-              <span className={styles.addedCount}>{missing.length}</span>
-            </h2>
-            <ul className={styles.missingList}>
-              {missing.map(({ part, to }) => (
-                <li key={part} className={styles.missingItem}>
-                  <span>{r.missing[part]}</span>
-                  <Link to={to} className={styles.addLink} aria-label={r.addLabel(r.missing[part])}>
-                    {r.add}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        {/* The other ways on are plain links, never a stack of buttons. */}
+        <p className={styles.otherWays}>
+          {state !== 'ready' ? (
+            <Link to="/share" className={styles.addLink}>
+              {state === 'needsWho' ? r.shareWithout : r.shareAnyway}
+            </Link>
+          ) : null}
+          <Link to="/card" className={styles.addLink}>
+            {r.later}
+          </Link>
+        </p>
 
         <section aria-label={r.cardLabel} className={styles.cardBlock}>
-          <p className={styles.readingTime}>{copy.card.readingTime(words, minutes)}</p>
-          <FirstShiftCard model={model} variant="worker" />
+          <p className={styles.readingTime}>{c.readingTime(words, minutes)}</p>
+          <FirstShiftCard
+            model={model}
+            variant="family"
+            family={{ action }}
+            hide={state === 'needsWho' ? ['who'] : []}
+          />
         </section>
       </div>
     </FamilyShell>

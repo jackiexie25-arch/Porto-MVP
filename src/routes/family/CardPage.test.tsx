@@ -40,7 +40,11 @@ describe('card page', () => {
     expect(screen.getByText('Taps the door twice.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: c.changeLabel(c.sections.toileting) })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: c.addLabel(c.sections.food_drink) })).toBeInTheDocument();
-    expect(screen.getByText(c.emptyWho)).toBeInTheDocument();
+    // Gaps are stated in place, with their size, and the card never offers to fold.
+    expect(screen.getByText(c.gap.who)).toBeInTheDocument();
+    expect(screen.getByText(c.gap.food_drink())).toBeInTheDocument();
+    expect(screen.getAllByText(c.size(3, 1)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(c.hide)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: c.addLabel(c.sections.cues) })).toHaveAttribute('href', '/cues');
     expect(screen.getByRole('link', { name: c.printLink })).toHaveAttribute('href', '/card/print');
   });
@@ -51,10 +55,22 @@ describe('card page', () => {
     await user.click(screen.getByRole('button', { name: c.changeLabel(c.sections.toileting) }));
     const box = screen.getByLabelText(copy.sectionFields.toileting.signs.ask('Ari'));
     expect(box).toHaveFocus();
+    expect(screen.getByText(c.editorKicker('Ari', c.size(3, 1)))).toBeInTheDocument();
     await user.clear(box);
     await user.type(box, 'Stands by the door.');
     await user.click(screen.getByRole('button', { name: c.doneLabel(c.sections.toileting) }));
     await waitFor(() => expect(saveSection).toHaveBeenCalledWith('toileting', expect.objectContaining({ details: { signs: 'Stands by the door.' } })));
     await waitFor(() => expect(screen.getByRole('button', { name: c.changeLabel(c.sections.toileting) })).toHaveFocus());
+  });
+
+  it('won’t close Who to call on a number that can’t be right', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: c.addLabel(c.sections.who) }));
+    await user.type(screen.getByLabelText(c.who.phoneLabel), '0412');
+    await user.click(screen.getByRole('button', { name: c.doneLabel(c.sections.who) }));
+    expect(screen.getByText(c.who.phoneInvalid)).toBeInTheDocument();
+    expect(screen.getByLabelText(c.who.phoneLabel)).toBeInTheDocument();
+    expect(saveProfile).not.toHaveBeenCalledWith(expect.objectContaining({ who_to_call_phone: '0412' }));
   });
 });

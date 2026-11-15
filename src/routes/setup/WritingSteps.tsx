@@ -4,34 +4,22 @@ import { QuestionSheet } from '../../components/family/Question';
 import { SectionFields } from '../../components/family/SectionFields';
 import { WhoFields, whoToSave } from '../../components/family/WhoFields';
 import { copy } from '../../copy/en-AU';
-import type { CardSectionKind, SectionDraft } from '../../data/types';
+import type { SectionDraft } from '../../data/types';
 import { aboutDraftFrom, aboutPatch, phoneLooksValid, sectionDraftFrom, whoDraftFrom } from '../../family/drafts';
 import { useFamilyData } from '../../family/FamilyDataProvider';
 import { useCardModel } from '../../family/useCardModel';
-import { buildCard, sectionLines, type CardModel } from '../../lib/card';
+import { buildCard, withSectionDrafts } from '../../lib/card';
 import { useAutosave } from '../../lib/useAutosave';
-import { SectionPreview } from './SectionPreview';
 import { SetupFrame } from './SetupFrame';
 import styles from './Setup.module.css';
 import { useStepNav } from './useStepNav';
 
 const s = copy.setup;
 
-/** The child's name for questions: what's typed, or "your child". */
+/** The child's name for questions: what's saved, or "your child". */
 function useChildName(): string {
   const { profile } = useFamilyData();
   return profile.display_name.trim() || s.yourChild;
-}
-
-/** The card with some sections swapped for what's being typed, so the preview keeps up with every key. */
-function withDrafts(model: CardModel, drafts: Partial<Record<CardSectionKind, SectionDraft>>): CardModel {
-  return {
-    ...model,
-    sections: model.sections.map((block) => {
-      const draft = drafts[block.key];
-      return draft ? { ...block, lines: sectionLines(block.key, draft) } : block;
-    }),
-  };
 }
 
 export function AboutStep() {
@@ -43,7 +31,7 @@ export function AboutStep() {
     () => buildCard({ ...profile, ...aboutPatch(draft) }, sections, cues, s.yourChild),
     [profile, sections, cues, draft],
   );
-  // The tips and what setup involves are said once, here, the first time through.
+  // What setup involves, and the two tips, are said once: here, the first time through.
   const firstTime = !profile.setup_completed_at;
 
   return (
@@ -64,7 +52,7 @@ export function AboutStep() {
       busy={busy}
       onPrimary={() => void goNext(flush)}
       onSkip={() => void goNext(flush)}
-      preview={<SectionPreview model={model} parts={['about']} />}
+      model={model}
     >
       <QuestionSheet>
         <AboutFields draft={draft} onChange={setDraft} />
@@ -73,7 +61,45 @@ export function AboutStep() {
   );
 }
 
-export function SectionStep({ step, section }: { step: 2 | 3; section: 'toileting' | 'food_drink' }) {
+export function WhoStep() {
+  const { profile, saveProfile } = useFamilyData();
+  const name = useChildName();
+  const { model } = useCardModel();
+  const [draft, setDraft] = useState(() => whoDraftFrom(profile));
+  const [strict, setStrict] = useState(false);
+  const toSave = whoToSave(draft, profile.who_to_call_phone);
+  const { state, flush } = useAutosave(toSave, (d) => saveProfile(d));
+  const { busy, goNext } = useStepNav(2);
+  const live = {
+    ...model,
+    whoToCall: toSave.who_to_call_phone ? { name: toSave.who_to_call_name, phone: toSave.who_to_call_phone } : null,
+  };
+
+  // A number that can't be right is never dropped quietly: say so here, whichever way they move on.
+  function moveOn() {
+    if (!phoneLooksValid(draft.who_to_call_phone)) return setStrict(true);
+    void goNext(flush);
+  }
+
+  return (
+    <SetupFrame
+      step={2}
+      heading={s.who.heading}
+      intro={s.who.intro(name)}
+      autosave={state}
+      busy={busy}
+      onPrimary={moveOn}
+      onSkip={moveOn}
+      model={live}
+    >
+      <QuestionSheet>
+        <WhoFields draft={draft} onChange={setDraft} strict={strict} />
+      </QuestionSheet>
+    </SetupFrame>
+  );
+}
+
+export function SectionStep({ step, section }: { step: 3 | 4; section: 'toileting' | 'food_drink' }) {
   const { sections, saveSection } = useFamilyData();
   const name = useChildName();
   const { model } = useCardModel();
@@ -91,7 +117,7 @@ export function SectionStep({ step, section }: { step: 2 | 3; section: 'toiletin
       busy={busy}
       onPrimary={() => void goNext(flush)}
       onSkip={() => void goNext(flush)}
-      preview={<SectionPreview model={withDrafts(model, { [section]: draft })} parts={[section]} />}
+      model={withSectionDrafts(model, { [section]: draft })}
     >
       <QuestionSheet>
         <SectionFields section={section} name={name} draft={draft} onChange={setDraft} />
@@ -122,18 +148,18 @@ export function CalmingStep() {
       saveSection('avoid', d.avoid),
     ]);
   });
-  const { busy, goNext } = useStepNav(4);
+  const { busy, goNext } = useStepNav(5);
 
   return (
     <SetupFrame
-      step={4}
+      step={5}
       heading={s.calming.heading}
       intro={s.calming.intro(name)}
       autosave={state}
       busy={busy}
       onPrimary={() => void goNext(flush)}
       onSkip={() => void goNext(flush)}
-      preview={<SectionPreview model={withDrafts(model, draft)} parts={['overstimulation', 'calms', 'avoid']} />}
+      model={withSectionDrafts(model, draft)}
     >
       <QuestionSheet>
         <SectionFields
@@ -144,42 +170,6 @@ export function CalmingStep() {
         />
         <SectionFields section="calms" name={name} draft={draft.calms} onChange={(calms) => setDraft((d) => ({ ...d, calms }))} />
         <SectionFields section="avoid" name={name} draft={draft.avoid} onChange={(avoid) => setDraft((d) => ({ ...d, avoid }))} />
-      </QuestionSheet>
-    </SetupFrame>
-  );
-}
-
-export function WhoStep() {
-  const { profile, saveProfile } = useFamilyData();
-  const name = useChildName();
-  const { model } = useCardModel();
-  const [draft, setDraft] = useState(() => whoDraftFrom(profile));
-  const [strict, setStrict] = useState(false);
-  const toSave = whoToSave(draft, profile.who_to_call_phone);
-  const { state, flush } = useAutosave(toSave, (d) => saveProfile(d));
-  const { busy, goNext } = useStepNav(5);
-  const preview: CardModel = {
-    ...model,
-    whoToCall: toSave.who_to_call_phone ? { name: toSave.who_to_call_name, phone: toSave.who_to_call_phone } : null,
-  };
-
-  return (
-    <SetupFrame
-      step={5}
-      heading={s.who.heading}
-      intro={s.who.intro(name)}
-      autosave={state}
-      busy={busy}
-      onPrimary={() => {
-        // A half-typed number isn't saved, so say so here rather than on the card-ready page.
-        if (!phoneLooksValid(draft.who_to_call_phone)) return setStrict(true);
-        void goNext(flush);
-      }}
-      onSkip={() => void goNext(flush)}
-      preview={<SectionPreview model={preview} parts={['who']} />}
-    >
-      <QuestionSheet>
-        <WhoFields draft={draft} onChange={setDraft} strict={strict} />
       </QuestionSheet>
     </SetupFrame>
   );

@@ -104,7 +104,7 @@ function LinkReady({ created, name, onDone }: { created: CreatedShare; name: str
           setAsking(false);
           guard.stay();
         }} title={c.uncopiedTitle}>
-        <p>{c.uncopiedBody}</p>
+        <p>{c.uncopiedBody(formatUntil(created.expires_at))}</p>
         <div className={styles.sheetActions}>
           <div>
             <Button
@@ -307,6 +307,7 @@ export function SharePage() {
               />
               <RadioGroup
                 legend={c.durationLegend}
+                hint={c.durationHint}
                 name="duration"
                 value={form.duration}
                 options={DURATIONS.map((d) => ({ value: d, label: c.durations[d], hint: c.durationUntil(ends.get(d) ?? '') }))}

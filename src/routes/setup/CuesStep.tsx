@@ -6,6 +6,7 @@ import { Banner, Button, Sheet } from '../../components/ui';
 import { copy } from '../../copy/en-AU';
 import type { NewCue, NewMeaning } from '../../data/types';
 import { useFamilyData } from '../../family/FamilyDataProvider';
+import { useCardModel } from '../../family/useCardModel';
 import { cardMeaning } from '../../lib/card';
 import { useRevealOn } from '../../lib/reveal';
 import { useLeaveGuard } from '../../lib/useLeaveGuard';
@@ -20,6 +21,7 @@ export function CuesStep() {
   const { profile, cues, addCue } = useFamilyData();
   const name = profile.display_name.trim() || copy.setup.yourChild;
   const { busy, goNext } = useStepNav(6);
+  const { model } = useCardModel();
   const [formOpen, setFormOpen] = useState(cues.length < STARTER_COUNT);
   const [draft, setDraft] = useState<QuickDraft | null>(null);
   const [justAdded, setJustAdded] = useState(0);
@@ -46,9 +48,12 @@ export function CuesStep() {
   }
 
   function addThenContinue() {
-    setAsking(false);
     continueAfterAdd.current = true;
-    formRef.current?.requestSubmit();
+    if (!asking) return formRef.current?.requestSubmit();
+    // From the question: let it close (and hand focus back) first, so if something's missing,
+    // focus can then move to that box.
+    setAsking(false);
+    window.setTimeout(() => formRef.current?.requestSubmit(), 0);
   }
 
   // "Save and continue" adds a half-written cue rather than dropping it. If it isn't complete,
@@ -65,7 +70,7 @@ export function CuesStep() {
   }
 
   return (
-    <SetupFrame step={6} heading={s.heading} intro={s.intro(name)} busy={busy} onPrimary={onPrimary} onSkip={onSkip}>
+    <SetupFrame step={6} heading={s.heading} intro={s.intro(name)} busy={busy} onPrimary={onPrimary} onSkip={onSkip} model={model}>
       {cues.length ? (
         <section aria-labelledby="added-so-far">
           <h2 id="added-so-far" className={styles.addedHead}>

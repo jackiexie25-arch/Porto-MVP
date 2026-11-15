@@ -184,6 +184,50 @@ export function isEmptyCard(model: CardModel): boolean {
   return !model.note && !model.about.length && model.sections.every((s) => !s.lines.length) && !model.cues.length && !model.whoToCall;
 }
 
+/** Every part of the card, in the order a worker reads it. */
+export type CardPart = 'about' | CardSectionKind | 'cues' | 'who';
+
+export const CARD_PARTS: readonly CardPart[] = ['about', 'toileting', 'food_drink', 'overstimulation', 'calms', 'avoid', 'cues', 'who'];
+
+/** Whether a worker would read anything in this part. */
+export function partWritten(model: CardModel, part: CardPart): boolean {
+  if (part === 'about') return Boolean(model.note || model.about.length);
+  if (part === 'cues') return model.cues.length > 0;
+  if (part === 'who') return model.whoToCall !== null;
+  return Boolean(model.sections.find((s) => s.key === part)?.lines.length);
+}
+
+/** How many questions each part asks, and roughly how long it takes, for "3 questions · about a minute". */
+export const PART_SIZE: Record<Exclude<CardPart, 'cues'>, { questions: number; minutes: number }> = {
+  about: { questions: 5, minutes: 3 },
+  who: { questions: 2, minutes: 1 },
+  toileting: { questions: 3, minutes: 1 },
+  food_drink: { questions: 3, minutes: 1 },
+  overstimulation: { questions: 2, minutes: 1 },
+  calms: { questions: 1, minutes: 1 },
+  avoid: { questions: 1, minutes: 1 },
+};
+
+/** The model with any parts the family is typing swapped in, so previews keep up with every key. */
+export function withSectionDrafts(
+  model: CardModel,
+  drafts: Partial<Record<CardSectionKind, Pick<CardSection, 'body' | 'details'>>>,
+): CardModel {
+  return {
+    ...model,
+    sections: model.sections.map((block) => {
+      const draft = drafts[block.key];
+      return draft ? { ...block, lines: sectionLines(block.key, draft) } : block;
+    }),
+  };
+}
+
+/** Words and reading minutes for the card; minutes is 0 when nothing is written. */
+export function cardLength(model: CardModel): { words: number; minutes: number } {
+  const words = countWords(cardText(model));
+  return { words, minutes: words ? readingMinutes(words) : 0 };
+}
+
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
 }

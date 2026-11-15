@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { copy } from '../../copy/en-AU';
 import { LIMITS } from '../../data/types';
 import { phoneLooksValid, type WhoDraft } from '../../family/drafts';
@@ -5,21 +6,29 @@ import { WritingQuestion } from './Question';
 
 const w = copy.card.who;
 
-/** Who a worker should ring: a first name and a number. */
+/**
+ * Who a worker should ring: a first name and a number. A number that can't be right is said so
+ * calmly: straight away for letters, and for a number that's too short once the family leaves the
+ * box or tries to move on. It is never saved, so nothing is dropped without a word.
+ */
 export function WhoFields({
   draft,
   onChange,
   compact,
   level = 2,
   strict = false,
+  requirePhone = false,
 }: {
   draft: WhoDraft;
   onChange: (draft: WhoDraft) => void;
-  /** Also say so about a number that's too short, once the family has tried to move on. */
+  /** Where adding someone is the point (the card-ready page), an empty number is said too. */
+  requirePhone?: boolean;
+  /** Say so about a number that's too short (set once the family has tried to move on). */
   strict?: boolean;
   compact?: boolean;
   level?: 2 | 3;
 }) {
+  const [left, setLeft] = useState(false);
   const look = { compact, level };
   return (
     <>
@@ -42,10 +51,13 @@ export function WhoFields({
         maxLength={LIMITS.phone}
         value={draft.who_to_call_phone}
         onChange={(who_to_call_phone) => onChange({ ...draft, who_to_call_phone })}
+        onBlur={() => setLeft(true)}
         error={
-          phoneHasWrongCharacters(draft.who_to_call_phone) || (strict && !phoneLooksValid(draft.who_to_call_phone))
+          phoneProblem(draft.who_to_call_phone, strict || left)
             ? w.phoneInvalid
-            : undefined
+            : requirePhone && strict && !draft.who_to_call_phone.trim()
+              ? w.phoneMissing
+              : undefined
         }
       />
     </>
@@ -53,11 +65,11 @@ export function WhoFields({
 }
 
 /**
- * Says so only when something other than a phone number is typed, never while a number is still
- * being typed (a half-typed number simply isn't saved yet).
+ * Whether to say the number can't be right: letters or other characters at once; a number that's
+ * too short only once `finished` (the family left the box or tried to move on).
  */
-export function phoneHasWrongCharacters(phone: string): boolean {
-  return /[^\d\s()+-]/.test(phone) || phone.trim().length > 20;
+export function phoneProblem(phone: string, finished: boolean): boolean {
+  return /[^\d\s()+-]/.test(phone) || phone.trim().length > 20 || (finished && !phoneLooksValid(phone));
 }
 
 /** What autosave stores: an unfinished number isn't saved, and the last good one stays until it's fixed. */

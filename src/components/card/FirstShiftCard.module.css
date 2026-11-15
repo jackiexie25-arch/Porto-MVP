@@ -12,7 +12,8 @@
  * Family: the same page, so what the family sees is what the worker sees.
  */
 .worker,
-.family {
+.family,
+.preview {
   background: var(--surface);
   border-radius: var(--radius-lg);
   padding: var(--space-2) var(--space-6) var(--space-6);
@@ -20,19 +21,64 @@
 
 @media (max-width: 399px) {
   .worker,
-  .family {
+  .family,
+  .preview {
     padding-inline: var(--space-4);
   }
 }
 
 /* The family's copy is a tool page: its heading row isn't a fold. */
-.family .summary {
+.family .summary,
+.preview .summary {
   cursor: auto;
 }
 
-/* A part with nothing in it yet, stated as a plain fact. */
-.gap {
+/*
+ * A part with nothing in it yet (family and preview only): its title quieter and smaller, then a
+ * plain fact and its size. Workers never see these.
+ */
+.gapPart .title {
+  font-size: 20px;
+  line-height: 26px;
+  color: var(--ink-soft);
+}
+
+.gapText {
+  color: var(--ink-soft);
+}
+
+.gapPart .body {
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.gapSize {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
   color: var(--muted);
+}
+
+/* Preview: the part being written now, marked with the ink rule used for "in context". */
+.preview .marked {
+  border-left: 2px solid var(--ink);
+  padding-left: var(--space-4);
+}
+
+/* An empty part is a plain list row: no list gap, and no ink rules around an empty "Please avoid". */
+.gapPart.cues {
+  display: block;
+}
+
+.family .avoid.gapPart,
+.preview .avoid.gapPart {
+  margin: 0;
+  border-top: 1px solid var(--blob);
+  border-bottom: 0;
+}
+
+.family .avoid.gapPart + .block,
+.preview .avoid.gapPart + .block {
+  border-top: 1px solid var(--blob);
 }
 
 /* The family's note opens the card, set like the first line of a letter. */
@@ -87,12 +133,14 @@
 
 /* Who to call ends the card: clear space above its rule, so the last cue never sits on it. */
 .worker .who,
-.family .who {
+.family .who,
+.preview .who {
   margin-top: var(--space-4);
 }
 
 .worker > * + .block,
-.family > * + .block {
+.family > * + .block,
+.preview > * + .block {
   border-top: 1px solid var(--blob);
 }
 
@@ -189,7 +237,8 @@ details:not([open]) > .summary .hide {
 
 @container card (min-width: 520px) {
   .worker .line,
-  .family .line {
+  .family .line,
+  .preview .line {
     grid-template-columns: 9.5rem minmax(0, 1fr);
     gap: var(--space-4);
     align-items: baseline;
@@ -211,14 +260,16 @@ details:not([open]) > .summary .hide {
  * reads as a deliberate warning line rather than a heavier hairline. No colour.
  */
 .worker .avoid,
-.family .avoid {
+.family .avoid,
+.preview .avoid {
   margin: var(--space-4) 0;
   border-top: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
 }
 
 .worker .avoid + .block,
-.family .avoid + .block {
+.family .avoid + .block,
+.preview .avoid + .block {
   border-top: 0;
 }
 

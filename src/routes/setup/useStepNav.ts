@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logEvent } from '../../data/events';
 import { useFamilyData } from '../../family/FamilyDataProvider';
-import { SETUP_STEPS } from './SetupFrame';
-
-/** Where "Save and continue" goes from a step: the next step, or the card-ready page after the last. */
-export function nextPath(step: number): string {
-  return step >= SETUP_STEPS ? '/setup/ready' : `/setup/${step + 1}`;
-}
+import { nextPath, SETUP_STEPS } from './steps';
 
 /**
  * Moves between setup steps. Saves anything pending first and records the furthest step

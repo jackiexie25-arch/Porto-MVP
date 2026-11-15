@@ -4,7 +4,7 @@ import { COMMUNICATION_MODES, LIMITS } from '../../data/types';
 import type { AboutDraft } from '../../family/drafts';
 import { Checkbox } from '../ui';
 import fieldStyles from '../ui/Field.module.css';
-import { ChoiceQuestion, WritingQuestion } from './Question';
+import { ChoiceQuestion, MoreQuestions, WritingQuestion } from './Question';
 
 const c = copy.setup.about;
 
@@ -61,32 +61,6 @@ export function AboutFields({
       </ChoiceQuestion>
       <WritingQuestion
         {...look}
-        question={c.languagesLabel(name)}
-        hint={c.languagesHint}
-        multiline={false}
-        maxLength={LIMITS.languagesText}
-        value={draft.languagesText}
-        onChange={(v) => set('languagesText', v)}
-      />
-      <ChoiceQuestion {...look} question={c.styleLegend(name)} hint={c.styleHint}>
-        {(['identity_first', 'person_first'] as const).map((value) => (
-          <div key={value} className={fieldStyles.checkRow}>
-            <input
-              id={`${id}-${value}`}
-              type="radio"
-              name={`${id}-language-style`}
-              className={fieldStyles.checkbox}
-              checked={draft.language_style === value}
-              onChange={() => set('language_style', value)}
-            />
-            <label htmlFor={`${id}-${value}`} className={fieldStyles.checkLabel}>
-              {sentence(value === 'identity_first' ? c.styleIdentity(name) : c.stylePerson(name))}
-            </label>
-          </div>
-        ))}
-      </ChoiceQuestion>
-      <WritingQuestion
-        {...look}
         question={c.connectLabel(name)}
         hint={c.connectHint}
         example={c.connectExample}
@@ -94,6 +68,38 @@ export function AboutFields({
         value={draft.connect_note}
         onChange={(v) => set('connect_note', v)}
       />
+      <MoreQuestions
+        title={c.more(name)}
+        hint={c.moreHint}
+        startOpen={draft.languagesText.trim() !== '' || draft.language_style !== 'identity_first'}
+      >
+        <WritingQuestion
+          {...look}
+          question={c.languagesLabel(name)}
+          hint={c.languagesHint}
+          multiline={false}
+          maxLength={LIMITS.languagesText}
+          value={draft.languagesText}
+          onChange={(v) => set('languagesText', v)}
+        />
+        <ChoiceQuestion {...look} question={c.styleLegend(name)} hint={c.styleHint}>
+          {(['identity_first', 'person_first'] as const).map((value) => (
+            <div key={value} className={fieldStyles.checkRow}>
+              <input
+                id={`${id}-${value}`}
+                type="radio"
+                name={`${id}-language-style`}
+                className={fieldStyles.checkbox}
+                checked={draft.language_style === value}
+                onChange={() => set('language_style', value)}
+              />
+              <label htmlFor={`${id}-${value}`} className={fieldStyles.checkLabel}>
+                {sentence(value === 'identity_first' ? c.styleIdentity(name) : c.stylePerson(name))}
+              </label>
+            </div>
+          ))}
+        </ChoiceQuestion>
+      </MoreQuestions>
     </>
   );
 }

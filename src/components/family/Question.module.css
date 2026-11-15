@@ -3,23 +3,23 @@
  * an example to start from above the box, the box, and a quiet length line. Hairlines between.
  */
 
+/*
+ * On wider screens the questions sit straight on the page between hairlines, so the only sheet is
+ * the card beside them. On phones they share one surface sheet, edge to edge like the cue library.
+ */
 .sheet {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--blob);
-  border-radius: var(--radius-lg);
-  padding: var(--space-2) var(--space-6);
   min-width: 0;
+  border-top: 1px solid var(--blob);
+  border-bottom: 1px solid var(--blob);
 }
 
-/* On phones the sheet runs edge to edge, like the cue library. */
 @media (max-width: 599px) {
   .sheet {
     margin-inline: calc(var(--space-4) * -1);
-    border-radius: 0;
-    border-inline: 0;
     padding-inline: var(--space-4);
+    background: var(--surface);
   }
 }
 
@@ -72,14 +72,22 @@
   clear: left;
 }
 
+/* Fraunces, but quieter than the page heading: 20/28 on phones, the h3 size (24/30) above. */
 .ask {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--text-h3);
-  line-height: var(--text-h3-lh);
+  font-size: 20px;
+  line-height: 28px;
   color: var(--ink);
   text-wrap: balance;
-  margin: 0 0 var(--space-2);
+  margin: 0;
+}
+
+@media (min-width: 600px) {
+  .ask {
+    font-size: var(--text-h3);
+    line-height: var(--text-h3-lh);
+  }
 }
 
 .ask label {
@@ -102,11 +110,10 @@
 }
 
 /* The example: a quoted line on a soft rule, set in the family's register, that can be tapped. */
+/* The quote and "Start from this" run on as one line of text, so the offer costs no extra row. */
 .example {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
+  display: block;
+  width: 100%;
   min-height: var(--control-height);
   margin: 0 0 var(--space-2);
   padding: var(--space-2) 0 var(--space-2) var(--space-4);
@@ -127,6 +134,12 @@
   font-size: var(--text-body);
   line-height: var(--text-body-lh);
   font-style: italic;
+}
+
+.use,
+.useOff {
+  margin-left: var(--space-2);
+  white-space: nowrap;
 }
 
 .use {
@@ -167,7 +180,7 @@
 }
 
 .box {
-  min-height: calc(var(--control-height) * 2);
+  min-height: calc(var(--control-height) * 1.75);
 }
 
 .compact .box {
@@ -186,4 +199,75 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0 var(--space-4);
+}
+
+/* "More about Ari": the questions most families answer once, folded under one quiet line. */
+.more {
+  border-top: 1px solid var(--blob);
+}
+
+.moreSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--control-height);
+  padding: var(--space-3) 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.moreSummary::-webkit-details-marker {
+  display: none;
+}
+
+.moreText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.moreTitle {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.moreHint {
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  color: var(--muted);
+}
+
+.moreFold {
+  flex: none;
+  font-size: var(--text-small);
+  line-height: var(--text-small-lh);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.whenOpen,
+.more[open] .whenClosed {
+  display: none;
+}
+
+.more[open] .whenOpen {
+  display: inline;
+}
+
+.more[open] > .moreSummary + * {
+  border-top: 1px solid var(--blob);
+}
+
+/* A phone screen holds more of one question when the rhythm is a little tighter. */
+@media (max-width: 599px) {
+  .question {
+    padding-block: var(--space-4);
+  }
+
+  .compact {
+    padding-block: var(--space-4);
+  }
 }

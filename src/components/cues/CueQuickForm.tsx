@@ -3,7 +3,7 @@ import { copy } from '../../copy/en-AU';
 import { LIMITS, type ContextTag, type NewCue, type NewMeaning } from '../../data/types';
 import { friendlyError } from '../../lib/errors';
 import { reveal, useRevealOn } from '../../lib/reveal';
-import { ChoiceQuestion, WritingQuestion } from '../family/Question';
+import { ChoiceQuestion, MoreQuestions, WritingQuestion } from '../family/Question';
 import { Banner, Button, ChipGroup, ChoiceChip } from '../ui';
 import { toggleTag } from './drafts';
 import { WORKER_PLACES } from './PlacePicker';
@@ -107,15 +107,6 @@ export function CueQuickForm({
           {errors.form}
         </Banner>
       ) : null}
-      <ChoiceQuestion question={s.kindLegend}>
-        <ChipGroup>
-          {s.kinds.map((kind) => (
-            <ChoiceChip key={kind.type} selected={draft.cue_type === kind.type} onClick={() => set('cue_type', kind.type as StarterKind)}>
-              {kind.label}
-            </ChoiceChip>
-          ))}
-        </ChipGroup>
-      </ChoiceQuestion>
       <WritingQuestion
         key={draft.cue_type}
         question={s.seeLabel}
@@ -159,6 +150,20 @@ export function CueQuickForm({
         value={draft.what_to_do}
         onChange={(v) => set('what_to_do', v)}
       />
+      <MoreQuestions
+        title={s.moreDetail}
+        hint={s.moreDetailHint(s.kinds.find((k) => k.type === draft.cue_type)!.label.toLowerCase())}
+      >
+        <ChoiceQuestion question={s.kindLegend}>
+          <ChipGroup>
+            {s.kinds.map((kind) => (
+              <ChoiceChip key={kind.type} selected={draft.cue_type === kind.type} onClick={() => set('cue_type', kind.type as StarterKind)}>
+                {kind.label}
+              </ChoiceChip>
+            ))}
+          </ChipGroup>
+        </ChoiceQuestion>
+      </MoreQuestions>
       <div className={styles.submit}>
         <Button type="submit" variant="outlined" disabled={adding}>
           {adding ? c.adding : s.add}

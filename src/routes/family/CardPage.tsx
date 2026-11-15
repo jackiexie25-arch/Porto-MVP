@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FirstShiftCard, type CardPart } from '../../components/card/FirstShiftCard';
+import { FirstShiftCard, partSize, type CardPart } from '../../components/card/FirstShiftCard';
 import { FamilyShell } from '../../components/family/FamilyShell';
 import { PageHeading } from '../../components/layout/PageHeading';
 import { copy } from '../../copy/en-AU';
@@ -32,7 +32,7 @@ export function CardPage() {
     if (editing) {
       editorRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
     } else if (returnTo.current) {
-      document.querySelector<HTMLElement>(`[data-part="${returnTo.current}"]`)?.focus();
+      document.querySelector<HTMLElement>(`[data-change="${returnTo.current}"]`)?.focus();
       returnTo.current = null;
     }
   }, [editing]);
@@ -50,7 +50,7 @@ export function CardPage() {
       );
     }
     return (
-      <button type="button" className={styles.change} aria-label={label} data-part={part} onClick={() => setEditing(part)}>
+      <button type="button" className={styles.change} aria-label={label} data-change={part} onClick={() => setEditing(part)}>
         {text}
       </button>
     );
@@ -64,6 +64,7 @@ export function CardPage() {
     const doneLabel = c.doneLabel(part === 'about' ? c.sections.about(model.name) : c.sections[part]);
     return (
       <div ref={editorRef} className={styles.editor}>
+        <p className={styles.kicker}>{c.editorKicker(model.name, partSize(part))}</p>
         {part === 'about' ? (
           <AboutEditor onDone={done} doneLabel={doneLabel} />
         ) : part === 'who' ? (

@@ -280,6 +280,7 @@ export const copy = {
     workerLabel: 'Worker’s first name',
     workerHint: 'Only you see this.',
     durationLegend: 'How long should it stay open?',
+    durationHint: 'You can close it sooner.',
     durations: {
       shift: 'This shift, 8 hours',
       today: 'Until midnight tonight',
@@ -309,9 +310,10 @@ export const copy = {
     nativeShareText: (name: string) => `${name}’s first-shift card on Porto`,
     done: 'Done',
     uncopiedTitle: 'You haven’t copied this link',
-    uncopiedBody: 'Porto shows it only once. Once you leave, you’ll need to close it and share again.',
-    uncopiedCopy: 'Copy link and finish',
-    uncopiedLeave: 'Leave without the link',
+    uncopiedBody: (until: string) =>
+      `It stays open until ${until}, even after you leave. Porto shows it only once, so copy it now to send it.`,
+    uncopiedCopy: 'Copy the link, then leave',
+    uncopiedLeave: 'Leave without copying',
     scopesShort: {
       card: 'Card only',
       card_search: 'Card and search',
@@ -636,10 +638,16 @@ export const copy = {
   setup: {
     title: (step: number) => `Setup, step ${step}`,
     progressLabel: 'Profile setup',
-    /** The step's name for the progress list read to screen readers: "Toileting, done". */
-    stepState: (name: string, state: 'done' | 'current' | 'todo') =>
-      state === 'done' ? `${name}, visited` : state === 'current' ? `${name}, this step` : name,
-    minutesLeft: (minutes: number) => (minutes <= 1 ? 'About a minute left' : `About ${minutes} minutes left`),
+    /** "Step 3 of 6 · about 11 minutes left" */
+    progress: (step: number, total: number, minutes: number) =>
+      `Step ${step} of ${total} · ${minutes <= 1 ? 'about a minute left' : `about ${minutes} minutes left`}`,
+    /** Each part's name in the progress line, as screen readers hear it. */
+    stepState: (name: string, current: boolean, written: boolean) =>
+      [name, current ? 'this step' : '', written ? 'written' : ''].filter(Boolean).join(', '),
+    soFar: (minutes: number) =>
+      minutes === 0
+        ? 'Nothing on the card yet.'
+        : `So far the card takes about ${minutes} minute${minutes === 1 ? '' : 's'} to read.`,
     continue: 'Save and continue',
     skip: 'Skip this step',
     back: 'Back',
@@ -650,30 +658,29 @@ export const copy = {
     /** Shown once, at the top of the first step. */
     start: {
       heading: 'Before you start',
-      lead: 'Six short steps, about 15 minutes in all. Skip anything, and stop whenever you like. Porto saves as you type.',
-      tips: [
-        'You can tap the microphone on your phone’s keyboard to speak instead of type.',
-        'Please leave out diagnoses and medical instructions. Everyday words like “looks flushed” are fine.',
-      ],
+      lead: 'Six short steps, about 15 minutes. Skip anything; it saves as you type.',
+      tips: ['Tap the microphone to speak instead of type. Please leave out diagnoses and medical instructions.'],
     },
-    /** Short names for the six steps, in order. */
-    stepNames: ['About your child', 'Toileting', 'Food and drink', 'Calming', 'Who to call', 'First cues'],
+    /** Short names for the six steps, in order, for the progress line. */
+    stepNames: ['About', 'Who to call', 'Toileting', 'Food and drink', 'Calming', 'First cues'],
     example: 'For example',
     useExample: 'Start from this',
     length: {
       good: 'About right.',
-      long: 'A worker reads this in a hurry, so shorter helps.',
+      long: (words: number) => `About ${words} words. A worker reads this in a hurry, so shorter helps.`,
     },
     preview: {
       heading: 'What a worker will see',
       show: 'See what a worker will see',
       hide: 'Hide',
       showWord: 'Show',
-      empty: 'Nothing yet. As you write, it shows here the way a worker reads it.',
+      current: 'Nothing here yet. As you write, it shows here the way a worker reads it.',
     },
     about: {
       heading: 'About your child',
       intro: 'Start with the basics. Short answers are fine.',
+      more: (name: string) => `More about ${name}`,
+      moreHint: 'Languages, and the words you use',
       nameLabel: 'First name or nickname',
       nameHint: 'Please don’t add a surname.',
       modesLegend: (name: string) => `How does ${name} mainly communicate?`,
@@ -699,8 +706,6 @@ export const copy = {
     calming: {
       heading: 'Calming',
       intro: (name: string) => `What overwhelms ${name}, how to spot it early, and what helps.`,
-      tooMuch: 'When it gets too much',
-      helps: 'What helps',
     },
     who: {
       heading: 'Who to call',
@@ -716,6 +721,8 @@ export const copy = {
         { type: 'sound', label: 'A sound' },
         { type: 'gesture', label: 'A gesture' },
       ],
+      moreDetail: 'More detail',
+      moreDetailHint: (kind: string) => `What kind of cue it is: ${kind}`,
       seeLabel: 'What do you see or hear?',
       seeExamples: {
         phrase: 'Cookie time',
@@ -741,23 +748,19 @@ export const copy = {
     ready: {
       title: 'Setup, card ready',
       heading: (name: string) => `${name}’s card is ready`,
-      headingNearly: (name: string) => `${name}’s card is nearly ready`,
+      headingNeedsWho: (name: string) => `${name}’s card needs someone to call`,
+      headingNoToileting: (name: string) => `${name}’s card is nearly ready`,
       intro: 'This is exactly what a worker sees on their first shift. You can change any of it later.',
-      missingHeading: 'Not on the card yet',
-      missing: {
-        who: 'No one to call',
-        about: 'No opening line or basics',
-        toileting: 'Nothing about toileting',
-        food_drink: 'Nothing about food and drink',
-        overstimulation: 'Nothing about overstimulation',
-        calms: 'Nothing about what calms',
-        avoid: 'Nothing to avoid',
-        cues: 'No cues',
-      },
-      add: 'Add',
-      addLabel: (what: string) => `Add: ${what}`,
+      introNeedsWho:
+        'If something comes up during a shift, a worker needs to reach you. Add a name and number, and the card is ready to share.',
+      introNoToileting: 'There’s nothing yet on toileting, which a new worker needs most. It takes about a minute.',
+      noOne: 'No one to call yet',
+      addWho: 'Add who to call',
+      addToileting: 'Add toileting',
       share: 'Share for a shift',
-      later: 'Go to the card page',
+      shareWithout: 'Share without a number',
+      shareAnyway: 'Share it as it is',
+      later: 'Finish later',
       cardLabel: 'The card',
     },
   },
@@ -858,7 +861,7 @@ export const copy = {
     heading: (name: string) => `${name}’s first-shift card`,
     headingNoName: 'Your child’s first-shift card',
     readingTime: (words: number, minutes: number) =>
-      `About ${minutes} minute${minutes === 1 ? '' : 's'} to read · ${words} words`,
+      words === 0 ? 'Nothing written yet' : `About ${minutes} minute${minutes === 1 ? '' : 's'} to read · ${words} words`,
     longNote:
       'Longer than most cards. Workers read it on their first shift, so anything rarely needed could live in the cue library.',
     intro: 'This is the card exactly as a worker sees it. Change any part here.',
@@ -869,8 +872,23 @@ export const copy = {
     addLabel: (title: string) => `Add ${title}`,
     done: 'Done',
     doneLabel: (title: string) => `Done with ${title}`,
-    emptyFamily: 'Nothing written yet. Workers won’t see this part until you add something.',
-    emptyWho: 'No one to call yet. A worker won’t know who to ring.',
+    /** A part with nothing in it yet: what's missing, in plain words. Workers don't see these. */
+    gap: {
+      about: (name: string) => `Nothing yet on how to connect with ${name}.`,
+      who: 'No one to call yet. A worker won’t know who to ring.',
+      toileting: (name: string) => `Nothing yet on how ${name} shows they need the toilet.`,
+      food_drink: () => 'Nothing yet on hunger, thirst or safe foods.',
+      overstimulation: () => 'Nothing yet on triggers or early signs.',
+      calms: (name: string) => `Nothing yet on what helps ${name} calm.`,
+      avoid: () => 'Nothing yet on what makes things worse.',
+      cues: () => 'No cues on the card yet.',
+    },
+    /** "3 questions · about a minute" */
+    size: (questions: number, minutes: number) =>
+      `${questions} question${questions === 1 ? '' : 's'} · about ${minutes <= 1 ? 'a minute' : `${minutes} minutes`}`,
+    cuesSize: 'Up to 5, chosen in the cue library',
+    /** Over a part's questions while it's open: "On Ari's card · 3 questions · about a minute". */
+    editorKicker: (name: string, size: string) => `On ${name}’s card · ${size}`,
     sections: {
       about: (name: string) => `About ${name}`,
       toileting: 'Toileting',
@@ -885,7 +903,6 @@ export const copy = {
       communicates: (list: string) => `Communicates through ${list}.`,
       languages: (list: string) => `Languages: ${list}.`,
     },
-    cuesEmpty: 'No cues on the card yet. Choose up to five in the cue library.',
     hide: 'Hide',
     show: 'Show',
     noteFrom: (name: string) => `From ${name}’s family`,
@@ -895,6 +912,7 @@ export const copy = {
       phoneLabel: 'What number should they ring?',
       note: 'Anyone with a share link can see this name and number.',
       phoneInvalid: 'Use numbers only, like 0412 345 678.',
+      phoneMissing: 'Add a number, so a worker can ring.',
       callLine: (name: string, phone: string) => (name ? `${name}: ${phone}` : phone),
       callAction: (name: string, phone: string) => (name ? `Call ${name} on ${phone}` : `Call ${phone}`),
     },
