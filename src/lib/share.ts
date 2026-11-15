@@ -7,9 +7,10 @@ export const DURATIONS: readonly DurationKey[] = ['shift', 'today', 'weekend', '
 export const WEEKEND_END_HOUR = 9;
 
 /**
- * Hours a link stays open. "Today" runs to the family's local midnight. "Weekend" runs to the next
- * Monday at 9 am after today, so a camp weekend is covered whichever day the link is made. Max 14
- * days (336 hours), which the database also enforces.
+ * Hours a link stays open. "Today" runs to the family's local midnight. "Weekend" runs to the
+ * coming Monday at 9 am: today's 9 am on a Monday morning, and never more than 7 days away. Max 14
+ * days (336 hours), which the database also enforces. Whole hours, rounded down, so a link closes
+ * before the time it promises (but always stays open at least an hour).
  */
 export function durationHours(key: DurationKey, now: Date = new Date()): number {
   switch (key) {
@@ -22,16 +23,23 @@ export function durationHours(key: DurationKey, now: Date = new Date()): number 
       return Math.max(1, Math.floor((midnight.getTime() - now.getTime()) / 3_600_000));
     }
     case 'weekend': {
-      const monday = new Date(now);
-      monday.setDate(now.getDate() + ((8 - now.getDay()) % 7 || 7));
-      monday.setHours(WEEKEND_END_HOUR, 0, 0, 0);
-      return Math.floor((monday.getTime() - now.getTime()) / 3_600_000);
+      return Math.max(1, Math.floor((nextMondayMorning(now).getTime() - now.getTime()) / 3_600_000));
     }
     case 'days7':
       return 168;
     case 'days14':
       return 336;
   }
+}
+
+/** The first Monday 9 am that is still ahead: today's on a Monday before 9, else the coming Monday's. */
+export function nextMondayMorning(now: Date): Date {
+  const monday = new Date(now);
+  monday.setHours(WEEKEND_END_HOUR, 0, 0, 0);
+  let days = (8 - now.getDay()) % 7;
+  if (days === 0 && monday.getTime() <= now.getTime()) days = 7;
+  monday.setDate(monday.getDate() + days);
+  return monday;
 }
 
 /** When a link made now with this choice would close. */

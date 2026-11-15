@@ -40,15 +40,25 @@ describe('weekend links', () => {
     expect(durationEnd('weekend', now).getDate()).toBe(16);
     // Sunday → the next day.
     expect(durationEnd('weekend', new Date('2026-11-15T10:00:00')).getDate()).toBe(16);
-    // Monday morning → the Monday after, never a link that closes within the hour.
-    expect(durationEnd('weekend', new Date('2026-11-16T08:30:00')).getDate()).toBe(23);
+    // Monday after 9 am → the coming Monday.
+    expect(durationEnd('weekend', new Date('2026-11-16T10:00:00')).getDate()).toBe(23);
   });
 
-  it('never runs past the 14-day limit', () => {
+  it('on a Monday before 9 am means this morning, never next week', () => {
+    const mondayEarly = new Date('2026-11-16T03:00:00');
+    expect(durationHours('weekend', mondayEarly)).toBe(6);
+    expect(durationEnd('weekend', mondayEarly).toString()).toBe(new Date('2026-11-16T09:00:00').toString());
+    // Just before 9 it still stays open for at least an hour.
+    expect(durationHours('weekend', new Date('2026-11-16T08:30:00'))).toBe(1);
+  });
+
+  it('is never more than 7 days, at any hour of any day', () => {
     for (let d = 0; d < 7; d++) {
-      const day = new Date(2026, 10, 9 + d, 23, 59);
-      expect(durationHours('weekend', day)).toBeLessThanOrEqual(336);
-      expect(durationHours('weekend', day)).toBeGreaterThanOrEqual(1);
+      for (let h = 0; h < 24; h++) {
+        const at = new Date(2026, 10, 9 + d, h, 30);
+        expect(durationHours('weekend', at)).toBeGreaterThanOrEqual(1);
+        expect(durationHours('weekend', at)).toBeLessThanOrEqual(7 * 24);
+      }
     }
   });
 });
