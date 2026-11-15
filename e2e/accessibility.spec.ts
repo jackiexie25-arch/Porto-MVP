@@ -48,7 +48,7 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
     problems.push(...(await scan(page, '/consent')));
     await page.getByLabel('I’ve read this and I agree to Porto storing this information.').check();
     await page.getByRole('button', { name: 'Agree and continue' }).click();
-    await expect(page.getByRole('heading', { name: 'About your child' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'About your child' })).toBeVisible();
 
     for (const step of [1, 2, 3, 4, 5, 6]) {
       await page.goto(`/setup/${step}`);
@@ -80,7 +80,7 @@ test.describe('accessibility (WCAG 2.2 AA, axe)', () => {
       problems.push(...(await scan(page, path)));
     }
     await page.goto('/card');
-    await page.getByRole('button', { name: 'Change Toileting' }).click();
+    await page.getByRole('button', { name: /^(Add|Change) Toileting$/ }).click();
     problems.push(...(await scan(page, '/card changing a section')));
 
     await page.goto('/cues');

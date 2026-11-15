@@ -48,7 +48,7 @@ export async function signUp(page: Page, email = `${unique('family')}@example.te
   await expect(page.getByRole('heading', { name: 'Before you start' })).toBeVisible();
   await page.getByLabel('I’ve read this and I agree to Porto storing this information.').check();
   await page.getByRole('button', { name: 'Agree and continue' }).click();
-  await expect(page.getByRole('heading', { name: 'About your child' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'About your child' })).toBeVisible();
   return { email };
 }
 
