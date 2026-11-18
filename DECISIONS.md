@@ -341,6 +341,12 @@ Choices made while building the Porto trial MVP, so the reasons stay visible.
 - **Share link ready:** "Copy link" is the page's one primary. Done or a menu link before copying or sending asks "You haven't copied this link": it says the link stays open until it ends, even after leaving, and offers "Copy the link, then leave" (primary) or "Leave without copying". Three names can be tapped for "What's this link for?". "Your links" is a ruled list with one muted facts line per link instead of cards and tags.
 - **`RadioGroup` options take an optional hint,** a quiet second line inside the label (used for when a share link closes).
 
+### Sign-in emails after launch (18 November 2026)
+
+- **What happened:** new families said the sign-up email never came. Supabase handed every confirmation email to Resend without error, and Resend shows each one "Delivered" (14 and 18 November). They were landing in spam or junk. Resend's report flags two causes: the link in the email points at the Supabase address (`…supabase.co/auth/v1/verify`), not `porto-app.com`, and `porto-app.com` has no DMARC record.
+- **Links now point at our own site.** `/auth/callback` also accepts `?token_hash=…&type=email` and swaps it for a session with `verifyOtp`, then strips it from the address bar. The Supabase "Confirm sign up" and "Magic link" templates use `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email` (RUNBOOK section 6). Older links still work. This also stops mail scanners (Outlook Safe Links and the like) using up a link before the family taps it, since they don't run the page's script.
+- **DMARC:** add a TXT record `_dmarc.porto-app.com` = `v=DMARC1; p=none;` in Cloudflare. Start with `p=none` (report only) so nothing is rejected.
+
 ## Brand gaps
 
 Things the brand doesn't define, and how each was derived from existing tokens.

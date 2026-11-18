@@ -118,11 +118,16 @@ Learn the *details* (what was searched, what notes said) by interviewing familie
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
 | Whole site shows errors, or "Something went wrong" everywhere | Supabase free project paused after 7 days of no activity | Supabase dashboard → the project → **Restore**. Consider the Pro plan during the trial. |
-| No sign-in email arrives | Email limits, or Resend problem | Check spam. Resend → **Logs** shows each send. Supabase → Authentication → Rate Limits (keep emails per hour at 30 or more). |
+| No sign-in email arrives | Spam folder, email limits, or a Resend problem | Check spam or junk first. Resend → **Emails** shows each send and whether it was delivered. Supabase → Authentication → Rate Limits (keep emails per hour at 30 or more). The links in the email templates must point at `porto-app.com` (below), and `_dmarc.porto-app.com` must have a DMARC record. |
 | "This sign-in link has closed" | Link already used, or older than an hour | Ask for a new link and use the newest email only. |
 | Sign-in link opens the wrong site | Supabase URL settings | Authentication → URL Configuration: Site URL `https://porto-app.com`, Redirect URL `https://porto-app.com/auth/callback`. |
 | A new deploy broke something | Code change | Netlify → **Deploys** → pick the last good deploy → **Publish deploy**. That's instant, and the code is untouched. |
 | The padlock or certificate fails | DNS or certificate | Netlify → Domain management → HTTPS → **Verify DNS configuration**. Cloudflare records for `@` and `www` must be **DNS only** (grey cloud). |
+
+**Email templates** (Supabase → Authentication → Emails). Links must point at our own site, so they land in fewer spam folders and mail scanners can't use them up:
+
+- **Confirm sign up:** link `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email`
+- **Magic link or OTP:** the same link.
 
 ## 7. Making changes
 
